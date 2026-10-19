@@ -5,13 +5,13 @@ correct, or each miss written down with its cause. Nothing is built before appro
 
 ## Steps
 1. `llm.py`: one chat client chosen by `.env`: `LLM_PROVIDER` = `local` (default,
-   llama-server on the 5090), `openai` or `anthropic`, plus `LLM_MODEL`, `LLM_BASE_URL`,
+   Ollama on the MacBook), `openai` or `anthropic`, plus `LLM_MODEL`, `LLM_BASE_URL`,
    `LLM_API_KEY`. The agent code never knows which one it is talking to.
    Note: a ChatGPT or Claude chat subscription does not include API access, and using its
    login in a third-party app is against their terms. So "connect your account" means the
    user pastes their own API key (billed separately). Keys stay in `.env`, never in the repo.
 2. Tool-calling check: run `qwen3:8b` and `qwen3.5:9b` (both already in Ollama; `qwen3:4b-instruct-2507`
-   as a small-model extra). Use 10 scripted tool-call prompts on each Write down
+   as a small-model extra). Use 10 scripted tool-call prompts on each. Write down
    which one calls tools reliably (right tool, valid arguments) in `docs/week2-notes.md`.
 3. `tools.py`: wrap the week 1 functions as tools (`price_stats`, `find_sales`,
    `compare_price`, `can_buy_resale`, `cpf_housing_grant`, `ehg_amount`, `phg_amount`,
