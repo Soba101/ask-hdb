@@ -33,7 +33,11 @@ def _cpf(use: RuleUse, profile: BuyerProfile, flat: Flat):
     )
     if profile.monthly_household_income > use.get(income_key(profile)):
         use.deny("Income exceeds the CPF grant ceiling")
-    large = flat.room >= use.get("eligibility.singles.max_flat_room_with_grants")
+    if flat.room < use.get(prefix + "min_room_with_amounts"):
+        use.unknown("room_below_grant_tables")
+    if single and flat.room > use.get("eligibility.singles.max_flat_room_with_grants"):
+        use.deny("Singles grants do not cover flats above the singles room limit")
+    large = flat.room >= use.get(prefix + "large_flat_min_room")
     if single:
         key = "singles_first_timer_5_room" if large else "singles_first_timer_2_to_4_room"
     else:
@@ -58,6 +62,14 @@ def cpf_housing_grant(profile: BuyerProfile, flat: Flat, rules: Rules | None = N
 
 def ehg_amount(profile: BuyerProfile, flat: Flat, rules: Rules | None = None) -> RuleResult:
     use = RuleUse(rules)
+    if (
+        profile.scheme == "single"
+        and profile.buying_with != "alone"
+        and profile.own_monthly_income is None
+    ):
+        # Household income cannot establish the single applicant's assessed income.
+        use.unknown("own_monthly_income")
+        return use.result
     use.get("grants.ehg.must_first_qualify_for_family_grant_on_resale")
     _cpf(use, profile, flat)
     # The prerequisite's amount is not an EHG award.
@@ -74,7 +86,7 @@ def ehg_amount(profile: BuyerProfile, flat: Flat, rules: Rules | None = None) ->
     prefix = "grants.ehg."
     if profile.scheme == "family":
         if profile.family_timers == "one_first":
-            income /= 2
+            income *= use.get(prefix + "mixed_couple_assessed_income_share")
             ceiling_key = "mixed_couple_assessed_income_ceiling_half_of_household"
             tiers_key = "mixed_couple_tiers_on_half_income"
         else:
@@ -93,7 +105,11 @@ def ehg_amount(profile: BuyerProfile, flat: Flat, rules: Rules | None = None) ->
         return use.result
     if use.result.eligible is not True:
         return use.result
-    assessed_income = profile.own_monthly_income if profile.scheme == "single" else income
+    assessed_income = (
+        profile.own_monthly_income
+        if profile.scheme == "single" and profile.buying_with != "alone"
+        else income
+    )
     tiers = use.get(prefix + tiers_key)
     amount = next((band["amount"] for band in tiers if assessed_income <= band["up_to"]), 0)
     if not amount:

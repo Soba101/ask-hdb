@@ -21,6 +21,10 @@ eligibility:
       value: 24000
       source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
       as_of: 2026-10-20
+    plus_prime_project_ceiling_room:
+      value: 3
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
     resale_unclassified_standard_no_grant_no_hdb_loan_income_ceiling:
       value: null  # none. "No income ceiling"; ceiling only applies to CPF grants (not PHG) and HDB loan
       source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
@@ -90,6 +94,14 @@ eligibility:
 
 grants:
   cpf_family:
+    min_room_with_amounts:
+      value: 2  # the grant tables start at 2-room; a 1-room flat has no published amount
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    large_flat_min_room:
+      value: 5
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
     first_timer_2_to_4_room_sc_sc:
       value: 80000
       source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
@@ -167,6 +179,10 @@ grants:
       source: https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant/EHG-amount-Families.pdf
       as_of: 2026-10-20
     # First-timer + second-timer couple: HALF of household income is assessed, ceiling 4500 on that half.
+    mixed_couple_assessed_income_share:
+      value: 0.5
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
     mixed_couple_assessed_income_ceiling_half_of_household:
       value: 4500
       source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant

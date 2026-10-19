@@ -22,6 +22,10 @@ def max_loan(
     applicant_checks(use, profile)
     use.get("loan.eligibility_citizenship")
     property_check(use, profile)
+    if profile.previous_hdb_loans >= use.get(
+        "loan.max_previous_hdb_loans_in_core_nucleus_exclusive"
+    ):
+        use.deny("Too many previous HDB loans")
     if profile.monthly_household_income > use.get(income_key(profile, loan=True)):
         use.deny("Income exceeds the HDB loan ceiling")
     if profile.scheme == "single":
@@ -56,7 +60,11 @@ def max_loan(
         payment * (-math.expm1(-months * math.log1p(rate))) / rate if rate else (payment * months)
     )
     bound = "msr"
-    if flat.price is not None:
+    if flat.price is None:
+        use.result.needs_check.append("ltv_not_applied")
+    else:
+        # Valuation can reduce the base below the supplied purchase price.
+        use.result.needs_check.append("ltv_valuation_not_modelled")
         price_cap = flat.price * use.get("loan.ltv_max_pct") / 100
         if price_cap < present_value:
             present_value, bound = price_cap, "ltv"

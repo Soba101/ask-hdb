@@ -87,7 +87,6 @@ def test_limit_and_equal_month_order(sales):
         {"town": "unknown"}, {"flat_type": "unknown"}, {"block_id": "unknown"},
         {"storey_min": 20}, {"min_lease_months": 1200}, {"max_price": 1},
         {"since": "2025-01"}, {"since": "2024-04", "until": "2024-01"},
-        {"since": "unknown"},
     ],
 )
 def test_empty_results(sales, filters):
@@ -98,3 +97,13 @@ def test_empty_results(sales, filters):
 def test_empty_source(sales):
     assert find_sales(sales.iloc[:0]) == []
     assert price_stats(sales.iloc[:0]) == {"n_sales": 0}
+
+
+@pytest.mark.parametrize("function", [find_sales, price_stats])
+@pytest.mark.parametrize("bound", ["since", "until"])
+@pytest.mark.parametrize("value", ["unknown", "2024-02-30", "NaT"])
+@pytest.mark.parametrize("empty", [False, True])
+def test_invalid_date_bounds_raise(sales, function, bound, value, empty):
+    source = sales.iloc[:0] if empty else sales
+    with pytest.raises(ValueError, match=f"Invalid {bound} date"):
+        function(source, **{bound: value})

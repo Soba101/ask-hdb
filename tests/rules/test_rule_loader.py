@@ -106,6 +106,7 @@ def test_custom_snapshot_drives_calculation(family, flat):
         {"monthly_household_income": -1},
         {"citizenships": ["SC", "SC", "SC"], "ages": [35, 35, 35]},
         {"first_timer": True},
+        {"previous_hdb_loans": -1},
     ],
 )
 def test_profile_rejects_invalid_family_shapes(family, changes):
@@ -120,7 +121,7 @@ def test_single_default_income_and_scheme_fields(single):
 
 
 @pytest.mark.parametrize(
-    "changes", [{"room": 1}, {"room": 6}, {"price": -1}, {"lease_left_months": -1}]
+    "changes", [{"room": 0}, {"room": 7}, {"price": -1}, {"lease_left_months": -1}]
 )
 def test_flat_rejects_invalid_shapes(changes):
     with pytest.raises(ValidationError):
@@ -129,7 +130,7 @@ def test_flat_rejects_invalid_shapes(changes):
 
 def test_no_numeric_rule_values_in_python():
     source_dir = Path(__file__).resolve().parents[2] / "src" / "ask_hdb" / "rules"
-    forbidden = re.compile(r"\b(?:16000|24000|80000|120000|9000)\b")
+    forbidden = re.compile(r"\b(?:16000|24000|80000|120000|9000|0\.5)\b|==\s*3\b")
     # Remove numeric separators too, so spelling cannot bypass the guard.
     for path in source_dir.glob("*.py"):
         assert not forbidden.search(path.read_text().replace("_", "")), path

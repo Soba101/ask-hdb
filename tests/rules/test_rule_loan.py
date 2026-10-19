@@ -79,3 +79,20 @@ def test_higher_qualifying_rate_reduces_loan(family, flat):
 def test_invalid_qualifying_rate(family, flat, rate):
     with pytest.raises(ValueError, match="finite and nonnegative"):
         max_loan(family(), flat(), qualifying_rate_pct=rate)
+
+
+@pytest.mark.parametrize("price,check", [
+    (None, "ltv_not_applied"), (100000, "ltv_valuation_not_modelled"),
+])
+def test_ltv_assumptions_are_explicit(family, flat, price, check):
+    result = max_loan(family(), flat(price=price, lease_left_months=719))
+    assert result.eligible is True
+    assert result.needs_check == [check, "ltv_pro_rating"]
+
+
+@pytest.mark.parametrize("previous,eligible", [(0, True), (1, True), (2, False), (3, False)])
+def test_previous_loan_limit(family, flat, previous, eligible):
+    result = max_loan(family(previous_hdb_loans=previous), flat(price=100000))
+    assert result.eligible is eligible
+    assert result.amount == (75000 if eligible else 0)
+    assert ("Too many previous HDB loans" in result.reasons) is (not eligible)

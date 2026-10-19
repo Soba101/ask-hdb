@@ -16,6 +16,19 @@ def _filtered(
     until=None,
     max_price=None,
 ) -> pd.DataFrame:
+    bounds = []
+    for name, value in (("since", since), ("until", until)):
+        if value is not None:
+            try:
+                date = pd.to_datetime(value, errors="coerce")
+                if pd.isna(date):
+                    raise ValueError("Missing date")
+                bounds.append((name, date.to_period("M").to_timestamp()))
+            except (ValueError, TypeError, OverflowError) as exc:
+                raise ValueError(f"Invalid {name} date: {value!r}") from exc
+    # Validate bounds even when there are no source rows.
+    if df.empty:
+        return df
     mask = pd.Series(True, index=df.index)
     for column, value in (("town", town), ("flat_type", flat_type), ("block_id", block_id)):
         if value is not None:
@@ -32,13 +45,8 @@ def _filtered(
             mask &= df[column].le(value)
 
     # Month bounds include the whole month, even when passed a specific day.
-    for value, lower in ((since, True), (until, False)):
-        if value is not None:
-            date = pd.to_datetime(value, errors="coerce")
-            if pd.isna(date):
-                return df.iloc[:0]
-            month = date.to_period("M").to_timestamp()
-            mask &= df["sale_month"].ge(month) if lower else df["sale_month"].le(month)
+    for name, month in bounds:
+        mask &= df["sale_month"].ge(month) if name == "since" else df["sale_month"].le(month)
     return df.loc[mask]
 
 
@@ -57,13 +65,13 @@ def find_sales(
     limit=50,
 ) -> list[dict]:
     """Return newest sales, with inclusive bounds and midpoint floor filtering."""
-    if df.empty:
-        return []
     rows = _filtered(
         df, town=town, flat_type=flat_type, block_id=block_id,
         storey_min=storey_min, storey_max=storey_max, min_lease_months=min_lease_months,
         since=since, until=until, max_price=max_price,
     )
+    if rows.empty:
+        return []
     # Stable sorting keeps equal-month rows in their original order.
     rows = rows.sort_values("sale_month", ascending=False, kind="stable").head(max(0, limit))
     rows = rows.copy()
@@ -77,8 +85,6 @@ def price_stats(df: pd.DataFrame, **filters) -> dict:
 
     Accept the same filters as find_sales, except limit. Storey bounds use midpoints.
     """
-    if df.empty:
-        return {"n_sales": 0}
     rows = _filtered(df, **filters)
     if rows.empty:
         return {"n_sales": 0}

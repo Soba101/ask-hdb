@@ -161,3 +161,9 @@ def test_real_data_smoke():
     assert result["level"] in {"block", "street", "town"}
     assert {"window", "median", "p25", "p75", "position", "examples", "notes"} <= result.keys()
     json.dumps(result, allow_nan=False)
+
+
+@pytest.mark.parametrize("as_of", ["unknown", "2026-02-30"])
+def test_invalid_comparison_date_raises(sample, as_of):
+    with pytest.raises(ValueError):
+        compare_price(sample, "blk_a_main", 300, flat_type="4 ROOM", as_of=as_of)

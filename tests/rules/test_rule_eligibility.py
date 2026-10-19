@@ -60,3 +60,28 @@ def test_unknown_plus_project_ceiling(family, flat):
     result = can_buy_resale(family(), flat(room=3, category="plus"))
     assert result.eligible is None
     assert "plus_3room_project_ceiling" in result.needs_check
+
+
+@pytest.mark.parametrize("scheme,company,extended,ceiling", [
+    ("family", "alone", False, 16000), ("family", "alone", True, 24000),
+    ("single", "alone", False, 8000), ("single", "parents", False, 8000),
+])
+@pytest.mark.parametrize("above", [False, True])
+def test_unknown_category_income_boundary(family, single, flat, scheme, company,
+                                         extended, ceiling, above):
+    profile = (family if scheme == "family" else single)(
+        monthly_household_income=ceiling + int(above), buying_with=company,
+        extended_family=extended,
+    )
+    result = can_buy_resale(profile, flat())
+    assert result.eligible is (None if above else True)
+    assert result.needs_check == (["flat_category"] if above else [])
+    assert not any("no income ceiling" in reason for reason in result.reasons)
+
+
+@pytest.mark.parametrize("category", ["standard", "plus", "prime", None])
+def test_only_standard_has_no_income_ceiling_reason(family, flat, category):
+    result = can_buy_resale(family(), flat(category=category))
+    assert any("no income ceiling" in reason for reason in result.reasons) is (
+        category == "standard"
+    )

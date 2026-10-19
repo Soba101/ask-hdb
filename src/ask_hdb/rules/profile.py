@@ -17,6 +17,7 @@ class BuyerProfile(BaseModel):
     family_timers: Literal["both_first", "one_first", "none_first"] | None = None
     first_timer: bool | None = None
     marital_status: Literal["unmarried", "divorced", "widowed", "married"] | None = None
+    previous_hdb_loans: NonnegativeInt = 0
     works_12_months: bool = True
     owns_private_property: bool = False
     buying_with: Literal["alone", "parents", "family_or_singles"] = "alone"
@@ -32,13 +33,15 @@ class BuyerProfile(BaseModel):
         if self.scheme == "single":
             if self.family_timers is not None:
                 raise ValueError("Use first_timer for singles")
-            if self.own_monthly_income is None:
+            if self.buying_with == "alone" and self.own_monthly_income is None:
                 self.own_monthly_income = self.monthly_household_income
         return self
 
 
 class Flat(BaseModel):
-    room: int = Field(ge=2, le=5)
+    """Rooms range from 1 to 6; 6 represents Executive/Multi-Generation flats."""
+
+    room: int = Field(ge=1, le=6)
     lease_left_months: NonnegativeInt
     price: NonnegativeInt | None = None
     category: Literal["standard", "plus", "prime"] | None = None

@@ -13,8 +13,12 @@ import pytest
 
 from ask_hdb.sales import price_stats
 
-CLEAN = Path("data/clean/resale.parquet")
-pytestmark = pytest.mark.skipif(not CLEAN.exists(), reason="run scripts/clean_resale.py first")
+CLEAN = Path(__file__).resolve().parents[1] / "data/clean/resale.parquet"
+pytestmark = pytest.mark.skipif(
+    not CLEAN.exists(),
+    reason="Build with uv run python scripts/fetch_resale.py then "
+           "uv run python scripts/clean_resale.py",
+)
 
 
 @pytest.fixture(scope="module")

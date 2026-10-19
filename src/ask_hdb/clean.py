@@ -17,6 +17,7 @@ def _lease_months(raw: pd.Series, years: pd.Series, dates: pd.Series) -> pd.Seri
 
     parsed = pd.to_numeric(parts[0]) * 12 + pd.to_numeric(parts[1]).fillna(0)
     # Only the start year is known, so missing leases count from January.
+    # Resale records describe flats with an original 99-year lease.
     fallback = (years + 99 - dates.dt.year) * 12 - (dates.dt.month - 1)
     return parsed.fillna(fallback).astype("int64")
 

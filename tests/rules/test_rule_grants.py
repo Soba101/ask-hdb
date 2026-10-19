@@ -36,7 +36,7 @@ def test_single_grant_ceiling(single, flat, income, company, amount):
 
 @pytest.mark.parametrize(
     "household,own,amount",
-    [(9000, 2000, 40000), (9001, 2000, 0), (9000, 4501, 0), (4500, None, 2500)],
+    [(9000, 2000, 40000), (9001, 2000, 0), (9000, 4501, 0), (4500, 4500, 2500)],
 )
 def test_single_with_parents_uses_own_income(single, flat, household, own, amount):
     profile = single(
@@ -113,7 +113,7 @@ def test_phg_relationship_timers_and_lease(family, single, flat):
 
 
 def test_joint_single_ehg_requires_separate_assessment(single, flat):
-    result = ehg_amount(single(buying_with="family_or_singles"), flat())
+    result = ehg_amount(single(buying_with="family_or_singles", own_monthly_income=2000), flat())
     assert result.eligible is None
     assert "ehg_joint_singles_assessment" in result.needs_check
 
@@ -135,3 +135,50 @@ def test_ehg_lease_boundary(family, flat, months, amount):
 def test_single_larger_flat_and_widow_grant(single, flat):
     assert cpf_housing_grant(single(), flat(room=5)).amount == 25000
     assert cpf_housing_grant(single(ages=[21], marital_status="widowed"), flat()).amount == 40000
+
+
+@pytest.mark.parametrize("buying_with", ["parents", "family_or_singles"])
+@pytest.mark.parametrize("income", [2000, 10000])
+def test_joint_single_missing_own_income(single, flat, buying_with, income):
+    profile = single(buying_with=buying_with, monthly_household_income=income)
+    assert profile.own_monthly_income is None
+    result = ehg_amount(profile, flat())
+    assert result.eligible is None
+    assert result.amount == 0
+    assert result.needs_check == ["own_monthly_income"]
+
+
+def test_alone_assesses_household_as_own_income(single, flat):
+    result = ehg_amount(single(monthly_household_income=2000, own_monthly_income=1000), flat())
+    assert result.amount == 40000
+
+
+@pytest.mark.parametrize("room", [2, 4, 5, 6])
+@pytest.mark.parametrize("timer,small,large", [
+    ("both_first", 80000, 50000), ("one_first", 40000, 25000),
+])
+def test_family_room_tiers(family, flat, room, timer, small, large):
+    result = cpf_housing_grant(family(family_timers=timer), flat(room=room))
+    assert result.eligible is True
+    assert result.amount == (small if room <= 4 else large)
+
+
+def test_single_cannot_get_grants_for_executive_flat(single, flat):
+    # Singles' grants stop at 5-room flats (eligibility.singles.max_flat_room_with_grants).
+    for function in (cpf_housing_grant, ehg_amount):
+        result = function(single(), flat(room=6))
+        assert (result.eligible, result.amount) == (False, 0)
+
+
+def test_family_executive_flat_uses_large_tier(family, flat):
+    # Families get the 5-room-or-larger amount: SC+SC first-timers, 50000.
+    result = cpf_housing_grant(family(), flat(room=6))
+    assert (result.eligible, result.amount) == (True, 50000)
+
+
+def test_one_room_flat_has_no_published_grant_amount(family, single, flat):
+    for profile in (family(), single()):
+        result = cpf_housing_grant(profile, flat(room=1))
+        assert result.eligible is None
+        assert result.amount == 0
+        assert "room_below_grant_tables" in result.needs_check

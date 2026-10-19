@@ -18,3 +18,11 @@ with no model anywhere.
 - Files stay under ~200 lines, with short plain comments.
 - If hdb.gov.sg is unclear or two pages disagree, write it down as a finding. Do not guess.
 - data.gov.sg API key goes in `.env` (`DATAGOV_API_KEY`), never in the repo.
+
+## Exit answer (2026-10-20)
+`uv run pytest -q` passes (229 tests) and `uv run ruff check .` is clean, with no model anywhere.
+- Data: 242,742 resale sales (2017-01 to 2026-10). Price facts are checked against the raw CSV.
+- Rules: `rules/2026-10.yaml` from hdb.gov.sg only. HDB's five worked examples pass as tests.
+- Open (see `docs/week1-rules-notes.md`): lease pro-rating formulas are unpublished (flagged, not guessed);
+  Plus/Prime 3-room project ceilings and joint-single EHG are not modelled; previous PHG use cannot be checked.
+- Reviewed twice by a second model; its must-fix items are fixed.
