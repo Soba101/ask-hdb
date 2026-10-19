@@ -10,7 +10,7 @@ correct, or each miss written down with its cause. Nothing is built before appro
    Note: a ChatGPT or Claude chat subscription does not include API access, and using its
    login in a third-party app is against their terms. So "connect your account" means the
    user pastes their own API key (billed separately). Keys stay in `.env`, never in the repo.
-2. Tool-calling check: run `qwen3:8b` and `qwen3.5:9b` (both already in Ollama; `qwen3:4b-instruct-2507`
+2. Tool-calling check: run `qwen3.8:27b` (PC) against `qwen3.5:9b` (Mac Ollama) ( `qwen3:4b-instruct-2507`
    as a small-model extra). Use 10 scripted tool-call prompts on each. Write down
    which one calls tools reliably (right tool, valid arguments) in `docs/week2-notes.md`.
 3. `tools.py`: wrap the week 1 functions as tools (`price_stats`, `find_sales`,
@@ -23,8 +23,10 @@ correct, or each miss written down with its cause. Nothing is built before appro
    compare, one unanswerable). Expected answers computed in code, checked by eye.
 
 ## Decisions I need from you
-- Decided 2026-10-20: models are the MacBook's Ollama ones (24 GB RAM, so 8-9B is the ceiling).
-  The 5090 is reachable but busy, so it waits.
+- Decided 2026-10-20: two local setups, set in `.env` only.
+  - PC (5090): `qwen3.8:27b` on llama-server, `http://100.75.187.23:8080/v1` over Tailscale.
+    Reachable and healthy. Whisperwick shares this GPU, so I only run when you say it is free.
+  - MacBook (24 GB): Ollama `qwen3.5:9b`, `qwen3:8b`, `qwen3:4b-instruct-2507` as fallback.
 - The MacBook's models can also be used as `local` (same OpenAI-compatible interface).
 - Decided 2026-10-20: 5090 is the default; OpenAI and Anthropic are optional via API key.
 
