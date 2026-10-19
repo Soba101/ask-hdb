@@ -11,7 +11,8 @@ from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
 
 MAX_TOOL_CALLS = 8
-TOKEN_BUDGET = 32000
+TOKEN_BUDGET = 64000
+HISTORY_MESSAGES = 6  # keep chat short so old turns cannot eat the budget
 SYSTEM_PROMPT = """The LLM talks. Code decides.
 Never state a number, price, distance or eligibility verdict unless it comes from
 a tool result in the current question. Do not reuse numbers from chat history.
@@ -39,27 +40,32 @@ def _size(value):
 
 def ask(question, history=None) -> dict:
     calls, pending = [], {}
-    tokens, requested = 0, 0
+    tokens, requested, reported = 0, 0, False
     stopped_reason = None
     answer = ""
-    model = get_chat_model().bind_tools(TOOLS)
+    plain = get_chat_model()
+    model = plain.bind_tools(TOOLS)
     schemas = [tool.args_schema.model_json_schema() for tool in TOOLS]
 
     def run_model(messages, config):
-        nonlocal tokens, requested
-        if requested >= MAX_TOOL_CALLS:
-            raise LimitReached("tool_calls")
-        input_bound = _size([message.model_dump() for message in messages]) + _size(schemas) + 1024
-        remaining = TOKEN_BUDGET - tokens - input_bound
+        nonlocal tokens, requested, reported
+        final = requested >= MAX_TOOL_CALLS
+        # Bytes over-count tokens, so use them only until a real usage figure is reported.
+        input_bound = 0 if reported else (_size([m.model_dump() for m in messages]) + _size(schemas)) // 3
+        remaining = TOKEN_BUDGET - tokens - input_bound - 1024
         if remaining <= 0:
             raise LimitReached("tokens")
-        reply = model.bind(max_tokens=remaining).invoke(messages, config)
+        # After the last allowed tool call the model may still write its answer, but with no tools.
+        reply = (plain if final else model).bind(max_tokens=remaining).invoke(messages, config)
         usage = reply.usage_metadata
+        reported = reported or bool(usage)
         tokens += (usage["total_tokens"] if usage else input_bound + _size(reply.model_dump()))
         if tokens >= TOKEN_BUDGET or reply.response_metadata.get("finish_reason") in {
             "length", "max_tokens",
         } or reply.response_metadata.get("stop_reason") == "max_tokens":
             raise LimitReached("tokens")
+        if final and reply.tool_calls:
+            raise LimitReached("tool_calls")
         # One model response may request many tools. Never execute past the cap.
         if len(reply.tool_calls) > MAX_TOOL_CALLS - requested:
             reply = reply.model_copy(update={"tool_calls": reply.tool_calls[
@@ -77,7 +83,7 @@ def ask(question, history=None) -> dict:
     messages = [message for message in convert_to_messages(history or [])
                 if isinstance(message, (HumanMessage, AIMessage))
                 and not (isinstance(message, AIMessage) and message.tool_calls)]
-    messages.append(HumanMessage(content=question))
+    messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=question)]
     try:
         # A ReAct round has a model node and a tool node. Calls are capped above.
         for update in graph.stream({"messages": messages},

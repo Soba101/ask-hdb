@@ -1,6 +1,7 @@
 """Expose the unchanged deterministic functions as JSON tools."""
 
 import json
+import sys
 from dataclasses import asdict
 from functools import lru_cache
 from pathlib import Path
@@ -39,7 +40,9 @@ def _tool(name, description, schema, function, *, rule=False):
                 result = {"sales": result}
             # Catch non-JSON results before they reach the chat client.
             return json.loads(json.dumps(result, allow_nan=False))
-        except (ValueError, TypeError, KeyError, OSError, OverflowError):
+        except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:
+            # Keep a trace so a real bug is not mistaken for a bad model argument.
+            print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
             return {"error": f"Invalid arguments or unavailable data for {name}"}
 
     return StructuredTool.from_function(

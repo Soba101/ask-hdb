@@ -42,7 +42,7 @@ class SalesArgs(Arguments):
 
 
 class FindArgs(SalesArgs):
-    limit: Annotated[int, Field(ge=0, le=50)] = 50
+    limit: Annotated[int, Field(ge=0, le=50)] = 10
 
 
 class CompareArgs(Arguments):
@@ -54,7 +54,7 @@ class CompareArgs(Arguments):
     storey_mid: Nonnegative | None = None
     lease_left_months: Count | None = None
     floor_area_sqm: Nonnegative | None = None
-    as_of: str | None = None
+    as_of: str | None = Field(None, description="Month, YYYY-MM")
     months: Annotated[int, Field(ge=1)] = 12
     storey_tol: Nonnegative = 3
     lease_tol_months: Count = 60

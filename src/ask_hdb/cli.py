@@ -26,6 +26,11 @@ def chat():
             return
         if not question:
             continue
-        result = ask(question, history)
+        try:
+            result = ask(question, history)
+        except Exception as exc:  # noqa: BLE001 - a network blip must not end the chat
+            # Print only the type: provider error text can contain URLs or keys.
+            print(f"Model call failed ({type(exc).__name__}). Try again.")
+            continue
         print_answer(result)
         history.extend([HumanMessage(content=question), AIMessage(content=result["answer"])])

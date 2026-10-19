@@ -148,3 +148,10 @@ on the rule tools. Casing ("Tampines") and bare years ("2025") were fixed in cod
 - Q8 answer repeated the $600,000 price from the question although the tool never received it.
 - Not scored: number grounding by code (`grounding.py` is week 3).
 Exit check: NOT met at 10/10. Misses are written down above.
+
+## Review fixes (Opus review, 2026-10-20)
+- Token budget counted bytes as tokens and over-counted about 3x, so a normal `find_sales` stopped the agent
+  after about 4K real tokens. Now bytes are used only until the model reports real usage; budget 64K;
+  `find_sales` default limit 10; chat history trimmed to 6 messages. Test added with realistic usage.
+- The model may now write its answer after the 8th tool call (one last call with no tools).
+- `chat` survives provider errors; tool wrapper prints the real exception to stderr.

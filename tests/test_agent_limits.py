@@ -14,6 +14,7 @@ class LoopModel(BaseChatModel):
     requests: int = 0
     usage: int = 10
     finish: bool = False
+    finish_after: int = 0
     truncated: bool = False
     omit_usage: bool = False
     caps: list[int] = Field(default_factory=list)
@@ -28,12 +29,13 @@ class LoopModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         self.requests += 1
         self.caps.append(kwargs["max_tokens"])
-        calls = [] if self.finish else [
+        done = self.finish or (self.finish_after and self.requests > self.finish_after)
+        calls = [] if done else [
             {"name": "price_stats", "args": {"town": "TAMPINES"},
              "id": f"call-{self.requests}-{index}", "type": "tool_call"}
             for index in range(self.batch)
         ]
-        reply = AIMessage(content="Please provide the missing inputs." if self.finish else "",
+        reply = AIMessage(content="Please provide the missing inputs." if done else "",
                           tool_calls=calls, usage_metadata=None if self.omit_usage else {
                               "input_tokens": self.usage, "output_tokens": 0,
                               "total_tokens": self.usage,
@@ -85,7 +87,7 @@ def test_missing_usage_still_has_budget(monkeypatch):
     result = agent.ask("Query prices")
     assert result["tokens"] > 0
     assert result["stopped_reason"] in {"tokens", "tool_calls"}
-    assert model.requests <= agent.MAX_TOOL_CALLS
+    assert model.requests <= agent.MAX_TOOL_CALLS + 1
 
 
 def test_truncated_response_stops_before_tools(monkeypatch):
@@ -113,3 +115,20 @@ def test_dict_history(monkeypatch):
     monkeypatch.setattr(agent, "get_chat_model", lambda: model)
     result = agent.ask("Can you help?", [{"role": "user", "content": "Earlier question"}])
     assert result["stopped_reason"] is None
+
+
+def test_realistic_usage_reaches_the_tool_cap(monkeypatch):
+    # Real usage is about 4 bytes per token; bytes must not stop the agent early.
+    model = LoopModel(usage=3500)
+    monkeypatch.setattr(agent, "get_chat_model", lambda: model)
+    result = agent.ask("Keep querying sales")
+    assert len(result["tool_calls"]) == agent.MAX_TOOL_CALLS
+
+
+def test_model_may_answer_after_last_tool_call(monkeypatch):
+    model = LoopModel(finish_after=agent.MAX_TOOL_CALLS)
+    monkeypatch.setattr(agent, "get_chat_model", lambda: model)
+    result = agent.ask("Query prices")
+    assert result["stopped_reason"] is None
+    assert len(result["tool_calls"]) == agent.MAX_TOOL_CALLS
+    assert result["answer"] == "Please provide the missing inputs."
