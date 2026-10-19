@@ -68,6 +68,7 @@ class ToolResult(BaseModel):
 2. `scripts/clean_resale.py`: parse dates, lease left in months, storey midpoint.
    Give every block a stable ID: `blk_<block>_<street-slug>`.
 3. `scripts/geocode_blocks.py`: block address -> lat/long via OneMap search. Cached to disk.
+   Cross-check with the data.gov.sg HDB Existing Buildings GeoJSON (block + postal code outlines).
 4. `scripts/fetch_places.py`: MRT stations and primary schools with lat/long.
 5. `scripts/fetch_policy.py`: HDB policy pages -> text chunks with URL and fetch date -> pgvector.
 

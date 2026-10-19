@@ -1,0 +1,368 @@
+# HDB resale rules, read from hdb.gov.sg on 2026-10-20.
+# Scope: Singapore Citizen families and citizen singles aged 35+, resale flats only.
+# Every leaf is {value, source, as_of}. Do not edit in place: add a new dated file.
+# Income tiers: each band is {up_to: <monthly $>, amount: <$>}; first band whose up_to >= income wins.
+
+eligibility:
+  families:
+    citizenship_min:
+      value: "Applicant is SC or SPR and household includes at least 1 SC or SPR occupant. v1 scope: SC applicant."
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    min_age_years:
+      value: 21
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    income_ceiling_grants_and_hdb_loan:
+      value: 16000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+      as_of: 2026-10-20
+    income_ceiling_extended_family:
+      value: 24000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+      as_of: 2026-10-20
+    resale_unclassified_standard_no_grant_no_hdb_loan_income_ceiling:
+      value: null  # none. "No income ceiling"; ceiling only applies to CPF grants (not PHG) and HDB loan
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    previous_housing_subsidy_affects_resale_purchase:
+      value: false  # any past subsidy does not block buying a resale flat; it affects grants
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    resale_levy_applies_to_resale_buyers:
+      value: false  # levy is for buying from HDB only
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    private_residential_property_owned_or_interest_with_grant_or_hdb_loan:
+      value: not_allowed
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    private_residential_disposal_wait_months_with_grant_or_hdb_loan:
+      value: 30  # counted from legal completion date of disposal to HFE letter application
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    private_residential_must_dispose_within_months_if_no_grant_no_hdb_loan:
+      value: 6  # after completing flat purchase; non-subsidised Unclassified/Standard flat only
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    non_residential_property_max_owned_with_grant_or_hdb_loan:
+      value: 1
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    non_residential_extra_disposal_wait_months:
+      value: 30
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    existing_hdb_flat_must_dispose_within_months:
+      value: 6  # after completing the purchase
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+  singles:
+    citizenship:
+      value: Singapore Citizen
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    min_age_years_unmarried_or_divorced:
+      value: 35
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    min_age_years_widowed_or_orphan:
+      value: 21
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    max_flat_room_with_grants:
+      value: 5
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    income_ceiling_resale_plus_flat:
+      value: 16000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    resale_unclassified_standard_income_ceiling:
+      value: null  # none
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    only_first_timer_may_get_grants:
+      value: true
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+      as_of: 2026-10-20
+    # Property ownership, disposal wait (30 months) and non-residential limit (1) are the same as families.
+
+grants:
+  cpf_family:
+    first_timer_2_to_4_room_sc_sc:
+      value: 80000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    first_timer_2_to_4_room_sc_spr:
+      value: 70000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    first_timer_5_room_plus_sc_sc:
+      value: 50000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    first_timer_5_room_plus_sc_spr:
+      value: 40000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    first_and_second_timer_2_to_4_room:
+      value: 40000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    first_and_second_timer_5_room_plus:
+      value: 25000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    income_ceiling:
+      value: 16000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    income_ceiling_extended_family:
+      value: 24000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    min_remaining_lease_years_exclusive:
+      value: 20  # "more than 20 years"
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+      as_of: 2026-10-20
+    singles_first_timer_2_to_4_room:
+      value: 40000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+      as_of: 2026-10-20
+    singles_first_timer_5_room:
+      value: 25000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+      as_of: 2026-10-20
+    singles_income_ceiling_alone:
+      value: 8000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+      as_of: 2026-10-20
+    singles_income_ceiling_with_family_or_other_singles:
+      value: 16000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+      as_of: 2026-10-20
+    singles_min_remaining_lease_years_exclusive:
+      value: 20
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+      as_of: 2026-10-20
+  ehg:
+    # Families: first-timer households. Income = average gross monthly household income over months worked in the 12 months ending 2 months before the HFE letter application.
+    families_income_ceiling:
+      value: 9000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    families_max_amount:
+      value: 120000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    families_tiers:
+      value: [
+        {up_to: 1500, amount: 120000}, {up_to: 2000, amount: 110000}, {up_to: 2500, amount: 105000},
+        {up_to: 3000, amount: 95000}, {up_to: 3500, amount: 90000}, {up_to: 4000, amount: 80000},
+        {up_to: 4500, amount: 70000}, {up_to: 5000, amount: 65000}, {up_to: 5500, amount: 55000},
+        {up_to: 6000, amount: 50000}, {up_to: 6500, amount: 40000}, {up_to: 7000, amount: 30000},
+        {up_to: 7500, amount: 25000}, {up_to: 8000, amount: 20000}, {up_to: 8500, amount: 10000},
+        {up_to: 9000, amount: 5000}]
+      source: https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant/EHG-amount-Families.pdf
+      as_of: 2026-10-20
+    # First-timer + second-timer couple: HALF of household income is assessed, ceiling 4500 on that half.
+    mixed_couple_assessed_income_ceiling_half_of_household:
+      value: 4500
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    mixed_couple_tiers_on_half_income:
+      value: [
+        {up_to: 750, amount: 60000}, {up_to: 1000, amount: 55000}, {up_to: 1250, amount: 52500},
+        {up_to: 1500, amount: 47500}, {up_to: 1750, amount: 45000}, {up_to: 2000, amount: 40000},
+        {up_to: 2250, amount: 35000}, {up_to: 2500, amount: 32500}, {up_to: 2750, amount: 27500},
+        {up_to: 3000, amount: 25000}, {up_to: 3250, amount: 20000}, {up_to: 3500, amount: 15000},
+        {up_to: 3750, amount: 12500}, {up_to: 4000, amount: 10000}, {up_to: 4250, amount: 5000},
+        {up_to: 4500, amount: 2500}]
+      source: https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant/EHG-amount-Families.pdf
+      as_of: 2026-10-20
+    min_continuous_work_months:
+      value: 12  # working continuously for 12 months ending 2 months before HFE application, and working at application
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    must_first_qualify_for_family_grant_on_resale:
+      value: true
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    full_amount_lease_must_cover_youngest_to_age:
+      value: 95  # otherwise EHG is pro-rated; the pro-rating formula is not published
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    min_remaining_lease_years_exclusive:
+      value: 20
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    singles_max_amount:
+      value: 60000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    singles_income_ceiling_alone:
+      value: 4500
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    singles_income_ceiling_household_with_other_singles_or_parents:
+      value: 9000  # page states 9,000 for resale with parents, but the parent case assesses the single's own income only; see notes
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+      as_of: 2026-10-20
+    singles_tiers_alone_or_with_parents:
+      value: [
+        {up_to: 750, amount: 60000}, {up_to: 1000, amount: 55000}, {up_to: 1250, amount: 52500},
+        {up_to: 1500, amount: 47500}, {up_to: 1750, amount: 45000}, {up_to: 2000, amount: 40000},
+        {up_to: 2250, amount: 35000}, {up_to: 2500, amount: 32500}, {up_to: 2750, amount: 27500},
+        {up_to: 3000, amount: 25000}, {up_to: 3250, amount: 20000}, {up_to: 3500, amount: 15000},
+        {up_to: 3750, amount: 12500}, {up_to: 4000, amount: 10000}, {up_to: 4250, amount: 5000},
+        {up_to: 4500, amount: 2500}]
+      source: https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant/EHG-amount-Singles.pdf
+      as_of: 2026-10-20
+  phg:
+    families_live_with_parents_or_child:
+      value: 30000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    families_live_near_parents_or_child:
+      value: 20000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    singles_live_with_parents_or_child:
+      value: 15000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant
+      as_of: 2026-10-20
+    singles_live_near_parents_or_child:
+      value: 10000
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant
+      as_of: 2026-10-20
+    near_distance_km_max:
+      value: 4  # "within 4km"
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    income_ceiling:
+      value: null  # none; income ceiling excludes PHG
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+      as_of: 2026-10-20
+    once_only:
+      value: true  # only for those who have not taken the PHG before
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant
+      as_of: 2026-10-20
+    single_child_helper_min_age_years:
+      value: 35  # unmarried/widowed/divorced child whose parents buy
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    parent_or_child_min_citizenship:
+      value: SPR
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    min_remaining_lease_years_exclusive:
+      value: 20
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+      as_of: 2026-10-20
+    singles_near_flat_room_range:
+      value: [2, 5]
+      source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant
+      as_of: 2026-10-20
+
+loan:
+  eligibility_citizenship:
+    value: At least 1 applicant is a Singapore Citizen
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  income_ceiling_families:
+    value: 16000
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  income_ceiling_extended_families:
+    value: 24000
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  income_ceiling_singles:
+    value: 8000
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  singles_min_age_years:
+    value: 35
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  singles_max_resale_room:
+    value: 5  # 5-room or smaller resale flat
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  max_previous_hdb_loans_in_core_nucleus_exclusive:
+    value: 2  # must not have taken 2 or more
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  ltv_max_pct:
+    value: 75  # of the lower of resale price or valuation; for resale applications from 2024-08-20
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  ltv_pro_rated_if_lease_covers_youngest_to_age_below:
+    value: 95  # LTV pro-rated from 75%; the formula is not published
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  concessionary_rate_pct:
+    value: 2.60  # 1 Oct to 31 Dec 2026; CPF OA rate + 0.1%; reviewed quarterly
+    source: https://www.hdb.gov.sg/managing-my-home/finances/loan-matters/interest-rate
+    as_of: 2026-10-20
+  concessionary_rate_spread_over_cpf_oa_pct:
+    value: 0.10
+    source: https://www.hdb.gov.sg/managing-my-home/finances/loan-matters/interest-rate
+    as_of: 2026-10-20
+  qualifying_rate_floor_pct:
+    value: 3.0  # higher of this and the prevailing rate is used to size the loan
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  msr_pct_of_monthly_income:
+    value: 30  # "Monthly instalments up to 30% of the applicants' monthly income"
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  max_tenure_years:
+    value: 25
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  tenure_cap_age_minus_avg_age:
+    value: 65  # tenure also capped at 65 minus the average age of applicants
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  tenure_cap_remaining_lease_minus_years:
+    value: 20  # tenure also capped at remaining lease minus 20 years
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  min_remaining_lease_years_exclusive:
+    value: 20
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+  cpf_oa_retainable_per_person:
+    value: 20000
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+    as_of: 2026-10-20
+
+# Worked examples published by HDB. Use as tests. Income = average gross monthly household income.
+examples:
+  ehg_resale_family_e:
+    inputs: {buyer: family_sc_spr, first_timers: both, flat: 4-room resale, hfe_applied: 2024-08-20, income: 4400}
+    expected: {family_grant: 70000, ehg: 70000}
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+    as_of: 2026-10-20
+  ehg_resale_family_f_not_working_12_months:
+    inputs: {buyer: family_sc_spr, first_timers: both, flat: 5-room resale, continuous_work_12_months: false}
+    expected: {family_grant: 40000, ehg: 0}
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+    as_of: 2026-10-20
+  ehg_resale_first_and_second_timer_h:
+    inputs: {buyer: family_sc_sc, first_timers: one_of_two, flat: 4-room resale, income: 4400, assessed_half_income: 2200}
+    expected: {family_grant: 40000, ehg: 35000}
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+    as_of: 2026-10-20
+  ehg_resale_single_b:
+    inputs: {buyer: single_sc, age: 35, first_timer: true, flat: 3-room resale, income: 2000}
+    expected: {singles_grant: 40000, ehg: 40000}
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+    as_of: 2026-10-20
+  ehg_resale_single_c_not_working_12_months:
+    inputs: {buyer: single_sc, age: 35, first_timer: true, flat: 3-room resale, continuous_work_12_months: false}
+    expected: {singles_grant: 40000, ehg: 0}
+    source: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+    as_of: 2026-10-20
