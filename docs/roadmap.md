@@ -34,6 +34,11 @@ Do not start the next week until the exit check passes (or the miss is written d
 - [ ] 10 hand-written questions, checked by eye.
 - **Exit:** 10/10 correct, or each miss written down with its cause.
 
+Implementation note: model selection, tools, bounded agent, terminal commands and
+the scripted routing check are built. Agent score change: unavailable; no prior
+agent evaluation existed. Live checks are blocked because the build sandbox cannot
+download the new dependencies. See `docs/week2-notes.md`; the exit check remains open.
+
 ## Week 3: eval set and baseline
 - [ ] `eval/questions.yaml`: about 68 questions as in docs/eval.md. Expected answers from code.
 - [ ] `ask-hdb eval` runner: scores, steps, tokens, time. JSON + markdown report.
