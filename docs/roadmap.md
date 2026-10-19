@@ -43,6 +43,8 @@ Do not start the next week until the exit check passes (or the miss is written d
 
 ## Week 4: places and MCP
 - [ ] `scripts/geocode_blocks.py` with a disk cache. `scripts/fetch_places.py` for MRT and schools.
+- [ ] Cross-check OneMap block coordinates against data.gov.sg "HDB Existing Buildings" (GeoJSON, `d_16b157c52ed637edd6ba1232e026258d`):
+      building outlines keyed by block number + postal code. Use it to spot bad geocodes. It has no street name, so it cannot replace OneMap.
 - [ ] `nearest(block_id, kind)` and a "within X km" filter for `find_sales`.
 - [ ] Move all tools into an MCP server (`ask_hdb/mcp`). Agent connects through it.
 - [ ] Add distance and multi-step questions to the eval.
