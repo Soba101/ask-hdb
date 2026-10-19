@@ -25,7 +25,12 @@ correct, or each miss written down with its cause. Nothing is built before appro
 - Which two local models to compare (suggest one ~30B and one ~8B, as in Whisperwick)?
 - Is the 5090 PC reachable from this Mac (Tailscale)? If not, I use an API-key provider
   for week 2 only and flag it.
+- The MacBook's models can also be used as `local` (same OpenAI-compatible interface).
 - Decided 2026-10-20: 5090 is the default; OpenAI and Anthropic are optional via API key.
+
+## Out of scope for week 2
+- iOS / on-device models (Apple Foundation Models or a downloaded model): noted in the
+  README as an idea. Revisit after the tool-calling check shows how small models do.
 
 ## Working rules
 - Codex builds, this chat reviews every diff. Files under ~200 lines, short comments.

@@ -36,6 +36,16 @@ Agent: [confirms your profile] -> [checks eligibility + grants in code]
           Tampines MRT: median $X (N sales, last 12 months). Sources: ..."
 ```
 
+## Bring your own model
+Ask HDB ships no model and no API key. You run it with your own:
+- **Local model (default):** any OpenAI-compatible server on your own machine, such as
+  llama-server, Ollama or MLX on a Mac or a GPU PC. Nothing leaves your machine.
+- **Your own API key:** OpenAI or Anthropic. A chat subscription (ChatGPT, Claude) does not
+  include API access, so this uses a separate API key that you paste into `.env`.
+- **iOS (idea, not built):** Apple's on-device model (Foundation Models, supports tool
+  calling) or a small model downloaded to the phone. Small models call tools less reliably,
+  so this needs the same tool-calling test as the desktop models.
+
 ## Stack (each picked to match current AI engineer job descriptions)
 
 | Part | Choice |
