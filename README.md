@@ -46,6 +46,24 @@ Ask HDB ships no model and no API key. You run it with your own:
   calling) or a small model downloaded to the phone. Small models call tools less reliably,
   so this needs the same tool-calling test as the desktop models.
 
+## Terminal commands
+
+Copy `.env.example` to `.env` and set `LLM_*` for your local server or API provider.
+For a cloud provider, remove `LLM_BASE_URL` to use its default endpoint and set your API key.
+
+```bash
+uv sync
+uv run ask-hdb ask "What are the recorded resale price statistics in TAMPINES?"
+uv run ask-hdb chat
+uv run python scripts/tool_call_check.py
+uv run ask-hdb eval
+```
+
+Chat shows each tool call and its result before the answer. Type `quit` to leave.
+The evaluation command runs the tool-call check and appends results to
+`docs/week2-notes.md`. Expected tool outputs go to `eval/reports/week2-expected.json`
+for manual answer review. The full answer evaluation is planned in the roadmap.
+
 ## Stack (each picked to match current AI engineer job descriptions)
 
 | Part | Choice |
