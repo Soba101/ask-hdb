@@ -10,8 +10,17 @@ import pandas as pd
 from langchain_core.tools import StructuredTool
 
 from ask_hdb import compare, sales
+from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
-from ask_hdb.tool_inputs import CompareArgs, FindArgs, LoanArgs, PhgArgs, RuleArgs, SalesArgs
+from ask_hdb.tool_inputs import (
+    CompareArgs,
+    FindArgs,
+    LoanArgs,
+    NearestArgs,
+    PhgArgs,
+    RuleArgs,
+    SalesArgs,
+)
 
 
 @lru_cache(maxsize=1)
@@ -45,14 +54,29 @@ def _tool(name, description, schema, function, *, rule=False):
         try:
             # Include defaults here so the flat and profile are complete.
             values = schema.model_validate(kwargs).model_dump()
-            result = (_rule_call(function, values) if rule else function(load_sales(), **values))
+            distance_filter = False
+            if name == "nearest_places":
+                result = function(**values)
+            elif rule:
+                result = _rule_call(function, values)
+            else:
+                if name in {"price_stats", "find_sales"}:
+                    geo_filters.validate_near(values)
+                    frame, values, distance_filter = geo_filters.filter_sales(load_sales(), values)
+                else:
+                    frame = load_sales()
+                result = function(frame, **values)
             if isinstance(result, list):
                 result = {"sales": result}
+            if distance_filter:
+                result["distance_method"] = "straight-line"
             # Catch non-JSON results before they reach the chat client.
             return json.loads(json.dumps(result, allow_nan=False))
         except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:
             # Keep a trace so a real bug is not mistaken for a bad model argument.
             print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
+            if name == "nearest_places" or "near_kind" in kwargs or "near_km" in kwargs:
+                return {"error": f"{name}: {exc}"}
             return {"error": f"Invalid arguments or unavailable data for {name}"}
 
     return StructuredTool.from_function(
@@ -80,5 +104,8 @@ phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living
 max_loan = _tool("max_loan", "Estimate the HDB loan cap; disclose needs_check and valuation limits.",
                  LoanArgs, loan.max_loan, rule=True)
 
+nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance.",
+                       NearestArgs, geo_filters.nearest_places)
+
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
-         cpf_housing_grant, ehg_amount, phg_amount, max_loan]
+         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places]

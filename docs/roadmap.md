@@ -63,6 +63,11 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 - [ ] Add distance and multi-step questions to the eval.
 - **Exit:** distance questions pass; same eval score through MCP as before.
 
+Offline build note (2026-10-20): place building, block cross-checks, straight-line
+distance tools and sales distance filters are implemented. School geocoding is
+prepared but was not run. Agent eval score change is unverified: the no-network
+constraint prevents the model-backed eval run. Frozen questions are unchanged.
+
 ## Week 5: trust features
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
 - [ ] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably".
