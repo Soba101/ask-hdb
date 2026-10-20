@@ -33,7 +33,7 @@ def test_nearest_and_within(geo_tables):
 
 
 @pytest.mark.parametrize("block,kind,message", [
-    ("missing", "mrt", "Unknown block_id"), ("pending", "mrt", "Missing coordinates"),
+    ("missing", "mrt", "No coordinates for block_id"), ("pending", "mrt", "Missing coordinates"),
     ("b", "unknown", "Unknown kind"), ("b", "primary_school", "Missing coordinates"),
 ])
 def test_nearest_errors(geo_tables, block, kind, message):

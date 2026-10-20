@@ -137,3 +137,8 @@ def test_invalid_coordinates(latitude):
     row["LATITUDE"] = latitude
     with pytest.raises(ValueError):
         match_result("001A", "BEDOK NTH ST 1", {"results": [row]})
+
+
+def test_leading_st_with_a_stop_is_saint_but_trailing_st_is_street():
+    assert normalize_street("ST. GEORGE'S RD") == normalize_street("SAINT GEORGE'S ROAD")
+    assert normalize_street("BEDOK NTH ST 1") == "BEDOK NORTH STREET 1"

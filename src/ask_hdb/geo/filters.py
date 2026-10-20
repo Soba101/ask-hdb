@@ -21,9 +21,13 @@ def filter_sales(frame, values):
     validate_near(values)
     values = values.copy()
     kind, km = values.pop("near_kind"), values.pop("near_km")
+    unlocated = frame.iloc[0:0]
     if kind is not None:
+        # Sales in blocks with no coordinates cannot be placed; keep them so the caller can count them
+        # under the same other filters (town, months, ...) and tell the user.
+        unlocated = frame.loc[~frame.block_id.isin(set(load_blocks().block_id))]
         frame = frame.loc[frame.block_id.isin(block_ids_near(kind, km))]
-    return frame, values, kind is not None
+    return frame, values, kind is not None, unlocated
 
 
 def nearest_places(block_id, kind, n=3):

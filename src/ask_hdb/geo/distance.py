@@ -38,7 +38,7 @@ def nearest(blocks_df, places_df, block_id, kind, n=3):
         raise ValueError("n must be a positive integer")
     rows = blocks_df.loc[blocks_df.block_id.eq(block_id)]
     if rows.empty:
-        raise ValueError(f"Unknown block_id: {block_id}")
+        raise ValueError(f"No coordinates for block_id: {block_id} (unknown or not geocoded)")
     if not _coordinates(rows).all():
         raise ValueError(f"Missing coordinates for block_id: {block_id}")
     block = rows.iloc[0]

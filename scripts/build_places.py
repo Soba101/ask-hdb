@@ -33,8 +33,10 @@ def build_places(exits, schools):
         groups.setdefault(name, []).append((lat, lng))
     rows, used = [], set()
     for source_name, coordinates in sorted(groups.items()):
-        name = re.sub(r" MRT STATION$", "", source_name, flags=re.IGNORECASE)
-        rows.append({"place_id": unique_id("mrt", name, used), "kind": "mrt", "name": name,
+        # LRT (light rail: Punggol, Sengkang, Bukit Panjang) is a different service; keep it apart from MRT.
+        kind = "lrt" if re.search(r" LRT STATION$", source_name, re.IGNORECASE) else "mrt"
+        name = re.sub(r" (?:MRT|LRT) STATION$", "", source_name, flags=re.IGNORECASE)
+        rows.append({"place_id": unique_id(kind, name, used), "kind": kind, "name": name,
                      "lat": sum(p[0] for p in coordinates) / len(coordinates),
                      "lng": sum(p[1] for p in coordinates) / len(coordinates),
                      "exit_count": len(coordinates), "postal_code": None})

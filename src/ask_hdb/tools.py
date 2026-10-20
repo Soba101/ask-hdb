@@ -54,9 +54,9 @@ def _tool(name, description, schema, function, *, rule=False):
         try:
             # Include defaults here so the flat and profile are complete.
             values = schema.model_validate(kwargs).model_dump()
-            if values.get("as_of") == "latest":
+            if str(values.get("as_of")).lower() == "latest":
                 values["as_of"] = None  # compare_price anchors to the newest data month
-            distance_filter = False
+            distance_filter, unlocated_frame = False, None
             if name == "nearest_places":
                 result = function(**values)
             elif rule:
@@ -64,7 +64,7 @@ def _tool(name, description, schema, function, *, rule=False):
             else:
                 if name in {"price_stats", "find_sales"}:
                     geo_filters.validate_near(values)
-                    frame, values, distance_filter = geo_filters.filter_sales(load_sales(), values)
+                    frame, values, distance_filter, unlocated_frame = geo_filters.filter_sales(load_sales(), values)
                 else:
                     frame = load_sales()
                 result = function(frame, **values)
@@ -72,6 +72,9 @@ def _tool(name, description, schema, function, *, rule=False):
                 result = {"sales": result}
             if distance_filter:
                 result["distance_method"] = "straight-line"
+                # Sales in blocks without coordinates are left out of a distance filter.
+                same = {k: v for k, v in values.items() if k != "limit"}
+                result["sales_without_coordinates"] = sales.price_stats(unlocated_frame, **same)["n_sales"]
             # Catch non-JSON results before they reach the chat client.
             return json.loads(json.dumps(result, allow_nan=False))
         except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:

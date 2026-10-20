@@ -106,7 +106,8 @@ Pass counts by kind, run 2 (direct / MCP): price 12/12 both, eligibility 9/10 an
 refuse 4/4 both, distance 5/5 both, multi-step 6/7 both.
 
 **Week 4 exit check:** distance questions pass (5/5), and MCP scores the same as direct (97.4% number both; 51 vs 50 passes, the
-difference is one timeout). Gate met.
+difference is one timeout). Gate met for distance and MCP parity. **Not yet compliant for multi-step:** 6 of the 7 multi-step dev passes rely on
+the model doing its own subtraction or addition ("638888 - 590000 = 48888"), so the final number is in no tool result. Fix: the calculate tool (issue 32).
 
 ## What changed between run 1 and run 2
 1. `compare_price` `as_of` became a required field (value `latest` means newest month). In run 1 the model left it out on three
@@ -146,3 +147,15 @@ Two proposed fixes, not yet done (so this held-out result stays clean):
 1. A `calculate` tool (safe arithmetic on numbers from earlier tool results) plus a prompt rule: never add, subtract or compare numbers yourself.
    This also makes the grounding check pass for derived numbers.
 2. Make `storey_mid`, `lease_left_months` and `floor_area_sqm` on `compare_price` required but nullable.
+
+## Data fixes after review (2026-10-21)
+An Opus review of PR 8 found two data problems. Both are corrected; none of the model runs above were redone except the one question that changed.
+1. **LRT stations were counted as MRT** (41 exits in Punggol, Sengkang, Bukit Panjang, Choa Chu Kang). They are now a separate kind `lrt`
+   (147 MRT stations, 41 LRT). This changes the nearest MRT for 1,735 blocks. Of the 18 new questions only held-out `q_multi_step_006`
+   (Punggol median minus Sengkang median) changes: expected 40,556 with LRT, **50,000 MRT-only**. This is a data fix, not tuning. The agent was
+   rerun once on that question after the fix and answers 50,000 (pass). The recorded held-out pass earlier was against the wrong expected value.
+2. **"ST." (saint) was read as STREET**, leaving 21 St. George's Rd and Lane blocks "uncertain". Fixed offline (no new OneMap calls):
+   9,477 blocks found, 0 uncertain, 19 not found.
+Also: distance filters now report `sales_without_coordinates` (sales in blocks with no coordinates are left out of a "within X km" filter),
+`nearest_places` says "No coordinates for block_id" instead of "Unknown block_id", `as_of="latest"` is case-insensitive, and the scorer filters
+small numbers and years on negative expected answers too.

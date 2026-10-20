@@ -54,32 +54,19 @@ and single-agent comparison were run; see `docs/eval-results.md`. Recorded score
 the scoring fixes; score changes await offline rescoring of stored reports. No model or
 eval runs were made for these fixes. Distance and multi-step questions remain in week 4.
 
-## Week 4: places and MCP
-- [ ] `scripts/geocode_blocks.py` with a disk cache. `scripts/fetch_places.py` for MRT and schools.
-- [ ] Cross-check OneMap block coordinates against data.gov.sg "HDB Existing Buildings" (GeoJSON, `d_16b157c52ed637edd6ba1232e026258d`):
-      building outlines keyed by block number + postal code. Use it to spot bad geocodes. It has no street name, so it cannot replace OneMap.
-- [ ] `nearest(block_id, kind)` and a "within X km" filter for `find_sales`.
-- [ ] Move all tools into an MCP server (`ask_hdb/mcp`). Agent connects through it.
-- [x] Add distance and multi-step questions to the eval.
-- **Exit:** distance questions pass; same eval score through MCP as before.
-
-Offline build note (2026-10-20): place building, block cross-checks, straight-line
-distance tools and sales distance filters are implemented. School geocoding is
-prepared but was not run. Agent eval score change is unverified: the no-network
-constraint prevents the model-backed eval run. Frozen questions are unchanged.
-
-MCP build note: all registered tools are exposed over stdio with their original
-schemas and results. Set `TOOL_SOURCE=mcp` for chat or use `ask-hdb eval --tools mcp`;
-direct remains the default. Offline protocol and fake-model tests cover parity and
-limits. Agent eval score change is unverified: model calls were explicitly disabled
-for this build, so no model-backed eval was run and existing reports were untouched.
-
-Eval additions: appended 8 distance and 10 multi-step questions with independent
-local expected answers. The bank now has 68 questions and 16 marked held out,
-including 6 new held-out IDs fixed before tuning. The original 50 entries and their
-fingerprints are unchanged. Offline tests and both expected-answer builders pass.
-Agent behavior is unchanged. Score change and direct/MCP score parity remain
-unverified: network access, model calls and eval runs were explicitly disabled.
+## Week 4: places and MCP (done 2026-10-21, PR #8)
+- [x] `scripts/geocode_blocks.py` with a disk cache; `scripts/fetch_places.py`, `build_places.py`, `geocode_schools.py` for MRT, LRT and primary schools.
+      9,477 of 9,496 recent blocks located (19 not found, mostly Towner Rd); 182 primary schools located.
+- [x] Cross-check against data.gov.sg "HDB Existing Buildings": median 8.5 m, worst 79 m (`scripts/check_geocodes.py`).
+- [x] `nearest_places(block_id, kind)` and `near_kind` / `near_km` filter on `price_stats` / `find_sales` (straight-line; the result also reports
+      sales in blocks without coordinates).
+- [x] All tools behind an MCP server (`ask_hdb/mcp`); the agent connects with `TOOL_SOURCE=mcp`.
+- [x] 8 distance and 10 multi-step eval questions with independent expected answers (68 total, 16 held out).
+- **Exit: met.** Distance questions 5/5. Same score through MCP as direct (97.4% number, 51 vs 50 of 52 passes). Agent score change:
+  run 1 (before fixes) 86.8% / 92.1% number (direct / MCP); run 2 (after fixes) 97.4% both. Held-out: 6 new = 4/6, 10 old = 10/10.
+  Details, every failure and its cause: `docs/eval-results.md`.
+- Caveat: 6 of the 7 multi-step dev passes rely on the model doing its own arithmetic (issue #32). The distance gate is met; multi-step is not yet
+  compliant with "code decides".
 
 ## Week 4b: BTO (added 2026-10-20, after week 4)
 Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.

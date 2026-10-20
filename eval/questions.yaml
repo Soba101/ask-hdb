@@ -758,7 +758,7 @@
   kind: multi_step
   question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2026-01 to 2026-09 inclusive in geocoded blocks within 1 km inclusive of an MRT station in each town. What is the PUNGGOL median minus the SENGKANG median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
   expect:
-    number: 40556
+    number: 50000
     tolerance: 0
   source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
   query:

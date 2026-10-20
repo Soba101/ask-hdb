@@ -78,9 +78,9 @@ def answer_passes(question, result):
                   if not any(_near(n, g) for g in given)]
         # Small numbers (counts, list items) cannot be a price or amount, so skip them
         # when the expected answer is 10,000 or more.
-        if expect['number'] >= 10000:
+        if abs(expect['number']) >= 10000:
             # Years (a window like 2025-10) are not amounts either.
-            values = [n for n in values if n >= 1000 and not 1900 <= n <= 2100]
+            values = [n for n in values if abs(n) >= 1000 and not 1900 <= n <= 2100]
         # The first non-question number must match, even if a later bold answer matches.
         if values and _near(values[0], expect['number'], expect['tolerance']):
             return True

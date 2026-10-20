@@ -26,7 +26,8 @@ def test_filter_wiring(local_geo, name):
     tool = getattr(tools, name)
     actual = tool.invoke({"near_kind": "mrt", "near_km": 0})
     expected = tool.invoke({"block_id": local_geo})
-    assert actual == expected | {"distance_method": "straight-line"}
+    # The fixture has 5 sales in blocks with no coordinates; the tool must say so.
+    assert actual == expected | {"distance_method": "straight-line", "sales_without_coordinates": 5}
     json.dumps(actual, allow_nan=False)
 
 
@@ -66,7 +67,7 @@ def test_nearest_registered_json_safe(local_geo, monkeypatch):
     assert result["note"] == filters.NOTE
     json.dumps(result, allow_nan=False)
     assert "block_id" in tools.nearest_places.invoke({"kind": "mrt"})["error"]
-    assert "Unknown block_id" in tools.nearest_places.invoke({
+    assert "No coordinates for block_id" in tools.nearest_places.invoke({
         "block_id": "absent", "kind": "mrt"})["error"]
 
 
