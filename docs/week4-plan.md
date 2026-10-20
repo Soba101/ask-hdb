@@ -25,9 +25,17 @@ same eval score through MCP as before. Nothing is built or downloaded before app
    from day one (the old held-out set is spent).
 7. **Runs on the MacBook model:** all dev questions through direct tools and through MCP; table with both.
 
+## OneMap facts (checked 2026-10-20)
+- Search needs a registered OneMap account and a token (3-day JWT, renewed automatically); only basemaps are open.
+  I cannot create the account. You would register, then put `ONEMAP_EMAIL` / `ONEMAP_PASSWORD` in `.env`.
+- The rate limit is not written in any page I could read (the docs site is script-rendered; their workshop slide
+  for it has no numbers). Terms of service set no figure, only "do not disrupt the service", and they may suspend access.
+  So: start slow (about 2 calls a second), back off on any 429, and stop and tell you if it pushes back.
+- We only need one call per unique block (9,763), not one per sale, and never repeat a call (disk cache).
+  To cut it down, we could first geocode only blocks with a sale in the last 3 years.
+
 ## Decisions for you
-- OK to call the OneMap search API about 9,800 times, slowly (a few per second, resumable, cached)? It needs no
-  key for search, but I will check their current terms and rate limit first.
+- OK to register a OneMap account and use it for about 9,800 slow, cached calls (or fewer, recent blocks only)?
 - OK that distances are straight-line only in v1, as in the proposal?
 - Download approval is asked per file when I get there (names, sizes, sources), as before.
 
