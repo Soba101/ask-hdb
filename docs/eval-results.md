@@ -179,8 +179,8 @@ now has coordinates (issue 34), and the MCP subprocess gets a safe environment (
 **Try 1 regression, cause:** the model wrote the text `"None"` for `floor_area_sqm` (and for `max_examples`), which failed validation, so it gave up on the tool
 and asked the user. Fix: in every tool, the text "None" or "null" now means null for a required-nullable field and "use the default" for any other optional field.
 **What the fixes did:** q_multi_step_002 (added 80,000 + 70,000 + 30,000 as 280,000) now passes through `calculate`; the multi-step dev questions are 7/7 with no
-model arithmetic needed. This resolves issue 32 for these questions. Grounding is still about 71%, now mostly restated question numbers and rounded
-figures; `grounding.py` is week 5.
+model arithmetic needed. This resolves issue 32 for these questions. Grounding is still about 71%; I have not yet analysed which numbers are unsupported
+(week 5, `grounding.py`).
 **Known scorer limit (not weakened):** q_distance_005's answer is right ("only 2 primary schools") but lists three distances first and the first-number rule reads
 0.056. A "last number" rule was tried and rejected: it broke 10 tests that guard against false passes.
 
