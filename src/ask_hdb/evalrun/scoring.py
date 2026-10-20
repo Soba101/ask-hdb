@@ -87,12 +87,14 @@ def answer_passes(question, result):
             prose = prose and any(v is positive for v in verdicts)
         return bool(prose)
     if expect.get('clarify'):
+        # A clarifying question may mention small numbers (12 months, 4-room); amounts are 1,000+.
         verdict = re.search(DENIAL + r'|\beligible\b|\bcan buy\b|^\s*(?:yes|no)\b',
                             answer, re.IGNORECASE)
         tool_verdict = any(isinstance(c.get('result'), dict)
                            and isinstance(c['result'].get('eligible'), bool) for c in calls)
         return (any(_keyword(answer, phrase) for phrase in CLARIFIES)
-                and not verdict and not numbers(result['answer']) and not tool_verdict)
+                and not verdict and not any(n >= 1000 for n in numbers(result['answer']))
+                and not tool_verdict)
     return not calls and any(_keyword(answer, phrase) for phrase in DECLINES)
 
 
