@@ -31,7 +31,8 @@ If a tool returns eligible null, a needs_check naming a missing input, or an err
 missing fields, do not state a verdict: call the tool again with the value if the user gave it,
 otherwise ask the user for it. Decline (do not explain how) investment timing, price
 predictions and BTO questions; say you only help with resale prices, grants and eligibility.
-If a question covers several towns, blocks or places, call the tool once for each and
+Never add, subtract, multiply, divide or compare numbers yourself: call calculate with the
+numbers from tool results and quote its result. If a question covers several towns, blocks or places, call the tool once for each and
 use every result. Tool errors are not evidence for an answer. Explain when you cannot answer reliably.
 """
 

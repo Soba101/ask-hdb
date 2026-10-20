@@ -60,9 +60,11 @@ class CompareArgs(Arguments):
     flat_type: str
 
     _upper = field_validator("flat_type", mode="before")(SalesArgs._upper.__func__)
-    storey_mid: Nonnegative | None = None
-    lease_left_months: Count | None = None
-    floor_area_sqm: Nonnegative | None = None
+    # Required but nullable: the model must write a value or null, so it cannot silently skip a filter
+    # (omitting lease_left_months gave wrong medians in two eval questions).
+    storey_mid: Nonnegative | None = Field(description="Storey midpoint to match, or null for no storey filter")
+    lease_left_months: Count | None = Field(description="Remaining lease in months, or null for no lease filter")
+    floor_area_sqm: Nonnegative | None = Field(description="Floor area in sqm, or null for no area filter")
     # Required: the 9B model skips optional fields, which silently moved the window by a month.
     as_of: str = Field(description="Month YYYY-MM the comparison is as of, or 'latest' if none given")
 
@@ -107,3 +109,7 @@ class PhgArgs(RuleArgs):
 
 class LoanArgs(RuleArgs):
     qualifying_rate_pct: Nonnegative | None = None
+
+
+class CalcArgs(Arguments):
+    expression: str = Field(description="Arithmetic on numbers from tool results, e.g. 80000 + 70000 - 25000")

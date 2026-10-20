@@ -25,7 +25,8 @@ def test_sales_tools():
     assert rows[0]["sale_month"] == "2024-05"
     result = tools.compare_price.invoke({"block_id": "blk_001a_tampines-st-11",
                                         "price": 150000, "flat_type": "4 ROOM", "min_n": 1,
-                                        "as_of": "latest"})
+                                        "as_of": "latest", "storey_mid": None,
+                                        "lease_left_months": None, "floor_area_sqm": None})
     assert result["n_comparables"] == 3
     assert result["median"] == 100000
     assert "not a valuation" in result["notes"][0]
@@ -120,8 +121,25 @@ def test_unknown_marital_status_is_a_needs_check_not_a_guess():
 
 
 def test_as_of_is_required_and_latest_means_newest_month():
-    args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM", "min_n": 1}
+    args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM", "min_n": 1,
+            "storey_mid": None, "lease_left_months": None, "floor_area_sqm": None}
     assert "as_of" in tools.compare_price.invoke(args)["error"]
-    latest = tools.compare_price.invoke(args | {"as_of": "latest"})
+    latest = tools.compare_price.invoke(args | {"as_of": "latest", "storey_mid": None,
+                                        "lease_left_months": None, "floor_area_sqm": None})
     explicit = tools.compare_price.invoke(args | {"as_of": "2024-06"})
     assert latest == explicit  # the fixture's newest month is 2024-06
+
+
+def test_compare_filters_are_required_but_nullable():
+    args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM", "min_n": 1,
+            "as_of": "latest", "storey_mid": None, "lease_left_months": None}
+    assert "floor_area_sqm" in tools.compare_price.invoke(args)["error"]
+    assert "n_comparables" in tools.compare_price.invoke(args | {"floor_area_sqm": None})
+
+
+def test_calculate_does_arithmetic_and_rejects_everything_else():
+    assert tools.calculate.invoke({"expression": "$80,000 + 70,000 + 30,000"})["result"] == 180000
+    assert tools.calculate.invoke({"expression": "(650000 - 625000) - (620000 - 523000)"})["result"] == -72000
+    assert tools.calculate.invoke({"expression": "10 / 4"})["result"] == 2.5
+    for bad in ("__import__('os').system('x')", "2 ** 9999", "abs(-1)", "1; 2", "a + 1"):
+        assert "error" in tools.calculate.invoke({"expression": bad})

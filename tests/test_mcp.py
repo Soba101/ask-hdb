@@ -41,8 +41,11 @@ def test_protocol_schemas_and_every_tool(local_data):
                     "price_stats": {"near_kind": "mrt", "near_km": 0},
                     "find_sales": {"town": "tampines"},
                     "compare_price": {"block_id": local_data, "price": 150000,
-                                      "flat_type": "4 ROOM", "min_n": 1, "as_of": "latest"},
+                                      "flat_type": "4 ROOM", "min_n": 1, "as_of": "latest",
+                                      "storey_mid": None, "lease_left_months": None,
+                                      "floor_area_sqm": None},
                     "nearest_places": {"block_id": local_data, "kind": "mrt"},
+                    "calculate": {"expression": "1 + 2"},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)
                 result = await session.call_tool(spec.name, args)
