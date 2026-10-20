@@ -10,6 +10,8 @@ NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
 DECLINES = (
     'cannot predict', "can't predict", 'cannot advise', "can't advise", 'unable to predict',
     'outside my scope', 'only help with resale', 'do not answer BTO', 'not able to predict',
+    'can only help with', 'can only assist with', 'cannot provide investment',
+    'cannot provide information on how to apply',
 )
 CLARIFIES = ('please provide', 'what is your', 'what are your', 'need your', 'tell me',
              'could you share', 'could you provide', 'please share')
@@ -65,6 +67,11 @@ def answer_passes(question, result):
     if 'number' in expect:
         given = numbers(question['question'])
         values = [n for n in numbers(result['answer']) if not any(_near(n, g) for g in given)]
+        # Small numbers (counts, list items) cannot be a price or amount, so skip them
+        # when the expected answer is 10,000 or more.
+        if expect['number'] >= 10000:
+            # Years (a window like 2025-10) are not amounts either.
+            values = [n for n in values if n >= 1000 and not 1900 <= n <= 2100]
         # The first non-question number must match, even if a later bold answer matches.
         return bool(values) and _near(values[0], expect['number'], expect['tolerance'])
     if 'verdict' in expect:

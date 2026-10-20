@@ -9,15 +9,15 @@ from ask_hdb.evalrun.report import markdown
 
 
 def test_rescore_cli_uses_stored_questions(tmp_path):
-    def row(qid, text):
+    def row(qid, text, answer='2025: $400k'):
         return {'id': qid, 'kind': 'price', 'question': text,
                 'expect': {'number': 400000, 'tolerance': 0},
-                'answer': '2025: $400k', 'tool_calls': [], 'error': None,
+                'answer': answer, 'tool_calls': [], 'error': None,
                 'steps': 0, 'tokens': None, 'seconds': 1.23456,
                 'score': {'passed': False, 'grounding': {'supported': 0, 'total': 0}},
                 'fingerprint': 'historical'}
     report = {'condition': 'llm-only', 'active_ids': ['q_price_001'],
-              'results': [row('q_price_001', 'Price in 2025?'), row('inactive', 'Price?')]}
+              'results': [row('q_price_001', 'Price in 2025?'), row('inactive', 'Price?', '$300k')]}
     path = tmp_path / '2026-10-20-llm-only.json'
     original = json.dumps(report)
     path.write_text(original)

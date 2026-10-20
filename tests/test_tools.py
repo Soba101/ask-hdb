@@ -105,3 +105,9 @@ def test_missing_required_profile_fields_are_named():
     args = {k: v for k, v in SINGLE.items() if k != "works_12_months"}
     result = tools.ehg_amount.invoke(args | {"first_timer": True})
     assert "works_12_months" in result["error"]
+
+
+def test_single_without_marital_status_gets_an_error():
+    args = {k: v for k, v in SINGLE.items() if k != "marital_status"}
+    result = tools.can_buy_resale.invoke(args | {"first_timer": True})
+    assert "marital_status" in result["error"]

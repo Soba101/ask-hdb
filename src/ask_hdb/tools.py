@@ -23,6 +23,10 @@ def load_sales():
 
 def _rule_call(function, values):
     values = values.copy()
+    if values["scheme"] == "single" and values.get("marital_status") is None:
+        # A single's age and marriage rules need it; do not let the tool answer "unknown".
+        return {"error": "Invalid arguments. Missing or invalid: marital_status. "
+                         "Ask the user for it, then call again."}
     # Models often send both timer fields. Keep the one that fits the scheme.
     values["first_timer" if values["scheme"] == "family" else "family_timers"] = None
     flat = Flat(**{key: values.pop(key) for key in Flat.model_fields})
