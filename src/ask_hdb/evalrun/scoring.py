@@ -1,8 +1,8 @@
 """Small answer checks; no model judges or changes to the agent."""
 
 import json
-import math
 import re
+from decimal import Decimal
 
 # Only explicit price scales count; metre and kilometre units never scale values.
 NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
@@ -35,7 +35,14 @@ def numbers(text):
 
 
 def _near(a, b, tolerance=0):
-    return math.isclose(a, b, rel_tol=0, abs_tol=tolerance)
+    # Decimal subtraction keeps an inclusive decimal boundary inclusive.
+    return abs(Decimal(str(a)) - Decimal(str(b))) <= Decimal(str(tolerance))
+
+
+def _without_question_ids(text, question):
+    # A stable block ID is a label, not a numeric answer.
+    ids = set(re.findall(r'\bblk_[\w-]+\b', question))
+    return re.sub(r'\bblk_[\w-]+\b', lambda m: '' if m[0] in ids else m[0], text)
 
 
 def _keyword(text, keyword):
@@ -65,8 +72,10 @@ def answer_passes(question, result):
     answer = re.sub(r'[*_`]', '', result['answer'])
     calls = result.get('tool_calls', [])
     if 'number' in expect:
-        given = numbers(question['question'])
-        values = [n for n in numbers(result['answer']) if not any(_near(n, g) for g in given)]
+        text = question['question']
+        given = numbers(_without_question_ids(text, text))
+        values = [n for n in numbers(_without_question_ids(result['answer'], text))
+                  if not any(_near(n, g) for g in given)]
         # Small numbers (counts, list items) cannot be a price or amount, so skip them
         # when the expected answer is 10,000 or more.
         if expect['number'] >= 10000:

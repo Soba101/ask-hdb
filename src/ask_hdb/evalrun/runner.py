@@ -46,7 +46,9 @@ def run(condition='agent', *, only=None, verbose=False, heldout=False, limit=Non
     if settings['tools'] not in {'direct', 'mcp'}:
         raise ValueError('Unknown tools source')
     day = day or date.today().isoformat()
-    path = Path(reports_dir) / f'{day}-{condition}.json'
+    # MCP runs get their own file so direct and MCP reports never mix.
+    suffix = '-mcp' if settings['tools'] == 'mcp' else ''
+    path = Path(reports_dir) / f'{day}-{condition}{suffix}.json'
     report = {'date': day, 'condition': condition, 'model': settings, 'results': []}
     if path.exists():
         report = json.loads(path.read_text())

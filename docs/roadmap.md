@@ -60,7 +60,7 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
       building outlines keyed by block number + postal code. Use it to spot bad geocodes. It has no street name, so it cannot replace OneMap.
 - [ ] `nearest(block_id, kind)` and a "within X km" filter for `find_sales`.
 - [ ] Move all tools into an MCP server (`ask_hdb/mcp`). Agent connects through it.
-- [ ] Add distance and multi-step questions to the eval.
+- [x] Add distance and multi-step questions to the eval.
 - **Exit:** distance questions pass; same eval score through MCP as before.
 
 Offline build note (2026-10-20): place building, block cross-checks, straight-line
@@ -73,6 +73,13 @@ schemas and results. Set `TOOL_SOURCE=mcp` for chat or use `ask-hdb eval --tools
 direct remains the default. Offline protocol and fake-model tests cover parity and
 limits. Agent eval score change is unverified: model calls were explicitly disabled
 for this build, so no model-backed eval was run and existing reports were untouched.
+
+Eval additions: appended 8 distance and 10 multi-step questions with independent
+local expected answers. The bank now has 68 questions and 16 marked held out,
+including 6 new held-out IDs fixed before tuning. The original 50 entries and their
+fingerprints are unchanged. Offline tests and both expected-answer builders pass.
+Agent behavior is unchanged. Score change and direct/MCP score parity remain
+unverified: network access, model calls and eval runs were explicitly disabled.
 
 ## Week 4b: BTO (added 2026-10-20, after week 4)
 Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.

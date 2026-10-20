@@ -1,6 +1,8 @@
 def main() -> None:
     import argparse
 
+    from ask_hdb.evalrun.loader import KINDS
+
     parser = argparse.ArgumentParser(prog="ask-hdb")
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("chat", help="Chat with the housing tools")
@@ -11,7 +13,7 @@ def main() -> None:
     evaluation = commands.add_parser("eval", help="Score answers against frozen questions")
     evaluation.add_argument("--tools", choices=("direct", "mcp"))
     evaluation.add_argument("--condition", choices=("llm-only", "agent"), default="agent")
-    evaluation.add_argument("--only", choices=("price", "eligibility", "grants", "price_check", "refuse"))
+    evaluation.add_argument("--only", choices=KINDS)
     evaluation.add_argument("--verbose", action="store_true")
     evaluation.add_argument("--heldout", action="store_true")
     evaluation.add_argument("--limit", type=int)

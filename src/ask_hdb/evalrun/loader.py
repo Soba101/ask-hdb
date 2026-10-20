@@ -7,7 +7,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 QUESTION_PATH = ROOT / 'eval/questions.yaml'
-KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse')
+KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step')
 
 
 def load_questions(path=QUESTION_PATH):
@@ -38,7 +38,9 @@ def load_questions(path=QUESTION_PATH):
                 if (isinstance(value, bool) or not isinstance(value, (int, float))
                         or not math.isfinite(value)):
                     raise ValueError('Expected number and tolerance must be finite')
-            if expect['tolerance'] < 0 or q['kind'] not in {'price', 'grants', 'price_check'}:
+            if expect['tolerance'] < 0 or q['kind'] not in {
+                'price', 'grants', 'price_check', 'distance', 'multi_step'
+            }:
                 raise ValueError('Invalid numeric expectation')
         elif 'verdict' in expect:
             if (q['kind'] not in {'eligibility', 'grants'}

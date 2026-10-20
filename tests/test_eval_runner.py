@@ -166,3 +166,15 @@ def test_tools_source_is_recorded_and_blocks_mixed_resume(tmp_path, bank, monkey
     assert os.environ['TOOL_SOURCE'] == 'mcp'
     with pytest.raises(ValueError, match='different model settings'):
         execute(tmp_path, bank, tools='direct', invoke=fake_agent, emit=lambda _: None)
+
+
+@pytest.mark.parametrize('kind', ['distance', 'multi_step'])
+def test_cli_accepts_new_eval_kinds(monkeypatch, kind):
+    import ask_hdb
+    import ask_hdb.evalrun
+
+    calls = []
+    monkeypatch.setattr(ask_hdb.evalrun, 'run', lambda *a, **kw: calls.append(kw))
+    monkeypatch.setattr('sys.argv', ['ask-hdb', 'eval', '--only', kind])
+    ask_hdb.main()
+    assert calls[0]['only'] == kind

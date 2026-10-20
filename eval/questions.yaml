@@ -562,3 +562,313 @@
     clarify: true
   source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
   heldout: true
+- id: q_distance_001
+  kind: distance
+  question: What is the straight-line distance from blk_395_tampines-ave-7 to its nearest MRT station, in kilometres rounded to 2 decimals? Answer with one number.
+  expect:
+    number: 0.09
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: nearest
+    block_id: blk_395_tampines-ave-7
+    place_kind: mrt
+- id: q_distance_002
+  kind: distance
+  question: What is the straight-line distance from blk_478b_yishun-st-44 to its nearest MRT station, in kilometres rounded to 2 decimals? Answer with one number.
+  expect:
+    number: 1.85
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: nearest
+    block_id: blk_478b_yishun-st-44
+    place_kind: mrt
+- id: q_distance_003
+  kind: distance
+  question: What is the straight-line distance from blk_406_ang-mo-kio-ave-10 to its nearest primary school, in kilometres rounded to 2 decimals? Answer with one number.
+  expect:
+    number: 0.22
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: nearest
+    block_id: blk_406_ang-mo-kio-ave-10
+    place_kind: primary_school
+  heldout: true
+- id: q_distance_004
+  kind: distance
+  question: What is the straight-line distance from blk_517_bedok-nth-ave-2 to its nearest primary school, in kilometres rounded to 2 decimals? Answer with one number.
+  expect:
+    number: 0.31
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: nearest
+    block_id: blk_517_bedok-nth-ave-2
+    place_kind: primary_school
+- id: q_distance_005
+  kind: distance
+  question: Using straight-line distance, how many primary schools are within 1 km inclusive of blk_161_woodlands-st-13? Answer with one exact count.
+  expect:
+    number: 2
+    tolerance: 0
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: within_count
+    block_id: blk_161_woodlands-st-13
+    place_kind: primary_school
+    km: 1
+- id: q_distance_006
+  kind: distance
+  question: Using straight-line distance, how many primary schools are within 1 km inclusive of blk_648a_jurong-west-st-61? Answer with one exact count.
+  expect:
+    number: 3
+    tolerance: 0
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: within_count
+    block_id: blk_648a_jurong-west-st-61
+    place_kind: primary_school
+    km: 1
+  heldout: true
+- id: q_distance_007
+  kind: distance
+  question: Using straight-line distance to each block's own nearest MRT station, how much closer is blk_395_tampines-ave-7 than blk_478b_yishun-st-44, in kilometres rounded to 2 decimals? Subtract the first block's distance from the second block's distance before rounding. Answer with one number.
+  expect:
+    number: 1.75
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: closer
+    block_id: blk_395_tampines-ave-7
+    other_block_id: blk_478b_yishun-st-44
+    place_kind: mrt
+- id: q_distance_008
+  kind: distance
+  question: Using straight-line distance to each block's own nearest MRT station, how much closer is blk_161_woodlands-st-13 than blk_458_ang-mo-kio-ave-10, in kilometres rounded to 2 decimals? Subtract the first block's distance from the second block's distance before rounding. Answer with one number.
+  expect:
+    number: 1.07
+    tolerance: 0.05
+  source: data/clean/blocks.parquet; data/clean/places.parquet; scripts/build_distance_expected.py; independent spherical law of cosines
+  query:
+    operation: closer
+    block_id: blk_161_woodlands-st-13
+    other_block_id: blk_458_ang-mo-kio-ave-10
+    place_kind: mrt
+  heldout: true
+# By hand from the cited keys: 80000 + 70000 = 150000.
+- id: q_multi_step_001
+  kind: multi_step
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. What is the total of CPF Housing Grant + Enhanced CPF Housing Grant, in dollars? Answer with only the total.
+  expect:
+    number: 150000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_2_to_4_room_sc_sc; grants.ehg.families_tiers.value (up_to=4500)
+  query:
+    operation: grant_sum
+    income: 4400
+    with_parents: false
+# By hand from the cited keys: 80000 + 70000 + 30000 = 180000.
+- id: q_multi_step_002
+  kind: multi_step
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. We will live with our SC parents in this flat and have never received PHG. The Standard resale flat is 4-room, $600000, with 960 months lease left. What is the total of CPF Housing Grant + Enhanced CPF Housing Grant + Proximity Housing Grant, in dollars? Answer with only the total.
+  expect:
+    number: 180000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_2_to_4_room_sc_sc; grants.ehg.families_tiers.value (up_to=4500); grants.phg.families_live_with_parents_or_child
+  query:
+    operation: grant_sum
+    income: 4400
+    with_parents: true
+  heldout: true
+- id: q_multi_step_003
+  kind: multi_step
+  question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2025-01 to 2025-12 inclusive in geocoded blocks within 1 km inclusive of an MRT station in each town. What is the TAMPINES median minus the BEDOK median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
+  expect:
+    number: 48888
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_difference
+    sales:
+    - town: TAMPINES
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 1
+      metric: median
+    - town: BEDOK
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 1
+      metric: median
+- id: q_multi_step_004
+  kind: multi_step
+  question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2024-01 to 2024-12 inclusive in geocoded blocks within 0.5 km inclusive of a primary school in each town. What is the BISHAN median minus the ANG MO KIO median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
+  expect:
+    number: 187000
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_difference
+    sales:
+    - town: BISHAN
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: median
+    - town: ANG MO KIO
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: median
+- id: q_multi_step_005
+  kind: multi_step
+  question: Using straight-line distance, what is the combined number of recorded sales of 4 ROOM flats sold from 2025-01 to 2025-12 inclusive in geocoded blocks within 0.8 km inclusive of an MRT station in WOODLANDS and YISHUN? Count sales, not distinct blocks. Answer with one exact count.
+  expect:
+    number: 922
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_sum
+    sales:
+    - town: WOODLANDS
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 0.8
+      metric: count
+    - town: YISHUN
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 0.8
+      metric: count
+- id: q_multi_step_006
+  kind: multi_step
+  question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2026-01 to 2026-09 inclusive in geocoded blocks within 1 km inclusive of an MRT station in each town. What is the PUNGGOL median minus the SENGKANG median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
+  expect:
+    number: 40556
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_difference
+    sales:
+    - town: PUNGGOL
+      flat_type: 4 ROOM
+      since: 2026-01
+      until: 2026-09
+      near_kind: mrt
+      near_km: 1
+      metric: median
+    - town: SENGKANG
+      flat_type: 4 ROOM
+      since: 2026-01
+      until: 2026-09
+      near_kind: mrt
+      near_km: 1
+      metric: median
+  heldout: true
+- id: q_multi_step_007
+  kind: multi_step
+  question: Using straight-line distance, what is the combined number of recorded sales of 4 ROOM flats sold from 2024-01 to 2024-12 inclusive in geocoded blocks within 0.5 km inclusive of a primary school in JURONG WEST and BUKIT BATOK? Count sales, not distinct blocks. Answer with one exact count.
+  expect:
+    number: 904
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_sum
+    sales:
+    - town: JURONG WEST
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: count
+    - town: BUKIT BATOK
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: count
+- id: q_multi_step_008
+  kind: multi_step
+  question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2025-01 to 2025-12 inclusive in geocoded blocks within 0.5 km inclusive of a primary school in each town. What is the HOUGANG median minus the PASIR RIS median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
+  expect:
+    number: -26556
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet by block_id; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_difference
+    sales:
+    - town: HOUGANG
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: median
+    - town: PASIR RIS
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: median
+- id: q_multi_step_009
+  kind: multi_step
+  question: 'As of 2026-09, consider two 4 ROOM flats: blk_517_bedok-nth-ave-2, asking $650000, storey midpoint 11, lease left 624 months; and blk_406_ang-mo-kio-ave-10, asking $620000, storey midpoint 8, lease left 625 months. For each comparable median use the last 12 inclusive months ending 2026-09, +/-3 storeys, +/-60 lease months, minimum 5 sales, widening block then street within town then town; keep the town sample if all are thin. No area filter. Round each median to the nearest dollar, ties to even. Define premium as asking price minus comparable median. What is the BEDOK block premium minus the ANG MO KIO block premium, in dollars? Answer with one number.'
+  expect:
+    number: 27000
+    tolerance: 0
+  source: data/clean/resale.parquet; independent pandas comparable rule in scripts/build_distance_expected.py
+  query:
+    operation: premium_difference
+    comparables:
+    - block_id: blk_517_bedok-nth-ave-2
+      flat_type: 4 ROOM
+      storey_mid: 11
+      lease_left_months: 624
+      price: 650000
+      as_of: 2026-09
+    - block_id: blk_406_ang-mo-kio-ave-10
+      flat_type: 4 ROOM
+      storey_mid: 8
+      lease_left_months: 625
+      price: 620000
+      as_of: 2026-09
+- id: q_multi_step_010
+  kind: multi_step
+  question: 'As of 2026-09, consider two 4 ROOM flats: blk_517_bedok-nth-ave-2, asking $650000, storey midpoint 11, lease left 624 months; and blk_406_ang-mo-kio-ave-10, asking $620000, storey midpoint 8, lease left 625 months. For each comparable median use the last 12 inclusive months ending 2026-09, +/-3 storeys, +/-60 lease months, minimum 5 sales, widening block then street within town then town; keep the town sample if all are thin. No area filter. Round each median to the nearest dollar, ties to even. Define premium as asking price minus comparable median. For the block with the higher premium, what is the straight-line distance to its nearest MRT station, in kilometres rounded to 2 decimals? Answer with one number.'
+  expect:
+    number: 0.74
+    tolerance: 0.05
+  source: data/clean/resale.parquet; blocks.parquet; places.parquet; independent comparable rule and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: premium_nearest
+    comparables:
+    - block_id: blk_517_bedok-nth-ave-2
+      flat_type: 4 ROOM
+      storey_mid: 11
+      lease_left_months: 624
+      price: 650000
+      as_of: 2026-09
+    - block_id: blk_406_ang-mo-kio-ave-10
+      flat_type: 4 ROOM
+      storey_mid: 8
+      lease_left_months: 625
+      price: 620000
+      as_of: 2026-09
+  heldout: true
