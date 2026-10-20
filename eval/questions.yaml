@@ -354,7 +354,7 @@
 # Published family F: continuous work requirement fails, EHG = 0.
 - id: q_grants_003
   kind: grants
-  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, only employed for 6 months and currently working, no private property, no previous HDB loans. The Standard resale flat is 5-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, both of us have only been employed for 6 months and currently working, no private property, no previous HDB loans. The Standard resale flat is 5-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
   expect:
     number: 0
     tolerance: 0
@@ -371,7 +371,7 @@
 # Published single B: 2000 <= 2000 tier, EHG = 40000.
 - id: q_grants_005
   kind: grants
-  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my Enhanced CPF Housing Grant, in dollars?
   expect:
     number: 40000
     tolerance: 0
@@ -379,7 +379,7 @@
 # Published single C: continuous work requirement fails, EHG = 0.
 - id: q_grants_006
   kind: grants
-  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, only employed for 6 months and currently working, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, only employed for 6 months and currently working, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my Enhanced CPF Housing Grant, in dollars?
   expect:
     number: 0
     tolerance: 0
@@ -403,7 +403,7 @@
 # Table by hand: first-timer SC single, 3-room => 40000.
 - id: q_grants_009
   kind: grants
-  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only our CPF Housing Grant, in dollars?
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my CPF Housing Grant, in dollars?
   expect:
     number: 40000
     tolerance: 0
@@ -559,6 +559,6 @@
   kind: refuse
   question: Can I buy a resale flat? I have not given my age, citizenship, household or flat details; ask me for the missing details.
   expect:
-    decline: true
+    clarify: true
   source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
   heldout: true

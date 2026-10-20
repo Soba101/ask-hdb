@@ -26,7 +26,7 @@ Each has a frozen expected answer that code can check.
 | price check | 8 | comparable sales picked by code (same block/street, storey band, lease band) |
 | distance | 8 | haversine on our geo index |
 | multi-step | 10 | combination of the above (e.g. budget + grant + MRT distance) |
-| refuse | 5 | must decline: "will prices rise?", "should I buy now?", BTO questions |
+| refuse | 5 | four declines and one request for missing details: "will prices rise?", "should I buy now?", BTO questions |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
 - 10 questions are held out and never looked at while tuning prompts.
@@ -38,7 +38,7 @@ Each has a frozen expected answer that code can check.
 | Verdict accuracy | eligibility and grant answers match | ≥ 95% |
 | Number accuracy | price and distance within tolerance | ≥ 90% |
 | Grounding rate | numbers in replies found in tool results | 100% |
-| Refusal accuracy | declines out-of-scope questions politely | 5 / 5 |
+| Refusal accuracy | declines out-of-scope requests or asks for missing details | 5 / 5 |
 | Steps | tool calls per question | report median, watch for loops |
 | Cost and latency | tokens and seconds per question | report median and p90 |
 
@@ -69,8 +69,17 @@ Results go to `eval/reports/<date>-<condition>.json`, plus a short markdown tabl
 ## Frozen inputs and report semantics
 
 `eval/questions.yaml` uses `expect.number` plus an absolute, inclusive `tolerance`,
-`expect.verdict` (`yes`/`no`) plus `answer_keywords`, or `expect.decline: true`.
+`expect.verdict` (`yes`/`no`) plus `answer_keywords`, `expect.decline: true`, or `expect.clarify: true`.
 Numeric grant answers are scored as numbers; eligibility answers are scored as verdicts.
+For numeric accuracy, the first number absent from the question must match within tolerance;
+a later correct number (even a bold final answer) cannot rescue an earlier guess or range.
+Ordered-list labels, including labels under bullets, are ignored. Purchase verdict matching
+ignores Markdown emphasis and code markers. Purchase denials fail affirmative expectations
+unless clearly about grants, loans, EHG or CPF. Only `can_buy_resale` results supply tool
+eligibility evidence; grant-tool eligibility is not purchase evidence.
+Declines require a request-specific refusal phrase and no tool calls. Clarifications require
+a request for details, no stated number or verdict, and no tool result with an eligibility
+verdict. The clarification case remains in the refuse kind and held-out split.
 Each entry cites its independent source. Rule arithmetic is in adjacent YAML comments.
 Price entries also have a structured `query` so the independent builder can reproduce them.
 
@@ -91,9 +100,9 @@ Provider and factory errors, or agent budget stops, always fail the question.
 
 Grounding is the micro-average of supported numeric occurrences across answers. Numbers
 present in the question are excluded. Evidence comes only from the current turn's tool
-results, never tool arguments or earlier turns. Commas, decimal values, `k`, `m`, `thousand`
-and `million` are understood. An answer with no scored numbers has a vacuous rate of one;
-answer accuracy and errors must be read alongside grounding. This simple checker does not
+results, never tool arguments or earlier turns. Commas, decimal values, `k`
+and `million` are understood. Bare `m` and `km` units do not scale numbers.
+An answer with no scored numbers has a vacuous rate of one; answer accuracy and errors must be read alongside grounding. This simple checker does not
 alter or replace the agent's planned grounding enforcement.
 
 Median and p90 use all recorded observations; missing token values are excluded from the
@@ -111,4 +120,13 @@ conditions. Do not run concurrent writers to the same dated condition report.
 
 Failures appear in the report's Markdown table with an exception type, stop reason or a
 frozen-expectation mismatch. Review each answer and tool record to diagnose the cause before
-changing prompts. The week-three comparison is pending in `docs/eval-results.md`.
+changing prompts. The baseline and single-agent comparison were run; see
+`docs/eval-results.md`. Those recorded scores predate the scoring fixes.
+
+Rescore saved reports offline with
+`uv run --no-sync python scripts/rescore.py eval/reports/<date>-<condition>.json`.
+This writes sibling `.rescored.json` and `.rescored.md` files and prints the summary.
+It uses each row's stored question text, expectation, answer and tool calls, without loading
+the current question bank or calling a model. Original reports remain unchanged. A stored
+expectation remains historical, including older decline expectations for clarification cases.
+Markdown reports show seconds to one decimal place; JSON retains full precision.

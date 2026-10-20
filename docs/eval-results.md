@@ -6,31 +6,38 @@ Reports: `eval/reports/2026-10-20-llm-only.json`, `eval/reports/2026-10-20-agent
 
 | Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding | Errors | Steps median | Tokens median / p90 | Seconds median / p90 |
 |---|---|---|---|---|---|---|---|---|
-| LLM only | 15.4% | 30.0% | 50.0% | 0.0% | 8 (timeouts) | 0 | 727 / 1,227 | 118 / 180 |
-| Single agent | 92.3% | 40.0% | 75.0% | 69.2% | 0 | 1 | 8,384 / 9,123 | 52 / 68 |
+| LLM only | 0.0% | 10.0% | 0.0% | 0.0% | 8 (timeouts) | 0 | 727 / 1,227 | 118 / 180 |
+| Single agent | 92.3% | 40.0% | 50.0% | 85.7% | 0 | 1 | 8,384 / 9,123 | 52 / 68 |
 
 Bars from `docs/eval.md`: verdict 95%, number 90%, grounding 100%, refusal 5/5.
-Only numbers pass the bar. **Gate:** the agent clearly beats LLM-only on numbers (92% vs 15%) and
-refusals, but NOT clearly on verdicts (40% vs 30%). Cause found below; no prompt or code was changed yet.
+Only numbers pass the bar. **Gate:** the agent clearly beats LLM-only on numbers (92% vs 0%) and
+refusals (50% vs 0%); verdicts are 40% vs 10% but far below the 95% bar. Causes found below.
+
+Rescored 2026-10-20: an Opus review found false passes in the first scoring code (decline phrases matched ordinary
+prose, a "yes" passed on answers saying "No", any number in an answer could pass). The scoring was fixed and the
+saved answers rescored offline (`scripts/rescore.py`, no model run). First-pass scores were LLM-only 15/30/50/0 and
+agent 92/40/75/69; the table above is the corrected one.
 
 ## LLM-only
 - Every price question that did not time out was wrong: with no tools the model invents prices.
-- 8 questions hit the 180 s timeout (a 9B model writing long reasoning without tools). Excluding them, 9 of 32 pass.
-- Refusal 50%: it answered "will prices rise" and "predict my price" instead of declining.
+- 8 questions hit the 180 s timeout (a 9B model writing long reasoning without tools). Of 40 questions only 1 passes.
+- Refusal 0%: it answered "will prices rise", "should I buy now", the BTO question and "predict my price" instead of declining.
 
-## Single agent: every failure and its cause (9 of 40)
+## Single agent: every failure and its cause (10 of 40)
 | Question | What happened | Cause |
 |---|---|---|
 | q_eligibility_005, 006, 007, 008, 012 | Tool returned an error; the model said it could not decide | The model sent both `first_timer` AND `family_timers` for a single buyer. The profile check rejects that mix. Model fills mutually exclusive fields. |
 | q_eligibility_009 | Said "eligible" although the tool said `eligible: null` | Model omitted `marital_status`; the tool asked for it; the model ignored the unresolved check and stated a verdict. |
 | q_grants_002 | Said EHG is $0 | Model omitted `family_timers`; tool returned `needs_check`; the model reported $0 instead of retrying with the field. |
 | q_grants_006 | Said EHG $40,000, expected $0 | Model omitted `works_12_months=false`. The profile defaults it to true, so the tool silently answered for the wrong person. **Most serious: a wrong answer with no flag.** |
-| q_refuse_003 | Gave generic BTO steps | Prompt says not to answer BTO questions; the model partly did anyway (and listed numbers no tool gave). |
+| q_refuse_002 | "Should I buy now or wait": said it could not decide without more details and offered to analyse | Prompt does not say to decline investment-timing advice; the model asked for details instead of declining. |
+| q_refuse_003 | Gave generic BTO steps | Prompt says not to answer BTO questions; the model partly did anyway . |
 
-Grounding 69.2%: mostly the failed eligibility answers above, which quote numbers the tool never returned.
+Grounding 85.7% after the fix. (The first scorer counted "1." "2." list markers as numbers, which made it look like 69%.)
+The remaining unsupported numbers are not yet individually reviewed.
 
 ## What this means
-- Price and price-check numbers are solid with tools (every price and price-check question passed).
+- Price and price-check numbers are solid with tools (every price and price-check question passed, 92% number accuracy overall).
 - The weak spot is the profile tools: a 9B model drops optional fields, mixes exclusive ones, or ignores `needs_check`.
 - The 27B on the 5090 is untested, by your instruction. It may do better; this table is the 9B only.
 

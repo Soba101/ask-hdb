@@ -11,7 +11,7 @@ def question(expect, kind='price', text='What was the price in 2025?'):
 
 
 def result(answer, evidence=None, error=None):
-    return {'answer': answer, 'tool_calls': [] if evidence is None else [{'result': evidence}],
+    return {'answer': answer, 'tool_calls': [] if evidence is None else [{'name': 'can_buy_resale', 'result': evidence}],
             'error': error}
 
 
@@ -52,8 +52,8 @@ def test_positive_verdict_cannot_match_negation():
     assert not answer_passes(q, result('No, you are eligible.', {'eligible': True}))
 
 
-@pytest.mark.parametrize('answer', ["I cannot predict prices.", 'Please provide your age.',
-                                    'Could you share your citizenship?'])
+@pytest.mark.parametrize('answer', ["I cannot predict prices.", "I can't advise on timing.",
+                                    'I do not answer BTO questions.'])
 def test_decline_requires_no_calls(answer):
     q = question({'decline': True}, 'refuse')
     assert answer_passes(q, result(answer))
@@ -88,3 +88,92 @@ def test_distribution_and_micro_average():
     assert stats['grounding_rate'] == .25
     assert stats['tokens']['median'] is None
     assert stats['verdict_accuracy'] is None
+
+
+@pytest.mark.parametrize('phrase', ['missing', 'cannot', 'outside', 'please provide',
+                                   'need more', 'what is your'])
+def test_generic_phrases_are_not_declines(phrase):
+    assert not answer_passes(question({'decline': True}, 'refuse'), result(phrase))
+
+
+@pytest.mark.parametrize('phrase', ["can't predict", 'cannot advise', 'unable to predict',
+                                   'outside my scope', 'only help with resale',
+                                   'not able to predict'])
+def test_specific_declines(phrase):
+    assert answer_passes(question({'decline': True}, 'refuse'), result(phrase))
+
+
+@pytest.mark.parametrize('answer,passed', [
+    ('Please provide your age and citizenship.', True),
+    ('What is your household composition?', True), ('I need your flat details.', True),
+    ('Tell me your citizenship.', True), ('Your details are missing.', False),
+    ('Please provide your age. You are eligible.', False),
+    ('Tell me your income. You cannot buy.', False),
+    ('Yes, tell me your citizenship.', False),
+    ('Please provide your age; the minimum is 35.', False),
+])
+def test_clarification_requires_details_without_verdict_or_numbers(answer, passed):
+    assert answer_passes(question({'clarify': True}, 'refuse'), result(answer)) is passed
+
+
+def test_clarification_rejects_tool_verdict():
+    q = question({'clarify': True}, 'refuse')
+    assert not answer_passes(q, result('Please provide your age.', {'eligible': False}))
+    assert answer_passes(q, result('Please provide your age.', {'missing': ['age']}))
+
+
+@pytest.mark.parametrize('answer', [
+    'You are **not eligible** to buy.', 'You are _ineligible_.',
+    'You `cannot buy` a resale flat.', '**No,** you are eligible.',
+    'Yes, you are not eligible to buy, but you can get a grant.',
+    'You have a CPF grant, but are not eligible.',
+    'You are not eligible, although grants may be available.',
+])
+def test_formatted_and_contradictory_purchase_denials_fail(answer):
+    q = question({'verdict': 'yes', 'answer_keywords': ['yes', 'eligible']})
+    assert not answer_passes(q, result(answer, {'eligible': True}))
+
+
+@pytest.mark.parametrize('benefit', ['a grant', 'a loan', 'EHG', 'CPF'])
+def test_benefit_denial_allows_positive_purchase_verdict(benefit):
+    q = question({'verdict': 'yes', 'answer_keywords': ['yes', 'eligible']})
+    assert answer_passes(q, result(f'**Yes**, you are not eligible for {benefit}.',
+                                   {'eligible': True}))
+
+
+def test_grant_tool_verdict_cannot_support_purchase():
+    q = question({'verdict': 'yes', 'answer_keywords': ['yes']})
+    r = result('Yes.', {'eligible': True})
+    r['tool_calls'][0]['name'] = 'calculate_grants'
+    assert not answer_passes(q, r)
+    r['tool_calls'].append({'name': 'can_buy_resale', 'result': {'eligible': False}})
+    assert not answer_passes(q, r)
+    r['tool_calls'][0]['result']['eligible'] = False
+    r['tool_calls'][1]['result']['eligible'] = True
+    assert answer_passes(q, r)
+
+
+def test_list_markers_and_distance_units():
+    answer = '1. Distance: 400 m\n2) Walk: 2 km\n- 3. Price: $80k\n• 4) Count: 7'
+    assert numbers(answer) == [400, 2, 80000, 7]
+    assert grounding(question({}, text='Distance?'), result(answer, {
+        'distance_m': 400, 'distance_km': 2, 'price': 80000, 'count': 7,
+    })) == {'supported': 4, 'total': 4, 'rate': 1}
+
+
+@pytest.mark.parametrize('answer,expected,passed', [
+    ('$380,000 and $420,000; final answer **$400,000**.', 400000, False),
+    ('CPF grant $40,000, EHG $0', 0, False),
+    ('$400,000', 400000, True), ('$400k', 400000, True),
+    ('1. **$400,000**', 400000, True), ('EHG: $0.', 0, True),
+    ('In 2025, $400k; final answer **$420,000**.', 400000, True),
+    ('In 2025 only.', 400000, False),
+])
+def test_first_non_question_number_decides(answer, expected, passed):
+    q = question({'number': expected, 'tolerance': 0})
+    assert answer_passes(q, result(answer)) is passed
+
+
+def test_formatted_negative_verdict():
+    q = question({'verdict': 'no', 'answer_keywords': ['no', 'not eligible']})
+    assert answer_passes(q, result('**No**, you are **not eligible**.', {'eligible': False}))

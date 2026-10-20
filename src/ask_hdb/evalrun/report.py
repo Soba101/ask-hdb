@@ -47,7 +47,9 @@ def markdown(report):
              '', '| Measure | Median | p90 |', '|---|---:|---:|']
     for key in ('steps', 'tokens', 'seconds'):
         stats = summary[key]
-        lines.append(f"| {key} | {stats['median']} | {stats['p90']} |")
+        values = [f'{stats[k]:.1f}' if key == 'seconds' and stats[k] is not None
+                  else str(stats[k]) for k in ('median', 'p90')]
+        lines.append(f"| {key} | {' | '.join(values)} |")
     failures = [r for r in report['results'] if r['id'] in report['active_ids']
                 and not r['score']['passed']]
     if failures:

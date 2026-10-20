@@ -107,3 +107,22 @@ def test_comparable_widening_and_boundaries():
     assert level == 'town' and len(sample) == 4
     duplicated = pd.concat([df.iloc[[0]]] * 5, ignore_index=True)
     assert module.comparable_rows(duplicated, query)[0] == 'block'
+
+
+def test_clarify_schema_and_question_wording(tmp_path):
+    qs = {q['id']: q for q in load_questions()}
+    assert qs['q_refuse_005']['expect'] == {'clarify': True}
+    assert qs['q_refuse_005']['heldout'] is True
+    assert sum(q['expect'].get('decline', False) for q in qs.values()) == 4
+    assert sum(q['expect'].get('clarify', False) for q in qs.values()) == 1
+    assert 'both of us have only been employed for 6 months' in qs['q_grants_003']['question']
+    for qid in ('q_grants_005', 'q_grants_006', 'q_grants_009'):
+        assert 'only my' in qs[qid]['question']
+        assert 'our' not in qs[qid]['question']
+    for expect, kind in [({'clarify': False}, 'refuse'), ({'clarify': True}, 'price'),
+                         ({'clarify': True, 'decline': True}, 'refuse')]:
+        q = {**qs['q_refuse_005'], 'expect': expect, 'kind': kind}
+        path = tmp_path / 'bad.yaml'
+        path.write_text(yaml.safe_dump([q]))
+        with pytest.raises(ValueError):
+            load_questions(path)

@@ -44,15 +44,15 @@ download the new dependencies. See `docs/week2-notes.md`; the exit check remains
       Price expectations use independent pandas; rule expectations cite the frozen YAML by hand.
 - [x] `ask-hdb eval` runner: scores, steps, tokens, time. JSON + markdown report.
       The previous routing check remains available as `ask-hdb routing`.
-- [x] Run LLM-only and single-agent conditions (9B Mac model, 2026-10-20): numbers 15% vs 92%, verdicts 30% vs 40%,
-      refusals 50% vs 75%. Failures written down in `docs/eval-results.md`. Gate not cleared on verdicts; fixes proposed there.
+- [x] Run LLM-only and single-agent conditions (9B Mac model, 2026-10-20): numbers 0% vs 92%, verdicts 10% vs 40%,
+      refusals 0% vs 50% (rescored after review). Failures written down in `docs/eval-results.md`. Gate not cleared on verdicts; fixes proposed there.
 - **Exit:** a results table. **Gate:** if the agent does not clearly beat LLM-only,
   stop and find out why before adding anything.
 
-Build note (2026-10-20): agent behavior and rule functions are unchanged. Score change
-is unavailable: model execution was explicitly prohibited for this build. Both live
-conditions and the comparison gate remain pending; see `docs/eval-results.md`.
-The offline tests and lint pass. Distance and multi-step questions remain in week 4.
+Build note (2026-10-20): agent behavior and rule functions are unchanged. The baseline
+and single-agent comparison were run; see `docs/eval-results.md`. Recorded scores predate
+the scoring fixes; score changes await offline rescoring of stored reports. No model or
+eval runs were made for these fixes. Distance and multi-step questions remain in week 4.
 
 ## Week 4: places and MCP
 - [ ] `scripts/geocode_blocks.py` with a disk cache. `scripts/fetch_places.py` for MRT and schools.

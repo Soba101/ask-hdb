@@ -71,8 +71,8 @@ See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results
 
 | Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding |
 |---|---|---|---|---|
-| LLM-only | 15.4% | 30.0% | 50.0% | 0.0% |
-| Single agent | 92.3% | 40.0% | 75.0% | 69.2% |
+| LLM-only | 0.0% | 10.0% | 0.0% | 0.0% |
+| Single agent | 92.3% | 40.0% | 50.0% | 85.7% |
 
 Live baseline: 40 questions per condition, one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. The agent wins on numbers but misses the verdict bar; causes are in the results doc.
 

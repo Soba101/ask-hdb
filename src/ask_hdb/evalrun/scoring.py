@@ -4,24 +4,27 @@ import json
 import math
 import re
 
-# Commas, decimal prices and common scale suffixes are answer numbers too.
+# Only explicit price scales count; metre and kilometre units never scale values.
 NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
-                    r'\s*(?:million\b|thousand\b|[km]\b)?', re.IGNORECASE)
+                    r'\s*(?:million\b|k\b)?', re.IGNORECASE)
 DECLINES = (
-    "cannot", "can't", "unable", "not able", "out of scope", "outside", "don't predict",
-    "do not predict", "can't predict", "cannot predict", "not supported", "need more",
-    "please provide", "could you provide", "please share", "what is your", "what are your",
-    "could you share", "need your", "missing", "do not provide", "don't provide",
+    'cannot predict', "can't predict", 'cannot advise', "can't advise", 'unable to predict',
+    'outside my scope', 'only help with resale', 'do not answer BTO', 'not able to predict',
 )
+CLARIFIES = ('please provide', 'what is your', 'what are your', 'need your', 'tell me',
+             'could you share', 'could you provide', 'please share')
+DENIAL = r"\b(?:not eligible|ineligible|cannot buy|can't buy|not able to buy)\b"
+BENEFIT = r'\b(?:grants?|loans?|EHG|CPF)\b'
 
 
 def numbers(text):
+    # Ignore ordered-list labels, including labels nested under a bullet.
+    text = re.sub(r'^\s*(?:[-*+•]\s+)?\d+[.)]\s+', '', str(text), flags=re.MULTILINE)
     values = []
-    for match in NUMBER.finditer(str(text)):
+    for match in NUMBER.finditer(text):
         raw = match.group().strip().lower().replace(',', '')
         scale = 1
-        for suffix, multiplier in [('million', 1000000), ('thousand', 1000),
-                                   ('k', 1000), ('m', 1000000)]:
+        for suffix, multiplier in [('million', 1000000), ('k', 1000)]:
             if raw.endswith(suffix):
                 raw, scale = raw[:-len(suffix)].strip(), multiplier
                 break
@@ -37,32 +40,52 @@ def _keyword(text, keyword):
     return bool(re.search(r'(?<!\w)' + re.escape(keyword) + r'(?!\w)', text, re.IGNORECASE))
 
 
+def _purchase_denial(answer):
+    if re.search(r'^\s*no\s*[,!.]', answer, re.IGNORECASE):
+        return True
+    # Scope each denial locally: a grant denial in another clause cannot excuse a
+    # purchase denial. Explicit buying language always describes purchase eligibility.
+    for clause in re.split(r'[.!?;\n]|\bbut\b|\band\b', answer, flags=re.IGNORECASE):
+        for denial in re.finditer(DENIAL, clause, re.IGNORECASE):
+            tail = clause[denial.start():]
+            scope = re.match(r'\s+(?:for|to receive|to get)\b[^,.!?;]*',
+                             clause[denial.end():], re.IGNORECASE)
+            if (re.search(r'\bbuy\b', tail, re.IGNORECASE)
+                    or not scope or not re.search(BENEFIT, scope.group(), re.IGNORECASE)):
+                return True
+    return False
+
+
 def answer_passes(question, result):
     if result.get('error') or result.get('stopped_reason'):
         return False
-    expect, answer = question['expect'], result['answer']
+    expect = question['expect']
+    answer = re.sub(r'[*_`]', '', result['answer'])
     calls = result.get('tool_calls', [])
     if 'number' in expect:
-        return any(_near(value, expect['number'], expect['tolerance']) for value in numbers(answer))
+        given = numbers(question['question'])
+        values = [n for n in numbers(result['answer']) if not any(_near(n, g) for g in given)]
+        # The first non-question number must match, even if a later bold answer matches.
+        return bool(values) and _near(values[0], expect['number'], expect['tolerance'])
     if 'verdict' in expect:
         positive = expect['verdict'] == 'yes'
-        # A denial must not satisfy an affirmative "eligible" keyword. Other clauses
-        # may still say "not eligible for a grant" after a valid purchase verdict.
-        denials = r"\b(?:not eligible|ineligible|cannot buy|can't buy|not able to buy)\b"
-        negative = bool(re.search(denials + r'|(?:^|[.!?]\s*)no\b',
-                                  answer, re.IGNORECASE))
-        prose_text = re.sub(denials, '', answer, flags=re.IGNORECASE) if positive else answer
-        prose = any(_keyword(prose_text, key) for key in expect['answer_keywords'])
-        if positive and re.search(r'^\s*no\s*[,!.]', answer, re.IGNORECASE):
-            prose = False
-        if not positive and not negative:
-            prose = False
+        negative = _purchase_denial(answer)
+        prose = any(_keyword(answer, key) for key in expect['answer_keywords'])
+        prose = prose and (not negative if positive else negative)
         if calls:
-            # Evidence must be an actual verdict, not a truthy string or tool argument.
-            verdicts = [call.get('result', {}).get('eligible') for call in calls
-                        if isinstance(call.get('result'), dict)]
+            # Grant tools also return eligible; only purchase verdicts are evidence here.
+            verdicts = [call['result'].get('eligible') for call in calls
+                        if call.get('name') == 'can_buy_resale'
+                        and isinstance(call.get('result'), dict)]
             prose = prose and any(v is positive for v in verdicts)
         return bool(prose)
+    if expect.get('clarify'):
+        verdict = re.search(DENIAL + r'|\beligible\b|\bcan buy\b|^\s*(?:yes|no)\b',
+                            answer, re.IGNORECASE)
+        tool_verdict = any(isinstance(c.get('result'), dict)
+                           and isinstance(c['result'].get('eligible'), bool) for c in calls)
+        return (any(_keyword(answer, phrase) for phrase in CLARIFIES)
+                and not verdict and not numbers(result['answer']) and not tool_verdict)
     return not calls and any(_keyword(answer, phrase) for phrase in DECLINES)
 
 

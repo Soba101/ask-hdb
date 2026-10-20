@@ -30,7 +30,7 @@ def load_questions(path=QUESTION_PATH):
         expect = q['expect']
         if not isinstance(expect, dict):
             raise TypeError(f"Invalid expectation for {q['id']}")
-        if sum(key in expect for key in ('number', 'verdict', 'decline')) != 1:
+        if sum(key in expect for key in ('number', 'verdict', 'decline', 'clarify')) != 1:
             raise ValueError('Expected exactly one answer type')
         if 'number' in expect:
             for key in ('number', 'tolerance'):
@@ -48,8 +48,10 @@ def load_questions(path=QUESTION_PATH):
                     or any(not isinstance(k, str) or not k.strip()
                            for k in expect['answer_keywords'])):
                 raise ValueError('Invalid verdict expectation')
-        elif expect.get('decline') is not True or q['kind'] != 'refuse':
-            raise ValueError('Invalid decline expectation')
+        elif q['kind'] != 'refuse' or not any(
+            expect.get(key) is True for key in ('decline', 'clarify')
+        ):
+            raise ValueError('Invalid decline/clarify expectation')
     return questions
 
 
