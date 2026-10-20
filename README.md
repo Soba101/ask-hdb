@@ -3,7 +3,8 @@
 An agent that helps you find HDB resale flats you are **eligible for**, can **afford**,
 and that are **near what matters to you** (MRT, schools, parents).
 
-> Status: **Planning.** No code yet. Start with [docs/roadmap.md](docs/roadmap.md).
+> Status: Data tools, rules, agent and offline evaluation are built. The first baseline
+> is run (agent beats LLM-only on numbers, not yet on eligibility verdicts). See [docs/roadmap.md](docs/roadmap.md).
 
 ## The problem
 
@@ -56,13 +57,24 @@ uv sync
 uv run ask-hdb ask "What are the recorded resale price statistics in TAMPINES?"
 uv run ask-hdb chat
 uv run python scripts/tool_call_check.py
-uv run ask-hdb eval
+uv run --no-sync ask-hdb routing
+uv run --no-sync ask-hdb eval --condition agent
+uv run --no-sync ask-hdb eval --condition llm-only
 ```
 
 Chat shows each tool call and its result before the answer. Type `quit` to leave.
-The evaluation command runs the tool-call check and appends results to
-`docs/week2-notes.md`. Expected tool outputs go to `eval/reports/week2-expected.json`
-for manual answer review. The full answer evaluation is planned in the roadmap.
+`ask-hdb routing` keeps the previous tool-call check and its week-two notes.
+`ask-hdb eval` scores the frozen answer bank and saves JSON plus Markdown after each question.
+Use `--only price --verbose --limit 2` for a small run. Held-out questions run only with
+`--heldout`. Reports resume explicitly; existing completed results and errors are retained.
+See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results.md).
+
+| Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding |
+|---|---|---|---|---|
+| LLM-only | 0.0% | 10.0% | 0.0% | 0.0% |
+| Single agent | 92.3% | 40.0% | 50.0% | 85.7% |
+
+Live baseline: 40 questions per condition, one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. The agent wins on numbers but misses the verdict bar; causes are in the results doc.
 
 ## Stack (each picked to match current AI engineer job descriptions)
 

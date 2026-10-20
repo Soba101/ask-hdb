@@ -1,0 +1,564 @@
+- id: q_price_001
+  kind: price
+  question: Whats the median resale price rounded to the nearest dollar for 4 ROOM flats in TAMPINES, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 668000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=TAMPINES; flat_type=4 ROOM; 2025-01..2025-12; median
+  query:
+    town: TAMPINES
+    flat_type: 4 ROOM
+    metric: median
+    since: 2025-01
+    until: 2025-12
+- id: q_price_002
+  kind: price
+  question: Whats the mean resale price rounded to the nearest dollar for 3 ROOM flats in BEDOK, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 449343
+    tolerance: 0
+  source: data/clean/resale.parquet; town=BEDOK; flat_type=3 ROOM; 2025-01..2025-12; mean
+  query:
+    town: BEDOK
+    flat_type: 3 ROOM
+    metric: mean
+    since: 2025-01
+    until: 2025-12
+- id: q_price_003
+  kind: price
+  question: Whats the number of recorded sales for 4 ROOM flats in ANG MO KIO, 2026-01 through 2026-09 inclusive?
+  expect:
+    number: 229
+    tolerance: 0
+  source: data/clean/resale.parquet; town=ANG MO KIO; flat_type=4 ROOM; 2026-01..2026-09; count
+  query:
+    town: ANG MO KIO
+    flat_type: 4 ROOM
+    metric: count
+    since: 2026-01
+    until: 2026-09
+  heldout: true
+- id: q_price_004
+  kind: price
+  question: Whats the highest resale price for 5 ROOM flats in BISHAN, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 1632000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=BISHAN; flat_type=5 ROOM; 2025-01..2025-12; max
+  query:
+    town: BISHAN
+    flat_type: 5 ROOM
+    metric: max
+    since: 2025-01
+    until: 2025-12
+- id: q_price_005
+  kind: price
+  question: Whats the lowest resale price for 3 ROOM flats in TOA PAYOH, 2024-01 through 2024-12 inclusive?
+  expect:
+    number: 300800
+    tolerance: 0
+  source: data/clean/resale.parquet; town=TOA PAYOH; flat_type=3 ROOM; 2024-01..2024-12; min
+  query:
+    town: TOA PAYOH
+    flat_type: 3 ROOM
+    metric: min
+    since: 2024-01
+    until: 2024-12
+- id: q_price_006
+  kind: price
+  question: Whats the median resale price rounded to the nearest dollar for 4 ROOM flats in WOODLANDS, 2025-01 through 2025-06 inclusive?
+  expect:
+    number: 558944
+    tolerance: 0
+  source: data/clean/resale.parquet; town=WOODLANDS; flat_type=4 ROOM; 2025-01..2025-06; median
+  query:
+    town: WOODLANDS
+    flat_type: 4 ROOM
+    metric: median
+    since: 2025-01
+    until: 2025-06
+- id: q_price_007
+  kind: price
+  question: Whats the mean resale price rounded to the nearest dollar for 5 ROOM flats in JURONG WEST, 2025-07 through 2025-12 inclusive?
+  expect:
+    number: 648291
+    tolerance: 0
+  source: data/clean/resale.parquet; town=JURONG WEST; flat_type=5 ROOM; 2025-07..2025-12; mean
+  query:
+    town: JURONG WEST
+    flat_type: 5 ROOM
+    metric: mean
+    since: 2025-07
+    until: 2025-12
+- id: q_price_008
+  kind: price
+  question: Whats the number of recorded sales for 4 ROOM flats in SENGKANG, 2024-01 through 2024-12 inclusive?
+  expect:
+    number: 1040
+    tolerance: 0
+  source: data/clean/resale.parquet; town=SENGKANG; flat_type=4 ROOM; 2024-01..2024-12; count
+  query:
+    town: SENGKANG
+    flat_type: 4 ROOM
+    metric: count
+    since: 2024-01
+    until: 2024-12
+- id: q_price_009
+  kind: price
+  question: Whats the median resale price rounded to the nearest dollar for 5 ROOM flats in PUNGGOL, 2026-01 through 2026-09 inclusive?
+  expect:
+    number: 800000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=PUNGGOL; flat_type=5 ROOM; 2026-01..2026-09; median
+  query:
+    town: PUNGGOL
+    flat_type: 5 ROOM
+    metric: median
+    since: 2026-01
+    until: 2026-09
+  heldout: true
+- id: q_price_010
+  kind: price
+  question: Whats the highest resale price for 3 ROOM flats in YISHUN, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 620000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=YISHUN; flat_type=3 ROOM; 2025-01..2025-12; max
+  query:
+    town: YISHUN
+    flat_type: 3 ROOM
+    metric: max
+    since: 2025-01
+    until: 2025-12
+- id: q_price_011
+  kind: price
+  question: Whats the lowest resale price for 4 ROOM flats in CLEMENTI, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 463000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=CLEMENTI; flat_type=4 ROOM; 2025-01..2025-12; min
+  query:
+    town: CLEMENTI
+    flat_type: 4 ROOM
+    metric: min
+    since: 2025-01
+    until: 2025-12
+- id: q_price_012
+  kind: price
+  question: Whats the median resale price rounded to the nearest dollar for 4 ROOM flats in BUKIT BATOK, 2024-01 through 2024-12 inclusive?
+  expect:
+    number: 600000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=BUKIT BATOK; flat_type=4 ROOM; 2024-01..2024-12; median
+  query:
+    town: BUKIT BATOK
+    flat_type: 4 ROOM
+    metric: median
+    since: 2024-01
+    until: 2024-12
+- id: q_price_013
+  kind: price
+  question: Whats the mean resale price rounded to the nearest dollar for 5 ROOM flats in PASIR RIS, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 738785
+    tolerance: 0
+  source: data/clean/resale.parquet; town=PASIR RIS; flat_type=5 ROOM; 2025-01..2025-12; mean
+  query:
+    town: PASIR RIS
+    flat_type: 5 ROOM
+    metric: mean
+    since: 2025-01
+    until: 2025-12
+- id: q_price_014
+  kind: price
+  question: Whats the median resale price rounded to the nearest dollar for 4 ROOM flats in HOUGANG, 2026-01 through 2026-09 inclusive?
+  expect:
+    number: 620000
+    tolerance: 0
+  source: data/clean/resale.parquet; town=HOUGANG; flat_type=4 ROOM; 2026-01..2026-09; median
+  query:
+    town: HOUGANG
+    flat_type: 4 ROOM
+    metric: median
+    since: 2026-01
+    until: 2026-09
+- id: q_price_015
+  kind: price
+  question: Whats the number of recorded sales for 3 ROOM flats in QUEENSTOWN, 2025-01 through 2025-12 inclusive?
+  expect:
+    number: 264
+    tolerance: 0
+  source: data/clean/resale.parquet; town=QUEENSTOWN; flat_type=3 ROOM; 2025-01..2025-12; count
+  query:
+    town: QUEENSTOWN
+    flat_type: 3 ROOM
+    metric: count
+    since: 2025-01
+    until: 2025-12
+  heldout: true
+# By hand: age 35 compared with 21; Standard purchase has no income ceiling.
+- id: q_eligibility_001
+  kind: eligibility
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Can we buy the flat itself, independent of grants or loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.families.min_age_years; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+# By hand: age 21 compared with 21; Standard purchase has no income ceiling.
+- id: q_eligibility_002
+  kind: eligibility
+  question: We are a married couple, both SC, both age 21, both first-timers, income $16000 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Can we buy the flat itself, independent of grants or loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.families.min_age_years; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+# By hand: age 20 compared with 21; Standard purchase has no income ceiling.
+- id: q_eligibility_003
+  kind: eligibility
+  question: We are a married couple, both SC, both age 20, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Can we buy the flat itself, independent of grants or loan?
+  expect:
+    verdict: 'no'
+    answer_keywords:
+    - 'no'
+    - ineligible
+    - cannot buy
+    - not eligible
+  source: rules/2026-10.yaml eligibility.families.min_age_years; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+# By hand: age 40 compared with 21; Standard purchase has no income ceiling.
+- id: q_eligibility_004
+  kind: eligibility
+  question: We are a married couple, both SC, both age 40, both first-timers, income $20000 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Can we buy the flat itself, independent of grants or loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.families.resale_unclassified_standard_no_grant_no_hdb_loan_income_ceiling; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+  heldout: true
+# By hand: SC, unmarried, age 35; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_005
+  kind: eligibility
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $4000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SC, unmarried, age 34; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_006
+  kind: eligibility
+  question: I am an unmarried SC, age 34, buying alone, first-timer, income $4000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'no'
+    answer_keywords:
+    - 'no'
+    - ineligible
+    - cannot buy
+    - not eligible
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SC, divorced, age 35; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_007
+  kind: eligibility
+  question: I am an divorced SC, age 35, buying alone, first-timer, income $9000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SC, divorced, age 34; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_008
+  kind: eligibility
+  question: I am an divorced SC, age 34, buying alone, first-timer, income $4000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'no'
+    answer_keywords:
+    - 'no'
+    - ineligible
+    - cannot buy
+    - not eligible
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SC, widowed, age 21; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_009
+  kind: eligibility
+  question: I am an widowed SC, age 21, buying alone, first-timer, income $3000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_widowed_or_orphan; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SC, widowed, age 20; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_010
+  kind: eligibility
+  question: I am an widowed SC, age 20, buying alone, first-timer, income $3000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'no'
+    answer_keywords:
+    - 'no'
+    - ineligible
+    - cannot buy
+    - not eligible
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_widowed_or_orphan; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# By hand: SPR, unmarried, age 40; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_011
+  kind: eligibility
+  question: I am an unmarried SPR, age 40, buying alone, first-timer, income $4000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'no'
+    answer_keywords:
+    - 'no'
+    - ineligible
+    - cannot buy
+    - not eligible
+  source: rules/2026-10.yaml eligibility.singles.citizenship; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+  heldout: true
+# By hand: SC, unmarried, age 60; compare citizen requirement and age minimum (21 widowed, 35 unmarried/divorced). Standard purchase has no income ceiling.
+- id: q_eligibility_012
+  kind: eligibility
+  question: I am an unmarried SC, age 60, buying alone, first-timer, income $20000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Am I eligble to buy the flat itself without grants or HDB loan?
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+# Published family E: family_grant = 70000.
+- id: q_grants_001
+  kind: grants
+  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our CPF Housing Grant, in dollars?
+  expect:
+    number: 70000
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_family_e; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+# Published family E: 4400 <= 4500, EHG = 70000.
+- id: q_grants_002
+  kind: grants
+  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  expect:
+    number: 70000
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_family_e; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+# Published family F: continuous work requirement fails, EHG = 0.
+- id: q_grants_003
+  kind: grants
+  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, both of us have only been employed for 6 months and currently working, no private property, no previous HDB loans. The Standard resale flat is 5-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  expect:
+    number: 0
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_family_f_not_working_12_months; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+  heldout: true
+# Published H: 4400 * 0.5 = 2200 <= 2250, EHG = 35000.
+- id: q_grants_004
+  kind: grants
+  question: We are a married couple, both SC, both age 35, one first-timer and one second-timer, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant, in dollars?
+  expect:
+    number: 35000
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_first_and_second_timer_h; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+# Published single B: 2000 <= 2000 tier, EHG = 40000.
+- id: q_grants_005
+  kind: grants
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my Enhanced CPF Housing Grant, in dollars?
+  expect:
+    number: 40000
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_single_b; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+# Published single C: continuous work requirement fails, EHG = 0.
+- id: q_grants_006
+  kind: grants
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, only employed for 6 months and currently working, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my Enhanced CPF Housing Grant, in dollars?
+  expect:
+    number: 0
+    tolerance: 0
+  source: rules/2026-10.yaml examples.ehg_resale_single_c_not_working_12_months; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant
+# Table by hand: both SC, both first, 4-room => 80000.
+- id: q_grants_007
+  kind: grants
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our CPF Housing Grant, in dollars?
+  expect:
+    number: 80000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_2_to_4_room_sc_sc; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+# Table by hand: both SC, both first, 5-room => 50000.
+- id: q_grants_008
+  kind: grants
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 5-room, $600000, with 960 months lease left. How much is only our CPF Housing Grant, in dollars?
+  expect:
+    number: 50000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_5_room_plus_sc_sc; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+# Table by hand: first-timer SC single, 3-room => 40000.
+- id: q_grants_009
+  kind: grants
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $2000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 3-room, $600000, with 960 months lease left. How much is only my CPF Housing Grant, in dollars?
+  expect:
+    number: 40000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.singles_first_timer_2_to_4_room; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+  heldout: true
+# Table by hand: family living with parents => 30000; no earlier PHG.
+- id: q_grants_010
+  kind: grants
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. We will live with our SC parents in this flat and have never received PHG. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our Proximity Housing Grant, in dollars?
+  expect:
+    number: 30000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.phg.families_live_with_parents_or_child; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+- id: q_price_check_001
+  kind: price_check
+  question: As of 2026-09, compare asking $620000 for 4 ROOM at blk_406_ang-mo-kio-ave-10, storey midpoint 8, lease left 625 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 526000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_406_ang-mo-kio-ave-10'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 8, ''lease_left_months'': 625, ''price'': 620000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_406_ang-mo-kio-ave-10
+    flat_type: 4 ROOM
+    storey_mid: 8
+    lease_left_months: 625
+    price: 620000
+    as_of: 2026-09
+- id: q_price_check_002
+  kind: price_check
+  question: As of 2026-09, compare asking $400000 for 3 ROOM at blk_314_ang-mo-kio-ave-3, storey midpoint 5, lease left 610 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 420000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_314_ang-mo-kio-ave-3'', ''flat_type'': ''3 ROOM'', ''storey_mid'': 5, ''lease_left_months'': 610, ''price'': 400000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_314_ang-mo-kio-ave-3
+    flat_type: 3 ROOM
+    storey_mid: 5
+    lease_left_months: 610
+    price: 400000
+    as_of: 2026-09
+- id: q_price_check_003
+  kind: price_check
+  question: As of 2026-09, compare asking $300000 for 2 ROOM at blk_406_ang-mo-kio-ave-10, storey midpoint 11, lease left 625 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 303000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_406_ang-mo-kio-ave-10'', ''flat_type'': ''2 ROOM'', ''storey_mid'': 11, ''lease_left_months'': 625, ''price'': 300000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_406_ang-mo-kio-ave-10
+    flat_type: 2 ROOM
+    storey_mid: 11
+    lease_left_months: 625
+    price: 300000
+    as_of: 2026-09
+  heldout: true
+- id: q_price_check_004
+  kind: price_check
+  question: As of 2026-09, compare asking $650000 for 4 ROOM at blk_165_simei-rd, storey midpoint 8, lease left 740 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 648000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_165_simei-rd'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 8.0, ''lease_left_months'': 740, ''price'': 650000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_165_simei-rd
+    flat_type: 4 ROOM
+    storey_mid: 8.0
+    lease_left_months: 740
+    price: 650000
+    as_of: 2026-09
+- id: q_price_check_005
+  kind: price_check
+  question: As of 2026-09, compare asking $650000 for 4 ROOM at blk_517_bedok-nth-ave-2, storey midpoint 11, lease left 624 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 529000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_517_bedok-nth-ave-2'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 11.0, ''lease_left_months'': 624, ''price'': 650000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_517_bedok-nth-ave-2
+    flat_type: 4 ROOM
+    storey_mid: 11.0
+    lease_left_months: 624
+    price: 650000
+    as_of: 2026-09
+- id: q_price_check_006
+  kind: price_check
+  question: As of 2026-09, compare asking $650000 for 4 ROOM at blk_144_bishan-st-12, storey midpoint 8, lease left 732 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 718000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_144_bishan-st-12'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 8.0, ''lease_left_months'': 732, ''price'': 650000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_144_bishan-st-12
+    flat_type: 4 ROOM
+    storey_mid: 8.0
+    lease_left_months: 732
+    price: 650000
+    as_of: 2026-09
+- id: q_price_check_007
+  kind: price_check
+  question: As of 2026-09, compare asking $650000 for 4 ROOM at blk_28_marsiling-dr, storey midpoint 14, lease left 596 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 425000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_28_marsiling-dr'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 14.0, ''lease_left_months'': 596, ''price'': 650000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_28_marsiling-dr
+    flat_type: 4 ROOM
+    storey_mid: 14.0
+    lease_left_months: 596
+    price: 650000
+    as_of: 2026-09
+- id: q_price_check_008
+  kind: price_check
+  question: As of 2026-09, compare asking $650000 for 4 ROOM at blk_682b_edgedale-plains, storey midpoint 14, lease left 1092 months. No area filter. Use the last 12 months, +/-3 storeys, +/-60 lease months, minimum 5, widening block then street then town. What is the comparable median in dollars?
+  expect:
+    number: 685000
+    tolerance: 0
+  source: 'data/clean/resale.parquet; independent pandas comparable rule; {''block_id'': ''blk_682b_edgedale-plains'', ''flat_type'': ''4 ROOM'', ''storey_mid'': 14.0, ''lease_left_months'': 1092, ''price'': 650000, ''as_of'': ''2026-09''}'
+  query:
+    block_id: blk_682b_edgedale-plains
+    flat_type: 4 ROOM
+    storey_mid: 14.0
+    lease_left_months: 1092
+    price: 650000
+    as_of: 2026-09
+  heldout: true
+- id: q_refuse_001
+  kind: refuse
+  question: Will resale prices rise next year? Predict the market for me.
+  expect:
+    decline: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
+- id: q_refuse_002
+  kind: refuse
+  question: Should I buy now or wait? Tell me the best investment timing.
+  expect:
+    decline: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
+- id: q_refuse_003
+  kind: refuse
+  question: How do I apply for a BTO flat?
+  expect:
+    decline: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
+- id: q_refuse_004
+  kind: refuse
+  question: Predict the exact future selling price of my home.
+  expect:
+    decline: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
+- id: q_refuse_005
+  kind: refuse
+  question: Can I buy a resale flat? I have not given my age, citizenship, household or flat details; ask me for the missing details.
+  expect:
+    clarify: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
+  heldout: true
