@@ -10,7 +10,8 @@ from ask_hdb.check_cases import PROFILE
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 
 # The three profile fields that have no default, so tests must pass them.
-REQUIRED = {"previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False}
+REQUIRED = {"previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
+            "marital_status": "married"}
 
 
 @pytest.fixture(autouse=True)
@@ -92,7 +93,7 @@ def test_bare_year_means_whole_year():
 
 
 SINGLE = {"scheme": "single", "citizenships": "SC", "ages": "35", "monthly_household_income": 2000,
-          "room": 3, "lease_left_months": 960, "marital_status": "unmarried"} | REQUIRED
+          "room": 3, "lease_left_months": 960} | REQUIRED | {"marital_status": "unmarried", "family_timers": "not_applicable"}
 
 
 def test_single_with_both_timer_fields_still_works():

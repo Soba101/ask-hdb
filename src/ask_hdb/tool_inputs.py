@@ -69,11 +69,12 @@ class RuleArgs(Arguments):
     ages: str = Field(description="Comma-separated applicant ages in years")
     monthly_household_income: Count
     own_monthly_income: Count | None = None
-    family_timers: Literal["both_first", "one_first", "none_first"] | None = Field(
-        None, description="Family scheme: set it. Are both, one or none first-timers")
+    # Required, because the 9B model fills required fields but skips optional ones.
+    family_timers: Literal["both_first", "one_first", "none_first", "not_applicable"] = Field(
+        description="Family scheme: are both, one or none first-timers. Single scheme: not_applicable")
     first_timer: bool | None = Field(None, description="Single scheme only")
-    marital_status: Literal["unmarried", "divorced", "widowed", "married"] | None = None
-    # No defaults on these three: a guessed "yes" or "no" gives a wrong verdict with no warning.
+    marital_status: Literal["unmarried", "divorced", "widowed", "married"] = Field(
+        description="Always set. Family scheme: married. Single scheme: what the user said")
     previous_hdb_loans: Count = Field(description="Number of previous HDB loans; ask if unknown")
     works_12_months: bool = Field(description="Worked continuously for the past 12 months; ask if unknown")
     owns_private_property: bool = Field(description="Owns private property; ask if unknown")
