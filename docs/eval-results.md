@@ -47,3 +47,25 @@ The remaining unsupported numbers are not yet individually reviewed.
    required on the profile tools, so a missing value comes back as "ask the user", not a silent guess.
 3. Code: if a tool returns `eligible: null`, the agent must ask for the missing field (a retry), not state a verdict.
 4. Prompt: one line on BTO and decline cases.
+
+## After the four fixes (same 40 questions, same 9B model, 2026-10-20)
+| Condition | Number | Verdict | Refusal | Grounding | Steps | Tokens median / p90 | Seconds median / p90 |
+|---|---|---|---|---|---|---|---|
+| Single agent, baseline | 92.3% | 40.0% | 50.0% | 85.7% | 1 | 8,384 / 9,123 | 52 / 68 |
+| Single agent, after fixes | 92.3% | 50.0% | 50.0% | 78.6% | 1 | 9,414 / 9,960 | 48 / 94 |
+
+30 of 40 pass before and 31 of 40 after. Verdicts moved from 40% to 50% only.
+
+| Question | What happened | Cause |
+|---|---|---|
+| q_eligibility_006, 007, 008, 009, 012 | Tool returned `eligible: null` because `marital_status` was missing; the model still stated a verdict (two said "not eligible" because of income, which does not matter for buying without grants) | The model keeps dropping `marital_status` on singles and ignores the unresolved check. The prompt line did not fix a 9B model. |
+| q_grants_002 | Said EHG is $0 and asked for `family_timers` the user had already given | The model did not retry the tool with the value. |
+| q_price_check_002 | **Scorer false fail.** The answer is right (median $420,000) but its first number is "57 comparables" | The "first number not in the question" rule is too strict. |
+| q_refuse_002, 003 | **Scorer false fails.** Both decline ("I can only assist with resale HDB flats...") | The decline phrase list does not include these wordings. |
+
+Fixed by the changes: the five "mixed timer fields" errors from the baseline are gone, and `q_grants_006` (silent wrong EHG) now passes.
+
+## Next proposals (need your OK; no code changed yet)
+1. Code: require `marital_status` for singles. A missing one returns an error naming it, so the tool never answers `eligible: null` for a single.
+2. Scorer: ignore numbers under 1,000 when the expected answer is 1,000 or more, and add the two decline wordings above. These are scoring corrections for answers that are plainly right, found by reading the failures.
+3. Then rerun, and only after that test the 27B on the 5090 (when you say).

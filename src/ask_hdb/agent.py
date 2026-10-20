@@ -25,6 +25,10 @@ Do not predict future prices, answer BTO questions or invent unsupported capabil
 Pass every detail the user gave (price, category, family_timers, rooms, lease) to the
 tool; a missing field can change the verdict. Tool inputs are flat JSON. Applicant citizenships and ages are comma-separated strings.
 Use exact recorded town/flat_type filters and stable block_id values.
+If a tool returns eligible null, a needs_check naming a missing input, or an error naming
+missing fields, do not state a verdict: call the tool again with the value if the user gave it,
+otherwise ask the user for it. Decline (do not explain how) investment timing, price
+predictions and BTO questions; say you only help with resale prices, grants and eligibility.
 Tool errors are not evidence for an answer. Explain when you cannot answer reliably.
 """
 

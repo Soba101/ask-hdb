@@ -9,6 +9,9 @@ from ask_hdb import tools
 from ask_hdb.check_cases import PROFILE
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 
+# The three profile fields that have no default, so tests must pass them.
+REQUIRED = {"previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False}
+
 
 @pytest.fixture(autouse=True)
 def fake_data(monkeypatch, sales):
@@ -42,7 +45,7 @@ def test_rules_keep_dicts_and_citations(name, function, extra):
     profile = BuyerProfile(scheme="family", citizenships=["SC", "SC"], ages=[35, 35],
                            monthly_household_income=4400, family_timers="both_first")
     flat = Flat(room=4, lease_left_months=960, price=600000, category="standard")
-    result = getattr(tools, name).invoke(PROFILE | extra)
+    result = getattr(tools, name).invoke(PROFILE | REQUIRED | extra)
     assert result == asdict(function(profile, flat, **extra))
     assert result["rules"]
     assert all({"source", "as_of"} <= rule.keys() for rule in result["rules"])
@@ -86,3 +89,19 @@ def test_bare_year_means_whole_year():
     year = tools.price_stats.invoke({"town": "TAMPINES", "since": "2024", "until": "2024"})
     months = tools.price_stats.invoke({"town": "TAMPINES", "since": "2024-01", "until": "2024-12"})
     assert year == months
+
+
+SINGLE = {"scheme": "single", "citizenships": "SC", "ages": "35", "monthly_household_income": 2000,
+          "room": 3, "lease_left_months": 960, "marital_status": "unmarried"} | REQUIRED
+
+
+def test_single_with_both_timer_fields_still_works():
+    # Models send family_timers too; the wrapper keeps only first_timer for a single.
+    result = tools.ehg_amount.invoke(SINGLE | {"first_timer": True, "family_timers": "none_first"})
+    assert "error" not in result and result["amount"] == 40000
+
+
+def test_missing_required_profile_fields_are_named():
+    args = {k: v for k, v in SINGLE.items() if k != "works_12_months"}
+    result = tools.ehg_amount.invoke(args | {"first_timer": True})
+    assert "works_12_months" in result["error"]

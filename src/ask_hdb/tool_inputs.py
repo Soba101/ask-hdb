@@ -73,9 +73,10 @@ class RuleArgs(Arguments):
         None, description="Family scheme: set it. Are both, one or none first-timers")
     first_timer: bool | None = Field(None, description="Single scheme only")
     marital_status: Literal["unmarried", "divorced", "widowed", "married"] | None = None
-    previous_hdb_loans: Count = 0
-    works_12_months: bool = True
-    owns_private_property: bool = False
+    # No defaults on these three: a guessed "yes" or "no" gives a wrong verdict with no warning.
+    previous_hdb_loans: Count = Field(description="Number of previous HDB loans; ask if unknown")
+    works_12_months: bool = Field(description="Worked continuously for the past 12 months; ask if unknown")
+    owns_private_property: bool = Field(description="Owns private property; ask if unknown")
     buying_with: Literal["alone", "parents", "family_or_singles"] = "alone"
     extended_family: bool = False
     confirmed: bool = False

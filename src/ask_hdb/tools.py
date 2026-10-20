@@ -23,6 +23,8 @@ def load_sales():
 
 def _rule_call(function, values):
     values = values.copy()
+    # Models often send both timer fields. Keep the one that fits the scheme.
+    values["first_timer" if values["scheme"] == "family" else "family_timers"] = None
     flat = Flat(**{key: values.pop(key) for key in Flat.model_fields})
     extra = {key: values.pop(key) for key in ("relation", "qualifying_rate_pct") if key in values}
     values["citizenships"] = [part.strip() for part in values["citizenships"].split(",")]
@@ -47,7 +49,9 @@ def _tool(name, description, schema, function, *, rule=False):
 
     return StructuredTool.from_function(
         func=invoke, name=name, description=description, args_schema=schema,
-        handle_validation_error=lambda _: {"error": f"Invalid arguments for {name}"},
+        handle_validation_error=lambda exc: {"error": f"Invalid arguments for {name}. Missing or invalid: "
+                                             + ", ".join(sorted({str(e["loc"][0]) for e in exc.errors()}))
+                                             + ". Ask the user for missing details, then call again."},
     )
 
 
