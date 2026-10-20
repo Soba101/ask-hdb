@@ -11,7 +11,7 @@ Do not start the next week until the exit check passes (or the miss is written d
 | 4 | Places + MCP | MRT/school distance questions work; MCP server works |
 | 5 | Trust features | Grounding 100%; profile confirmation; accuracy up vs week 3 |
 | 6 | Ship | Langfuse traces, Docker, public demo link, README results table |
-| later | Ideas parked | Walking routes, BTO, EIP quota, price trends chart, Telegram bot |
+| later | Ideas parked | Walking routes, EIP quota, price trends chart, Telegram bot |
 
 ## Week 1: data and rules (no LLM)
 - [ ] Repo setup: `uv init`, `pytest`, `ruff`, `.gitignore`, `.env.example`.
@@ -73,6 +73,15 @@ schemas and results. Set `TOOL_SOURCE=mcp` for chat or use `ask-hdb eval --tools
 direct remains the default. Offline protocol and fake-model tests cover parity and
 limits. Agent eval score change is unverified: model calls were explicitly disabled
 for this build, so no model-backed eval was run and existing reports were untouched.
+
+## Week 4b: BTO (added 2026-10-20, after week 4)
+Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.
+- [ ] BTO rules from hdb.gov.sg only, in a new dated YAML (eligibility, grants, loan limits that differ from resale).
+- [ ] BTO launch data: find a clean source first (HDB publishes launches as web pages). Show the user the source before using it.
+- [ ] BTO sites geocoded and added to the places table (nearest MRT and primary schools, straight-line).
+- [ ] New eval questions; the current "How do I apply for a BTO flat?" decline question (q_refuse_003) must change with the scope.
+- [ ] BTO sites on the 3D map (with the week 6 UI).
+- **Exit:** BTO eligibility and "what is open near X" questions pass in the eval.
 
 ## Week 5: trust features
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
