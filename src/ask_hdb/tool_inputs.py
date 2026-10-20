@@ -63,7 +63,9 @@ class CompareArgs(Arguments):
     storey_mid: Nonnegative | None = None
     lease_left_months: Count | None = None
     floor_area_sqm: Nonnegative | None = None
-    as_of: str | None = Field(None, description="Month, YYYY-MM")
+    # Required: the 9B model skips optional fields, which silently moved the window by a month.
+    as_of: str = Field(description="Month YYYY-MM the comparison is as of, or 'latest' if none given")
+
     months: Annotated[int, Field(ge=1)] = 12
     storey_tol: Nonnegative = 3
     lease_tol_months: Count = 60

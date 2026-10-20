@@ -41,7 +41,7 @@ def test_protocol_schemas_and_every_tool(local_data):
                     "price_stats": {"near_kind": "mrt", "near_km": 0},
                     "find_sales": {"town": "tampines"},
                     "compare_price": {"block_id": local_data, "price": 150000,
-                                      "flat_type": "4 ROOM", "min_n": 1},
+                                      "flat_type": "4 ROOM", "min_n": 1, "as_of": "latest"},
                     "nearest_places": {"block_id": local_data, "kind": "mrt"},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)

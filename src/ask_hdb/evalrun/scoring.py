@@ -82,7 +82,12 @@ def answer_passes(question, result):
             # Years (a window like 2025-10) are not amounts either.
             values = [n for n in values if n >= 1000 and not 1900 <= n <= 2100]
         # The first non-question number must match, even if a later bold answer matches.
-        return bool(values) and _near(values[0], expect['number'], expect['tolerance'])
+        if values and _near(values[0], expect['number'], expect['tolerance']):
+            return True
+        # A worked line like "638888 - 590000 = 48888" gives its result after the last "=".
+        tail = numbers(_without_question_ids(result['answer'].rsplit('=', 1)[1], text)
+                       ) if '=' in result['answer'] else []
+        return bool(tail) and _near(tail[0], expect['number'], expect['tolerance'])
     if 'verdict' in expect:
         positive = expect['verdict'] == 'yes'
         negative = _purchase_denial(answer)

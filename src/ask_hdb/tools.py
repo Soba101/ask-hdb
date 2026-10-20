@@ -54,6 +54,8 @@ def _tool(name, description, schema, function, *, rule=False):
         try:
             # Include defaults here so the flat and profile are complete.
             values = schema.model_validate(kwargs).model_dump()
+            if values.get("as_of") == "latest":
+                values["as_of"] = None  # compare_price anchors to the newest data month
             distance_filter = False
             if name == "nearest_places":
                 result = function(**values)
