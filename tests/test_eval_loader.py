@@ -18,20 +18,22 @@ def builder():
 
 def test_question_bank():
     qs = load_questions()
-    assert len(qs) == 68
-    assert len({q['id'] for q in qs}) == 68
+    assert len(qs) == 74
+    assert len({q['id'] for q in qs}) == 74
     assert Counter(q['kind'] for q in qs) == {
         'price': 15, 'eligibility': 12, 'grants': 10, 'price_check': 8, 'refuse': 5,
-        'distance': 8, 'multi_step': 10}
+        'distance': 8, 'multi_step': 16}
     assert {q['id'] for q in qs if q.get('heldout')} == {
         'q_price_003', 'q_price_009', 'q_price_015', 'q_eligibility_004',
         'q_eligibility_011', 'q_grants_003', 'q_grants_009',
         'q_price_check_003', 'q_price_check_008', 'q_refuse_005',
         'q_distance_003', 'q_distance_006', 'q_distance_008',
-        'q_multi_step_002', 'q_multi_step_006', 'q_multi_step_010'}
-    assert sum(bool(q.get('heldout')) for q in qs) == 16
+        'q_multi_step_002', 'q_multi_step_006', 'q_multi_step_010',
+        'q_multi_step_011', 'q_multi_step_012', 'q_multi_step_013',
+        'q_multi_step_014', 'q_multi_step_015', 'q_multi_step_016'}
+    assert sum(bool(q.get('heldout')) for q in qs) == 22
     assert len(select_questions(qs)) == 52
-    assert len(select_questions(qs, heldout=True)) == 68
+    assert len(select_questions(qs, heldout=True)) == 74
     assert len(select_questions(qs, only='distance')) == 5
     assert len(select_questions(qs, only='multi_step')) == 7
     assert len(select_questions(qs, only='price')) == 12

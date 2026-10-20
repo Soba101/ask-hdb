@@ -32,7 +32,7 @@ def test_old_fingerprints_and_order_are_frozen():
 
 
 def test_independent_local_expectations():
-    assert local_builder().build() == 18
+    assert local_builder().build() == 24
 
 
 def test_builder_fails_on_mismatch_and_only_writes_new_numeric_leaves(tmp_path):
@@ -46,7 +46,7 @@ def test_builder_fails_on_mismatch_and_only_writes_new_numeric_leaves(tmp_path):
     with pytest.raises(ValueError, match='q_distance_001: stored 999, want 0.09'):
         module.build(path=path)
     assert path.read_text() == altered
-    assert module.build(path=path, write=True) == 18
+    assert module.build(path=path, write=True) == 24
     assert path.read_text() == original
 
 
