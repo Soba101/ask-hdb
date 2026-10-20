@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Nonnegative = Annotated[float, Field(ge=0)]
 Count = Annotated[int, Field(ge=0)]
@@ -10,6 +10,23 @@ PlaceKind = Literal["mrt", "primary_school"]
 
 
 class Arguments(BaseModel):
+    @model_validator(mode="before")
+    @classmethod
+    def _text_none(cls, data):
+        # The 9B model writes the text "None" or "null" for "no value". For a required-but-nullable field that
+        # means null; for a field with a default it means "use the default", so drop the key.
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        for key, value in list(data.items()):
+            if isinstance(value, str) and value.strip().lower() in {"none", "null"}:
+                field = cls.model_fields.get(key)
+                if field is not None and field.is_required():
+                    data[key] = None
+                else:
+                    del data[key]
+        return data
+
     # Reject misspelled filters rather than silently broadening a query.
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
@@ -67,14 +84,6 @@ class CompareArgs(Arguments):
     floor_area_sqm: Nonnegative | None = Field(description="Floor area in sqm, or null for no area filter")
     # Required: the 9B model skips optional fields, which silently moved the window by a month.
     as_of: str = Field(description="Month YYYY-MM the comparison is as of, or 'latest' if none given")
-
-    @field_validator("storey_mid", "lease_left_months", "floor_area_sqm", mode="before")
-    @classmethod
-    def _none_text(cls, value):
-        # The 9B model writes the text "None" or "null" when it means no filter.
-        if isinstance(value, str) and value.strip().lower() in {"none", "null", ""}:
-            return None
-        return value
 
     months: Annotated[int, Field(ge=1)] = 12
     storey_tol: Nonnegative = 3
