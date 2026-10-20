@@ -159,3 +159,51 @@ An Opus review of PR 8 found two data problems. Both are corrected; none of the 
 Also: distance filters now report `sales_without_coordinates` (sales in blocks with no coordinates are left out of a "within X km" filter),
 `nearest_places` says "No coordinates for block_id" instead of "Unknown block_id", `as_of="latest"` is case-insensitive, and the scorer filters
 small numbers and years on negative expected answers too.
+
+# Week 4 fixes (2026-10-21): calculate tool, required-but-nullable filters, 27B on the 5090
+
+Fixes for issues 32 (the model added numbers wrongly) and 33 (the model skipped `lease_left_months`): a `calculate` tool plus a prompt rule, and
+`storey_mid`, `lease_left_months`, `floor_area_sqm` on `compare_price` made required but nullable. Also: every one of the 19 blocks OneMap could not find
+now has coordinates (issue 34), and the MCP subprocess gets a safe environment (issue 35).
+
+## 9B model on the MacBook (direct tools)
+| Run | Questions | Pass | Number | Notes |
+|---|---|---|---|---|
+| Week 4 (before these fixes) | 52 dev | 50/52 | 97.4% | direct; failures were q_eligibility_001 (timeout) and q_multi_step_009 (omitted lease filter) |
+| Try 1 (nullable fields, no text fix) | 51 of 52 done | 47/51 | 89.2% | **Regression:** price check fell from 6/6 to 3/6 |
+| Try 2 (final) | 52 dev | 51/52 | 97.4% | only miss: q_distance_005 (scorer limit, see below) |
+| Try 2 held-out, older 16 | 16 | 16/16 | | includes the q_multi_step_002 and 010 that failed before |
+| Try 2 held-out, **6 new (011 to 016)** | 6 | **6/6** | | clean test: written before the fixes, run once |
+| Try 2, all 74 questions | 74 | | 98.2% number, 100% verdict, 100% refusal, 70.8% grounding | |
+
+**Try 1 regression, cause:** the model wrote the text `"None"` for `floor_area_sqm` (and for `max_examples`), which failed validation, so it gave up on the tool
+and asked the user. Fix: in every tool, the text "None" or "null" now means null for a required-nullable field and "use the default" for any other optional field.
+**What the fixes did:** q_multi_step_002 (added 80,000 + 70,000 + 30,000 as 280,000) now passes through `calculate`; the multi-step dev questions are 7/7 with no
+model arithmetic needed. This resolves issue 32 for these questions. Grounding is still about 71%, now mostly restated question numbers and rounded
+figures; `grounding.py` is week 5.
+**Known scorer limit (not weakened):** q_distance_005's answer is right ("only 2 primary schools") but lists three distances first and the first-number rule reads
+0.056. A "last number" rule was tried and rejected: it broke 10 tests that guard against false passes.
+
+## 27B model on the 5090 (qwen3.8:27b, llama-server)
+Approved by the user on 2026-10-21 after coordinating with the Whisperwick session. One call at a time, nothing changed on the PC.
+The server has 4 slots of 8,192 tokens, and our first request is 6,664 tokens (10 tools of schema). Setup: tool schemas without repeated `title` keys,
+replies capped at 1,200 tokens, `find_sales` limited to 5 rows and `compare_price` to 3 examples (`LLM_COMPACT_TOOLS=1`). Same questions, same scorer.
+
+| Set | Pass | Notes |
+|---|---|---|
+| 52 dev | 50/52 | 94.7% number, 100% verdict, 100% refusal, 20 minutes, 0 errors |
+| older 16 held-out | 15/16 | |
+| new 6 held-out | 4/6 | |
+| all 74 | | 91.2% number, 100% verdict, 100% refusal, 76.3% grounding, 2 errors |
+
+Failures (4 questions, all multi-step counts and grant sums):
+- q_multi_step_005, 007 (dev) and 014 (held-out): the model counted rows from `find_sales` (capped at 5 per town by my compact setting) and answered 10, instead
+  of reading `n_sales` from `price_stats`. **Mostly my setup:** the cap hides the real rows. Partly the model's tool choice.
+- q_multi_step_002 and 012 (held-out grant sums with parents): the request was rejected (OpenAIInvalidRequestError) on the first call, with no tool call made.
+  Cause not verified; the likely reason is the 8k per-slot context, since both questions are long. Counted as failures.
+So the 27B number is not a fair comparison with the 9B: it ran under a tighter context and a different tool setup. A clean comparison needs a server with a larger
+context (for example 16k per slot), which I did not change.
+
+## Data and tools
+- All 9,496 recent blocks now have coordinates (the Towner Rd blocks needed HDB's building outlines to choose between two OneMap listings; New Market Rd needed `MKT = MARKET`).
+- `sales_without_coordinates` is reported on distance-filtered results.
