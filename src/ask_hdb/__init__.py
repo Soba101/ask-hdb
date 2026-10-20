@@ -4,10 +4,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="ask-hdb")
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("chat", help="Chat with the housing tools")
+    commands.add_parser("mcp", help="Serve housing tools over MCP stdio")
     one_shot = commands.add_parser("ask", help="Ask a housing question")
     one_shot.add_argument("question")
     commands.add_parser("routing", help="Run the week two tool-call check")
     evaluation = commands.add_parser("eval", help="Score answers against frozen questions")
+    evaluation.add_argument("--tools", choices=("direct", "mcp"))
     evaluation.add_argument("--condition", choices=("llm-only", "agent"), default="agent")
     evaluation.add_argument("--only", choices=("price", "eligibility", "grants", "price_check", "refuse"))
     evaluation.add_argument("--verbose", action="store_true")
@@ -17,13 +19,18 @@ def main() -> None:
     if args.command is None:
         print("Hello from ask-hdb!")
         return
+    if args.command == "mcp":
+        from ask_hdb.mcp.server import main
+
+        main()
+        return
     if args.command == "eval":
         from ask_hdb.evalrun import run
 
         if args.limit is not None and args.limit < 1:
             parser.error("--limit must be positive")
         run(args.condition, only=args.only, verbose=args.verbose,
-            heldout=args.heldout, limit=args.limit)
+            heldout=args.heldout, limit=args.limit, tools=args.tools)
         return
     if args.command == "routing":
         from ask_hdb.tool_check import main as evaluate

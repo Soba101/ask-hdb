@@ -44,8 +44,9 @@ class LoopModel(BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=reply)])
 
 
-@pytest.fixture(autouse=True)
-def fake_sales(monkeypatch, sales):
+@pytest.fixture(autouse=True, params=["direct", "mcp"])
+def fake_sales(monkeypatch, sales, memory_mcp, request):
+    monkeypatch.setenv("TOOL_SOURCE", request.param)
     monkeypatch.setattr("ask_hdb.tools.load_sales", lambda: sales)
 
 

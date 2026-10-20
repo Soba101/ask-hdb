@@ -68,6 +68,12 @@ distance tools and sales distance filters are implemented. School geocoding is
 prepared but was not run. Agent eval score change is unverified: the no-network
 constraint prevents the model-backed eval run. Frozen questions are unchanged.
 
+MCP build note: all registered tools are exposed over stdio with their original
+schemas and results. Set `TOOL_SOURCE=mcp` for chat or use `ask-hdb eval --tools mcp`;
+direct remains the default. Offline protocol and fake-model tests cover parity and
+limits. Agent eval score change is unverified: model calls were explicitly disabled
+for this build, so no model-backed eval was run and existing reports were untouched.
+
 ## Week 5: trust features
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
 - [ ] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably".

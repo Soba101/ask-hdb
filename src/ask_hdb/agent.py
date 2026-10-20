@@ -1,7 +1,9 @@
 """A bounded ReAct conversation over deterministic housing tools."""
 
 import json
+import os
 
+from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage, convert_to_messages
 from langchain_core.runnables import RunnableLambda
 from langgraph.errors import GraphRecursionError
@@ -43,13 +45,27 @@ def _size(value):
 
 
 def ask(question, history=None) -> dict:
+    load_dotenv()
+    source = os.getenv("TOOL_SOURCE", "direct")
+    if source == "direct":
+        return _ask(question, history, TOOLS)
+    if source != "mcp":
+        raise ValueError("TOOL_SOURCE must be direct or mcp")
+    from ask_hdb.mcp.client import load_mcp_tools
+
+    with load_mcp_tools() as tools:
+        return _ask(question, history, tools)
+
+
+def _ask(question, history, tools):
     calls, pending = [], {}
     tokens, requested, reported = 0, 0, False
     stopped_reason = None
     answer = ""
     plain = get_chat_model()
-    model = plain.bind_tools(TOOLS)
-    schemas = [tool.args_schema.model_json_schema() for tool in TOOLS]
+    model = plain.bind_tools(tools)
+    schemas = [tool.args_schema if isinstance(tool.args_schema, dict)
+               else tool.args_schema.model_json_schema() for tool in tools]
 
     def run_model(messages, config):
         nonlocal tokens, requested, reported
@@ -82,7 +98,7 @@ def ask(question, history=None) -> dict:
         # A dynamic model lets the budget guard run before every API request.
         return RunnableLambda(run_model)
 
-    graph = create_react_agent(select_model, TOOLS, prompt=SYSTEM_PROMPT, version="v1")
+    graph = create_react_agent(select_model, tools, prompt=SYSTEM_PROMPT, version="v1")
     # Only dialogue belongs in history; past tool evidence must be recomputed.
     messages = [message for message in convert_to_messages(history or [])
                 if isinstance(message, (HumanMessage, AIMessage))

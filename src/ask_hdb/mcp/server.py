@@ -1,0 +1,38 @@
+"""Serve the existing tools without changing their schemas or calculations."""
+
+import json
+import os
+import sys
+
+from mcp import types
+from mcp.server.fastmcp import FastMCP
+
+from ask_hdb.tools import TOOLS
+
+
+class HousingMCP(FastMCP):
+    # FastMCP's handlers use these methods. Skip signature inference so the
+    # published schema is exactly the one used by the direct tools.
+    async def list_tools(self):
+        return [types.Tool(name=tool.name, description=tool.description,
+                           inputSchema=tool.args_schema.model_json_schema())
+                for tool in TOOLS]
+
+    async def call_tool(self, name, arguments):
+        tool = next((tool for tool in TOOLS if tool.name == name), None)
+        try:
+            result = tool.invoke(arguments) if tool else {"error": f"Unknown tool: {name}"}
+        except Exception:  # noqa: BLE001 - bad calls must not end the protocol session
+            result = {"error": f"Invalid arguments or unavailable data for {name}"}
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=json.dumps(result, allow_nan=False))],
+            structuredContent=result,
+        )
+
+
+def main():
+    if os.getenv("ASK_HDB_MCP_QUIET") == "1":
+        # The client owns this subprocess. Keep SDK logs out of terminal chat.
+        with open(os.devnull, "w") as sink:
+            os.dup2(sink.fileno(), sys.stderr.fileno())
+    HousingMCP("ask-hdb").run(transport="stdio")
