@@ -131,5 +131,18 @@ difference is one timeout). Gate met.
 - Geocoding: 9,456 of 9,496 recent blocks found (99.6%); 21 uncertain and 19 not found (mostly Towner Rd and St. George's Rd). Cross-check against HDB
   building outlines: median 8.5 m, worst 79 m. All 182 primary schools located.
 
-## Held-out (6 new questions)
-To be run once, after this section is committed. Results below.
+## Held-out (6 new questions, run once)
+4 of 6 pass. The 10 older held-out questions (spent in week 3) were run again on the same code: 10 of 10 pass. Full 68-question
+report (direct tools): 94.1% number, 91.7% verdict, 100% refusal, 70.5% grounding.
+
+| Question | Held out | Result | Cause |
+|---|---|---|---|
+| q_distance_003, 006, 008 | new | pass | Distance and count questions: right tool, right arguments. |
+| q_multi_step_006 | new | pass | Punggol vs Sengkang median gap with MRT filter. |
+| q_multi_step_002 | new | FAIL: said 280,000, expected 180,000 | **The model added the numbers wrong.** The tools returned 80,000 + 70,000 + 30,000 correctly. This breaks the core rule: arithmetic must be done by code, not by the LLM. |
+| q_multi_step_010 | new | FAIL: said 0.97 km, expected 0.74 km | The model left out `lease_left_months` in both `compare_price` calls, so it picked the wrong block as the one with the higher premium. Same optional-field pattern as q_multi_step_009. |
+
+Two proposed fixes, not yet done (so this held-out result stays clean):
+1. A `calculate` tool (safe arithmetic on numbers from earlier tool results) plus a prompt rule: never add, subtract or compare numbers yourself.
+   This also makes the grounding check pass for derived numbers.
+2. Make `storey_mid`, `lease_left_months` and `floor_area_sqm` on `compare_price` required but nullable.
