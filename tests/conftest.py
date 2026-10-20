@@ -36,3 +36,20 @@ def raw_sales():
 @pytest.fixture
 def sales(raw_sales):
     return clean(raw_sales)
+
+
+@pytest.fixture
+def memory_mcp(monkeypatch):
+    from contextlib import asynccontextmanager
+
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+    from mcp.shared.memory import create_connected_server_and_client_session
+
+    from ask_hdb.mcp.server import HousingMCP
+
+    @asynccontextmanager
+    async def session(self, server_name):
+        async with create_connected_server_and_client_session(HousingMCP("test")) as client:
+            yield client
+
+    monkeypatch.setattr(MultiServerMCPClient, "session", session)

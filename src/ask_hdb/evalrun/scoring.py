@@ -1,8 +1,8 @@
 """Small answer checks; no model judges or changes to the agent."""
 
 import json
-import math
 import re
+from decimal import Decimal
 
 # Only explicit price scales count; metre and kilometre units never scale values.
 NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
@@ -35,7 +35,14 @@ def numbers(text):
 
 
 def _near(a, b, tolerance=0):
-    return math.isclose(a, b, rel_tol=0, abs_tol=tolerance)
+    # Decimal subtraction keeps an inclusive decimal boundary inclusive.
+    return abs(Decimal(str(a)) - Decimal(str(b))) <= Decimal(str(tolerance))
+
+
+def _without_question_ids(text, question):
+    # A stable block ID is a label, not a numeric answer.
+    ids = set(re.findall(r'\bblk_[\w-]+\b', question))
+    return re.sub(r'\bblk_[\w-]+\b', lambda m: '' if m[0] in ids else m[0], text)
 
 
 def _keyword(text, keyword):
@@ -65,15 +72,22 @@ def answer_passes(question, result):
     answer = re.sub(r'[*_`]', '', result['answer'])
     calls = result.get('tool_calls', [])
     if 'number' in expect:
-        given = numbers(question['question'])
-        values = [n for n in numbers(result['answer']) if not any(_near(n, g) for g in given)]
+        text = question['question']
+        given = numbers(_without_question_ids(text, text))
+        values = [n for n in numbers(_without_question_ids(result['answer'], text))
+                  if not any(_near(n, g) for g in given)]
         # Small numbers (counts, list items) cannot be a price or amount, so skip them
         # when the expected answer is 10,000 or more.
-        if expect['number'] >= 10000:
+        if abs(expect['number']) >= 10000:
             # Years (a window like 2025-10) are not amounts either.
-            values = [n for n in values if n >= 1000 and not 1900 <= n <= 2100]
+            values = [n for n in values if abs(n) >= 1000 and not 1900 <= n <= 2100]
         # The first non-question number must match, even if a later bold answer matches.
-        return bool(values) and _near(values[0], expect['number'], expect['tolerance'])
+        if values and _near(values[0], expect['number'], expect['tolerance']):
+            return True
+        # A worked line like "638888 - 590000 = 48888" gives its result after the last "=".
+        tail = numbers(_without_question_ids(result['answer'].rsplit('=', 1)[1], text)
+                       ) if '=' in result['answer'] else []
+        return bool(tail) and _near(tail[0], expect['number'], expect['tolerance'])
     if 'verdict' in expect:
         positive = expect['verdict'] == 'yes'
         negative = _purchase_denial(answer)

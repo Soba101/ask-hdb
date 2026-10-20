@@ -89,3 +89,73 @@ The agent clearly beats LLM-only, so the gate is cleared.
 2. The model still misreads `eligible: null` / omits optional fields (`category`, `price`). Candidate fix: make `category`
    required with an `unknown` option. Not done, because the held-out set is spent.
 3. These numbers are for the 9B model only. The 27B on the 5090 is untested until you say.
+
+# Week 4 results (2026-10-21): distance, multi-step, direct tools vs MCP
+
+Same 9B model on the MacBook, 52 dev questions (the 40 from week 3 plus 12 new: 5 distance, 7 multi-step). The 6 new held-out
+questions are not in these numbers. All runs scored with the final scorer (`scripts/rescore.py`).
+
+| Run | Tools | Pass | Number | Verdict | Refusal | Grounding | Seconds median / p90 |
+|---|---|---|---|---|---|---|---|
+| 1 (before fixes) | direct | 47/52 | 86.8% | 100% | 100% | 75.8% | 63 / 125 |
+| 1 (before fixes) | MCP | 49/52 | 92.1% | 100% | 100% | 77.8% | 39 / 64 |
+| 2 (after fixes) | direct | 50/52 | 97.4% | 90.0% | 100% | 74.3% | 53 / 91 |
+| 2 (after fixes) | MCP | 51/52 | 97.4% | 100% | 100% | 74.1% | 46 / 101 |
+
+Pass counts by kind, run 2 (direct / MCP): price 12/12 both, eligibility 9/10 and 10/10, grants 8/8 both, price check 6/6 both,
+refuse 4/4 both, distance 5/5 both, multi-step 6/7 both.
+
+**Week 4 exit check:** distance questions pass (5/5), and MCP scores the same as direct (97.4% number both; 51 vs 50 passes, the
+difference is one timeout). Gate met for distance and MCP parity. **Not yet compliant for multi-step:** 6 of the 7 multi-step dev passes rely on
+the model doing its own subtraction or addition ("638888 - 590000 = 48888"), so the final number is in no tool result. Fix: the calculate tool (issue 32).
+
+## What changed between run 1 and run 2
+1. `compare_price` `as_of` became a required field (value `latest` means newest month). In run 1 the model left it out on three
+   price-check questions, so the comparison window ended one month late and the median was wrong. Price check went from 3/6 (direct) to 6/6.
+2. The scorer now also accepts the result after the last "=" in a worked line ("638888 - 590000 = 48888"). Four correct answers had been
+   marked wrong because the first number was an intermediate value.
+3. One prompt line: call the tool once for each town, block or place in the question. Fixes the two-town count question (`q_multi_step_005`).
+
+## Every failure in run 2
+| Question | Run | What happened | Cause |
+|---|---|---|---|
+| q_eligibility_001 | direct | Timeout, no answer | OpenAITimeoutError at 180 s; the MacBook model was slow on that call. Infrastructure, not a wrong answer. |
+| q_multi_step_009 | direct and MCP | Premium difference -72,000, expected 27,000 | The model left out `lease_left_months` in both `compare_price` calls, so no lease filter was applied and the medians were wrong (625,000 and 523,000 instead of 529,000 and 526,000). Same pattern again: **the 9B model skips optional fields.** |
+
+## Findings
+- The 9B model skips optional tool fields: `category`, `price`, `as_of`, now `lease_left_months`. Making a field required with an escape value fixed
+  each one so far. Candidate next step: make the optional filters on `compare_price` (`storey_mid`, `lease_left_months`, `floor_area_sqm`) required
+  but nullable, so the model must write a value or null. Not done yet.
+- Scorer needs the same care as the agent: it gave false passes in week 3 and false fails on worked equations in week 4.
+- MCP matches direct tools. A faster median through MCP in run 1 was noise (different load on the Mac).
+- Grounding is still about 74%; the number-in-tool-result check counts intermediate and rounded numbers. Real fix is `grounding.py` (week 5).
+- Geocoding: 9,456 of 9,496 recent blocks found (99.6%); 21 uncertain and 19 not found (mostly Towner Rd and St. George's Rd). Cross-check against HDB
+  building outlines: median 8.5 m, worst 79 m. All 182 primary schools located.
+
+## Held-out (6 new questions, run once)
+4 of 6 pass. The 10 older held-out questions (spent in week 3) were run again on the same code: 10 of 10 pass. Full 68-question
+report (direct tools): 94.1% number, 91.7% verdict, 100% refusal, 70.5% grounding.
+
+| Question | Held out | Result | Cause |
+|---|---|---|---|
+| q_distance_003, 006, 008 | new | pass | Distance and count questions: right tool, right arguments. |
+| q_multi_step_006 | new | pass | Punggol vs Sengkang median gap with MRT filter. |
+| q_multi_step_002 | new | FAIL: said 280,000, expected 180,000 | **The model added the numbers wrong.** The tools returned 80,000 + 70,000 + 30,000 correctly. This breaks the core rule: arithmetic must be done by code, not by the LLM. |
+| q_multi_step_010 | new | FAIL: said 0.97 km, expected 0.74 km | The model left out `lease_left_months` in both `compare_price` calls, so it picked the wrong block as the one with the higher premium. Same optional-field pattern as q_multi_step_009. |
+
+Two proposed fixes, not yet done (so this held-out result stays clean):
+1. A `calculate` tool (safe arithmetic on numbers from earlier tool results) plus a prompt rule: never add, subtract or compare numbers yourself.
+   This also makes the grounding check pass for derived numbers.
+2. Make `storey_mid`, `lease_left_months` and `floor_area_sqm` on `compare_price` required but nullable.
+
+## Data fixes after review (2026-10-21)
+An Opus review of PR 8 found two data problems. Both are corrected; none of the model runs above were redone except the one question that changed.
+1. **LRT stations were counted as MRT** (41 exits in Punggol, Sengkang, Bukit Panjang, Choa Chu Kang). They are now a separate kind `lrt`
+   (147 MRT stations, 41 LRT). This changes the nearest MRT for 1,735 blocks. Of the 18 new questions only held-out `q_multi_step_006`
+   (Punggol median minus Sengkang median) changes: expected 40,556 with LRT, **50,000 MRT-only**. This is a data fix, not tuning. The agent was
+   rerun once on that question after the fix and answers 50,000 (pass). The recorded held-out pass earlier was against the wrong expected value.
+2. **"ST." (saint) was read as STREET**, leaving 21 St. George's Rd and Lane blocks "uncertain". Fixed offline (no new OneMap calls):
+   9,477 blocks found, 0 uncertain, 19 not found.
+Also: distance filters now report `sales_without_coordinates` (sales in blocks with no coordinates are left out of a "within X km" filter),
+`nearest_places` says "No coordinates for block_id" instead of "Unknown block_id", `as_of="latest"` is case-insensitive, and the scorer filters
+small numbers and years on negative expected answers too.

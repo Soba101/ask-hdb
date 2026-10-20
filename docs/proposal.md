@@ -17,7 +17,7 @@
 |---|---|
 | Purpose | Portfolio project, built to look production-grade |
 | Time | 6 weeks, side-project pace |
-| Scope v1 | Resale flats only. No BTO, no EC, no private property |
+| Scope v1 | Resale flats only. No EC, no private property. BTO added later as week 4b (decided 2026-10-20) |
 | Profiles v1 | Citizen couples and families, citizen singles 35+. Others: "not supported yet" |
 | Agent framework | LangGraph |
 | Tools | Own MCP server. The agent uses it |
@@ -27,7 +27,7 @@
 | Numbers | Only from tool results. Enforced by a grounding checker |
 | Cost safety | Hard limit on steps and tokens per question. Stops and says so |
 | Human in the loop | Agent shows the buyer profile it understood and asks "Is this right?" before computing |
-| UI | Streamlit chat page |
+| UI | Web app: FastAPI server + web front end with chat, tool results and a 3D map (changed from Streamlit on 2026-10-20) |
 | Deploy | Docker Compose, one small VM, public demo link |
 
 ## In scope (v1)
@@ -44,7 +44,7 @@
 - Explanations that quote HDB policy text with a link.
 
 ## Out of scope (v1)
-- BTO and EC applications, ballots, priority schemes.
+- EC applications, BTO ballots and priority schemes (BTO eligibility and launch info are planned for week 4b).
 - Ethnic Integration Policy (EIP) and SPR quota checks. Needs HDB's own e-service.
 - Price prediction ("will prices go up?") and predicting the official valuation. Past sales only.
 - Advice on whether to buy. The agent refuses and says why.

@@ -27,7 +27,7 @@ same eval score through MCP as before. Nothing is built or downloaded before app
 
 ## Stretch (not in week 4): 3D block map
 Possible and mostly free data we already plan to download. The HDB building outlines give each block's footprint
-and, I expect, its number of floors, so a 3D extruded map (MapLibre in the week 6 Streamlit page) can show the
+and, I expect, its number of floors, so a 3D extruded map (MapLibre in the week 6 web app) can show the
 block, its height and nearby MRT and schools. Facing: we can only estimate the direction a block's long side points
 from its outline, not which way each flat faces, so it would be labelled "approximate". Sun, noise and views are not
 in any dataset we have. Week 4 only keeps the outline data ready; the map itself goes after week 5.

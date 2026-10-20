@@ -11,7 +11,7 @@ Do not start the next week until the exit check passes (or the miss is written d
 | 4 | Places + MCP | MRT/school distance questions work; MCP server works |
 | 5 | Trust features | Grounding 100%; profile confirmation; accuracy up vs week 3 |
 | 6 | Ship | Langfuse traces, Docker, public demo link, README results table |
-| later | Ideas parked | Walking routes, BTO, EIP quota, price trends chart, Telegram bot |
+| later | Ideas parked | Walking routes, EIP quota, price trends chart, Telegram bot |
 
 ## Week 1: data and rules (no LLM)
 - [ ] Repo setup: `uv init`, `pytest`, `ruff`, `.gitignore`, `.env.example`.
@@ -54,14 +54,28 @@ and single-agent comparison were run; see `docs/eval-results.md`. Recorded score
 the scoring fixes; score changes await offline rescoring of stored reports. No model or
 eval runs were made for these fixes. Distance and multi-step questions remain in week 4.
 
-## Week 4: places and MCP
-- [ ] `scripts/geocode_blocks.py` with a disk cache. `scripts/fetch_places.py` for MRT and schools.
-- [ ] Cross-check OneMap block coordinates against data.gov.sg "HDB Existing Buildings" (GeoJSON, `d_16b157c52ed637edd6ba1232e026258d`):
-      building outlines keyed by block number + postal code. Use it to spot bad geocodes. It has no street name, so it cannot replace OneMap.
-- [ ] `nearest(block_id, kind)` and a "within X km" filter for `find_sales`.
-- [ ] Move all tools into an MCP server (`ask_hdb/mcp`). Agent connects through it.
-- [ ] Add distance and multi-step questions to the eval.
-- **Exit:** distance questions pass; same eval score through MCP as before.
+## Week 4: places and MCP (done 2026-10-21, PR #8)
+- [x] `scripts/geocode_blocks.py` with a disk cache; `scripts/fetch_places.py`, `build_places.py`, `geocode_schools.py` for MRT, LRT and primary schools.
+      9,477 of 9,496 recent blocks located (19 not found, mostly Towner Rd); 182 primary schools located.
+- [x] Cross-check against data.gov.sg "HDB Existing Buildings": median 8.5 m, worst 79 m (`scripts/check_geocodes.py`).
+- [x] `nearest_places(block_id, kind)` and `near_kind` / `near_km` filter on `price_stats` / `find_sales` (straight-line; the result also reports
+      sales in blocks without coordinates).
+- [x] All tools behind an MCP server (`ask_hdb/mcp`); the agent connects with `TOOL_SOURCE=mcp`.
+- [x] 8 distance and 10 multi-step eval questions with independent expected answers (68 total, 16 held out).
+- **Exit: met.** Distance questions 5/5. Same score through MCP as direct (97.4% number, 51 vs 50 of 52 passes). Agent score change:
+  run 1 (before fixes) 86.8% / 92.1% number (direct / MCP); run 2 (after fixes) 97.4% both. Held-out: 6 new = 4/6, 10 old = 10/10.
+  Details, every failure and its cause: `docs/eval-results.md`.
+- Caveat: 6 of the 7 multi-step dev passes rely on the model doing its own arithmetic (issue #32). The distance gate is met; multi-step is not yet
+  compliant with "code decides".
+
+## Week 4b: BTO (added 2026-10-20, after week 4)
+Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.
+- [ ] BTO rules from hdb.gov.sg only, in a new dated YAML (eligibility, grants, loan limits that differ from resale).
+- [ ] BTO launch data: find a clean source first (HDB publishes launches as web pages). Show the user the source before using it.
+- [ ] BTO sites geocoded and added to the places table (nearest MRT and primary schools, straight-line).
+- [ ] New eval questions; the current "How do I apply for a BTO flat?" decline question (q_refuse_003) must change with the scope.
+- [ ] BTO sites on the 3D map (with the week 6 UI).
+- **Exit:** BTO eligibility and "what is open near X" questions pass in the eval.
 
 ## Week 5: trust features
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
@@ -73,10 +87,14 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 
 ## Week 6: ship
 - [ ] Langfuse tracing on every run.
-- [ ] Streamlit chat page: chat on the left, tool results and sources on the right.
-- [ ] Docker Compose: app, MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
+- [ ] Web app (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
+      (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
+      chat on the left, tool results and sources on the right, 3D map panel (MapLibre) with block, MRT and school markers.
+      Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
+      Needs: rate limit per visitor, a cost cap, no personal data stored, a clear "not financial advice" line.
+- [ ] Docker Compose: web app (FastAPI + static front end), MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
 - [ ] Deploy to one small VM with a cloud model (no GPU needed there).
-- [ ] Stretch: 3D block map (building outlines extruded by floors, MRT and school markers, approximate facing).
+- [ ] 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
 - [ ] README: demo GIF, results table, architecture picture, "what I learned".
 - **Exit:** a stranger uses the public link with no help.
 

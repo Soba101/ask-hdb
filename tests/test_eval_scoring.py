@@ -201,3 +201,10 @@ def test_clarify_answer_may_list_room_types():
     q = question({'clarify': True}, 'refuse', 'Can I buy a resale flat?')
     assert answer_passes(q, result('Please provide your flat type (3-room, 4-room, 5-room) and age.'))
     assert not answer_passes(q, result('Please confirm. Your grant is $80,000.'))
+
+
+def test_worked_equation_result_counts_but_first_number_wrong_still_fails():
+    q = question({'number': 48888, 'tolerance': 0}, 'multi_step')
+    assert answer_passes(q, result('638888 - 590000 = 48888'))
+    assert not answer_passes(q, result('638888 - 590000 = 50000'))
+    assert not answer_passes(q, result('The answer is 50000 (not 48888 = x)'))

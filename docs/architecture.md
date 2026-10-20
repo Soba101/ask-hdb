@@ -3,7 +3,7 @@
 ## The big picture
 
 ```
- Streamlit chat
+ Web chat (FastAPI + front end)
       |
       v
  LangGraph agent  ----(traces)---->  Langfuse
@@ -108,7 +108,7 @@ ask_hdb/
 rules/          dated YAML rule files with sources
 scripts/        data fetch and clean scripts
 eval/           questions.yaml, runner, reports
-app/            Streamlit page
+app/            FastAPI server and web front end (week 6)
 tests/
 docs/
 ```

@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Nonnegative = Annotated[float, Field(ge=0)]
 Count = Annotated[int, Field(ge=0)]
+PlaceKind = Literal["mrt", "primary_school"]
 
 
 class Arguments(BaseModel):
@@ -23,6 +24,8 @@ class SalesArgs(Arguments):
     since: str | None = Field(None, description="First month, YYYY-MM")
     until: str | None = Field(None, description="Last month, YYYY-MM")
     max_price: Nonnegative | None = None
+    near_kind: PlaceKind | None = None
+    near_km: Nonnegative | None = None
 
     @field_validator("town", "flat_type", mode="before")
     @classmethod
@@ -45,6 +48,12 @@ class FindArgs(SalesArgs):
     limit: Annotated[int, Field(ge=0, le=50)] = 10
 
 
+class NearestArgs(Arguments):
+    block_id: str
+    kind: PlaceKind
+    n: Annotated[int, Field(ge=1)] = 3
+
+
 class CompareArgs(Arguments):
     block_id: str
     price: Nonnegative
@@ -54,7 +63,9 @@ class CompareArgs(Arguments):
     storey_mid: Nonnegative | None = None
     lease_left_months: Count | None = None
     floor_area_sqm: Nonnegative | None = None
-    as_of: str | None = Field(None, description="Month, YYYY-MM")
+    # Required: the 9B model skips optional fields, which silently moved the window by a month.
+    as_of: str = Field(description="Month YYYY-MM the comparison is as of, or 'latest' if none given")
+
     months: Annotated[int, Field(ge=1)] = 12
     storey_tol: Nonnegative = 3
     lease_tol_months: Count = 60

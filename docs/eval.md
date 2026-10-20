@@ -5,7 +5,7 @@ real AI engineers from demo builders, so it gets built in week 3, before the fan
 
 ## The eval set: `eval/questions.yaml`
 
-The week-three bank contains 50 questions. The planned total is 68 after week four.
+The bank contains 68 questions: the original 50 plus 18 appended for week four.
 Each has a frozen expected answer that code can check.
 
 ```yaml
@@ -24,12 +24,15 @@ Each has a frozen expected answer that code can check.
 | eligibility | 12 | HDB's own worked examples and rule tables |
 | grants | 10 | HDB grant tables (amount by income tier) |
 | price check | 8 | comparable sales picked by code (same block/street, storey band, lease band) |
-| distance | 8 | haversine on our geo index |
-| multi-step | 10 | combination of the above (e.g. budget + grant + MRT distance) |
+| distance | 8 | independent spherical law of cosines on local block and place coordinates |
+| multi_step | 10 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
 | refuse | 5 | four declines and one request for missing details: "will prices rise?", "should I buy now?", BTO questions |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
-- 10 questions are held out and never looked at while tuning prompts.
+- 16 questions are marked held out; the 52 development questions exclude them by default.
+- The original 10 held-out questions remain marked, but are spent for tuning (see results).
+  The 6 new held-out IDs were fixed before tuning: `q_distance_003`, `q_distance_006`,
+  `q_distance_008`, `q_multi_step_002`, `q_multi_step_006`, `q_multi_step_010`.
 
 ## Measures
 
@@ -82,6 +85,19 @@ a request for details, no stated number or verdict, and no tool result with an e
 verdict. The clarification case remains in the refuse kind and held-out split.
 Each entry cites its independent source. Rule arithmetic is in adjacent YAML comments.
 Price entries also have a structured `query` so the independent builder can reproduce them.
+
+New distance and multi-step entries also have structured queries. Verify them offline with
+`uv run --no-sync python scripts/build_distance_expected.py`; `--write` freezes numeric
+leaves only. It shares local parquet inputs, but imports no application distance, sales,
+comparison or rules functions. Distances use the spherical law of cosines with radius
+6371.0088 km. Kilometre answers round to 2 decimals with inclusive tolerance 0.05;
+counts and dollar answers are exact. Digits inside block IDs echoed from the question
+are ignored for answer matching. Small expected values bypass the large-price filter.
+Each multi-step case needs at least two tool calls: separate grant tools, two town
+statistics, or separate comparable samples followed by a nearest-place lookup.
+All sales windows have explicit end months; ungeocoded blocks are excluded from geo filters.
+The grant sums cite YAML keys and show hand arithmetic beside the entries. No loan
+estimate is included. The existing question entries and their order remain frozen.
 
 Run `uv run --no-sync python scripts/build_expected.py` to verify the numeric price
 expectations. It reads the parquet directly without importing the sales or compare tools.

@@ -1,6 +1,7 @@
 """The runner exercises real persistence with fake model and agent calls."""
 
 import json
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -148,11 +149,35 @@ def test_cli_routes_eval_and_preserves_routing(monkeypatch):
     calls = []
     monkeypatch.setattr(ask_hdb.evalrun, 'run', lambda *a, **kw: calls.append((a, kw)))
     monkeypatch.setattr('sys.argv', ['ask-hdb', 'eval', '--condition', 'llm-only', '--only',
-                                     'price', '--limit', '2', '--verbose', '--heldout'])
+                                     'price', '--limit', '2', '--verbose', '--heldout', '--tools', 'mcp'])
     ask_hdb.main()
     assert calls == [(('llm-only',), {'only': 'price', 'verbose': True,
-                                     'heldout': True, 'limit': 2})]
+                                     'heldout': True, 'limit': 2, 'tools': 'mcp'})]
     monkeypatch.setattr(ask_hdb.tool_check, 'main', lambda: calls.append('routing'))
     monkeypatch.setattr('sys.argv', ['ask-hdb', 'routing'])
     ask_hdb.main()
     assert calls[-1] == 'routing'
+
+
+def test_tools_source_is_recorded_and_blocks_mixed_resume(tmp_path, bank, monkeypatch):
+    monkeypatch.setenv('TOOL_SOURCE', 'direct')
+    report = execute(tmp_path, bank, tools='mcp', invoke=fake_agent, emit=lambda _: None)
+    assert report['model']['tools'] == 'mcp'
+    assert os.environ['TOOL_SOURCE'] == 'mcp'
+    # Direct runs go to a different file, so the two reports can never be mixed on resume.
+    direct = execute(tmp_path, bank, tools='direct', invoke=fake_agent, emit=lambda _: None)
+    assert direct['model']['tools'] == 'direct'
+    names = sorted(path.name for path in tmp_path.glob('*.json'))
+    assert any(name.endswith('-mcp.json') for name in names) and len(names) == 2
+
+
+@pytest.mark.parametrize('kind', ['distance', 'multi_step'])
+def test_cli_accepts_new_eval_kinds(monkeypatch, kind):
+    import ask_hdb
+    import ask_hdb.evalrun
+
+    calls = []
+    monkeypatch.setattr(ask_hdb.evalrun, 'run', lambda *a, **kw: calls.append(kw))
+    monkeypatch.setattr('sys.argv', ['ask-hdb', 'eval', '--only', kind])
+    ask_hdb.main()
+    assert calls[0]['only'] == kind
