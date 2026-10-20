@@ -25,6 +25,13 @@ same eval score through MCP as before. Nothing is built or downloaded before app
    from day one (the old held-out set is spent).
 7. **Runs on the MacBook model:** all dev questions through direct tools and through MCP; table with both.
 
+## Stretch (not in week 4): 3D block map
+Possible and mostly free data we already plan to download. The HDB building outlines give each block's footprint
+and, I expect, its number of floors, so a 3D extruded map (MapLibre in the week 6 Streamlit page) can show the
+block, its height and nearby MRT and schools. Facing: we can only estimate the direction a block's long side points
+from its outline, not which way each flat faces, so it would be labelled "approximate". Sun, noise and views are not
+in any dataset we have. Week 4 only keeps the outline data ready; the map itself goes after week 5.
+
 ## OneMap facts (checked 2026-10-20)
 - Search needs a registered OneMap account and a token (3-day JWT, renewed automatically); only basemaps are open.
   I cannot create the account. You would register, then put `ONEMAP_EMAIL` / `ONEMAP_PASSWORD` in `.env`.
@@ -35,7 +42,8 @@ same eval score through MCP as before. Nothing is built or downloaded before app
   To cut it down, we could first geocode only blocks with a sale in the last 3 years.
 
 ## Decisions for you
-- OK to register a OneMap account and use it for about 9,800 slow, cached calls (or fewer, recent blocks only)?
+- Decided 2026-10-20: no OneMap account for now; the script works without a token and uses one only if `.env` has it.
+  Start with blocks that have a sale in the last 3 years.
 - OK that distances are straight-line only in v1, as in the proposal?
 - Download approval is asked per file when I get there (names, sizes, sources), as before.
 
