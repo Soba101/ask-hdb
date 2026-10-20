@@ -26,7 +26,11 @@ def _rule_call(function, values):
     if values["scheme"] == "family":
         values["marital_status"] = None  # only singles use it
     # Models often send both timer fields. Keep the one that fits the scheme.
-    values["first_timer" if values["scheme"] == "family" else "family_timers"] = None
+    if values["scheme"] == "family":
+        values["first_timer"] = "not_applicable"
+    else:
+        values["family_timers"] = "not_applicable"
+    values["first_timer"] = {"yes": True, "no": False}.get(values["first_timer"])
     if values["family_timers"] == "not_applicable":
         values["family_timers"] = None
     flat = Flat(**{key: values.pop(key) for key in Flat.model_fields})

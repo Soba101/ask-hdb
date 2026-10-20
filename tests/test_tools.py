@@ -10,7 +10,7 @@ from ask_hdb.check_cases import PROFILE
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 
 # The three profile fields that have no default, so tests must pass them.
-REQUIRED = {"previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
+REQUIRED = {"first_timer": "not_applicable", "family_timers": "both_first", "previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
             "marital_status": "married"}
 
 
@@ -98,17 +98,17 @@ SINGLE = {"scheme": "single", "citizenships": "SC", "ages": "35", "monthly_house
 
 def test_single_with_both_timer_fields_still_works():
     # Models send family_timers too; the wrapper keeps only first_timer for a single.
-    result = tools.ehg_amount.invoke(SINGLE | {"first_timer": True, "family_timers": "none_first"})
+    result = tools.ehg_amount.invoke(SINGLE | {"first_timer": "yes", "family_timers": "none_first"})
     assert "error" not in result and result["amount"] == 40000
 
 
 def test_missing_required_profile_fields_are_named():
     args = {k: v for k, v in SINGLE.items() if k != "works_12_months"}
-    result = tools.ehg_amount.invoke(args | {"first_timer": True})
+    result = tools.ehg_amount.invoke(args | {"first_timer": "yes"})
     assert "works_12_months" in result["error"]
 
 
 def test_single_without_marital_status_gets_an_error():
     args = {k: v for k, v in SINGLE.items() if k != "marital_status"}
-    result = tools.can_buy_resale.invoke(args | {"first_timer": True})
+    result = tools.can_buy_resale.invoke(args | {"first_timer": "yes"})
     assert "marital_status" in result["error"]

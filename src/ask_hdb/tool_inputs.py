@@ -72,7 +72,8 @@ class RuleArgs(Arguments):
     # Required, because the 9B model fills required fields but skips optional ones.
     family_timers: Literal["both_first", "one_first", "none_first", "not_applicable"] = Field(
         description="Family scheme: are both, one or none first-timers. Single scheme: not_applicable")
-    first_timer: bool | None = Field(None, description="Single scheme only")
+    first_timer: Literal["yes", "no", "not_applicable"] = Field(
+        description="Single scheme: is the buyer a first-timer. Family scheme: not_applicable")
     marital_status: Literal["unmarried", "divorced", "widowed", "married"] = Field(
         description="Always set. Family scheme: married. Single scheme: what the user said")
     previous_hdb_loans: Count = Field(description="Number of previous HDB loans; ask if unknown")
