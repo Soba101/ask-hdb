@@ -164,8 +164,11 @@ def test_tools_source_is_recorded_and_blocks_mixed_resume(tmp_path, bank, monkey
     report = execute(tmp_path, bank, tools='mcp', invoke=fake_agent, emit=lambda _: None)
     assert report['model']['tools'] == 'mcp'
     assert os.environ['TOOL_SOURCE'] == 'mcp'
-    with pytest.raises(ValueError, match='different model settings'):
-        execute(tmp_path, bank, tools='direct', invoke=fake_agent, emit=lambda _: None)
+    # Direct runs go to a different file, so the two reports can never be mixed on resume.
+    direct = execute(tmp_path, bank, tools='direct', invoke=fake_agent, emit=lambda _: None)
+    assert direct['model']['tools'] == 'direct'
+    names = sorted(path.name for path in tmp_path.glob('*.json'))
+    assert any(name.endswith('-mcp.json') for name in names) and len(names) == 2
 
 
 @pytest.mark.parametrize('kind', ['distance', 'multi_step'])
