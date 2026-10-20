@@ -17,12 +17,17 @@ def check_geocodes(blocks, buildings):
         postal = str(feature["properties"].get("POSTAL_COD", "")).strip()
         if not postal:
             continue
-        ring = np.asarray(feature["geometry"]["coordinates"][0], dtype=float)
-        # A repeated closing vertex should not bias the mean towards one corner.
-        if len(ring) > 1 and np.array_equal(ring[0], ring[-1]):
-            ring = ring[:-1]
-        lng, lat = ring[:, :2].mean(axis=0)
-        centroids.setdefault(postal, []).append((lat, lng))
+        geometry = feature["geometry"]
+        # MultiPolygon features hold several polygons; use each polygon's outer ring.
+        polygons = (geometry["coordinates"] if geometry["type"] == "MultiPolygon"
+                    else [geometry["coordinates"]])
+        for polygon in polygons:
+            ring = np.asarray(polygon[0], dtype=float)
+            # A repeated closing vertex should not bias the mean towards one corner.
+            if len(ring) > 1 and np.array_equal(ring[0], ring[-1]):
+                ring = ring[:-1]
+            lng, lat = ring[:, :2].mean(axis=0)
+            centroids.setdefault(postal, []).append((lat, lng))
     matched, unmatched, flagged = 0, 0, []
     for row in blocks.to_dict("records"):
         candidates = centroids.get(str(row["postal"]).strip(), [])
