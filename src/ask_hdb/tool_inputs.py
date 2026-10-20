@@ -69,13 +69,17 @@ class RuleArgs(Arguments):
     ages: str = Field(description="Comma-separated applicant ages in years")
     monthly_household_income: Count
     own_monthly_income: Count | None = None
-    family_timers: Literal["both_first", "one_first", "none_first"] | None = Field(
-        None, description="Family scheme: set it. Are both, one or none first-timers")
-    first_timer: bool | None = Field(None, description="Single scheme only")
-    marital_status: Literal["unmarried", "divorced", "widowed", "married"] | None = None
-    previous_hdb_loans: Count = 0
-    works_12_months: bool = True
-    owns_private_property: bool = False
+    # Required, because the 9B model fills required fields but skips optional ones.
+    family_timers: Literal["both_first", "one_first", "none_first", "not_applicable"] = Field(
+        description="Family scheme: are both, one or none first-timers. Single scheme: not_applicable")
+    first_timer: Literal["yes", "no", "not_applicable"] = Field(
+        description="Single scheme: is the buyer a first-timer. Family scheme: not_applicable")
+    marital_status: Literal["unmarried", "divorced", "widowed", "married", "unknown"] = Field(
+        description="Always set. Family scheme: married. Single scheme: what the user said, "
+                    "or unknown if the user did not say")
+    previous_hdb_loans: Count = Field(description="Number of previous HDB loans; ask if unknown")
+    works_12_months: bool = Field(description="Worked continuously for the past 12 months; ask if unknown")
+    owns_private_property: bool = Field(description="Owns private property; ask if unknown")
     buying_with: Literal["alone", "parents", "family_or_singles"] = "alone"
     extended_family: bool = False
     confirmed: bool = False

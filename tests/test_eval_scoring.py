@@ -110,7 +110,7 @@ def test_specific_declines(phrase):
     ('Please provide your age. You are eligible.', False),
     ('Tell me your income. You cannot buy.', False),
     ('Yes, tell me your citizenship.', False),
-    ('Please provide your age; the minimum is 35.', False),
+    ('Please provide your age; your grant would be $80,000.', False),
 ])
 def test_clarification_requires_details_without_verdict_or_numbers(answer, passed):
     assert answer_passes(question({'clarify': True}, 'refuse'), result(answer)) is passed
@@ -177,3 +177,27 @@ def test_first_non_question_number_decides(answer, expected, passed):
 def test_formatted_negative_verdict():
     q = question({'verdict': 'no', 'answer_keywords': ['no', 'not eligible']})
     assert answer_passes(q, result('**No**, you are **not eligible**.', {'eligible': False}))
+
+
+def test_small_counts_do_not_hide_a_large_answer():
+    q = question({'number': 420000, 'tolerance': 0}, 'price_check')
+    assert answer_passes(q, result('Level: street, n_comparables: 57, median $420,000'))
+    # A wrong large number still fails.
+    assert not answer_passes(q, result('57 comparables, median $380,000'))
+
+
+def test_more_decline_wordings_pass_without_tools():
+    q = question({'decline': True}, 'refuse', 'How do I apply for a BTO flat?')
+    assert answer_passes(q, result('I can only assist with resale HDB flats and grants.'))
+    assert answer_passes(q, result('I cannot provide investment timing advice.'))
+
+
+def test_years_in_a_window_are_not_the_answer():
+    q = question({'number': 420000, 'tolerance': 0}, 'price_check')
+    assert answer_passes(q, result('Window: 2025-10..2026-09, 57 sales, median $420,000'))
+
+
+def test_clarify_answer_may_list_room_types():
+    q = question({'clarify': True}, 'refuse', 'Can I buy a resale flat?')
+    assert answer_passes(q, result('Please provide your flat type (3-room, 4-room, 5-room) and age.'))
+    assert not answer_passes(q, result('Please confirm. Your grant is $80,000.'))

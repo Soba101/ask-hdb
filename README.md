@@ -3,8 +3,8 @@
 An agent that helps you find HDB resale flats you are **eligible for**, can **afford**,
 and that are **near what matters to you** (MRT, schools, parents).
 
-> Status: Data tools, rules, agent and offline evaluation are built. The first baseline
-> is run (agent beats LLM-only on numbers, not yet on eligibility verdicts). See [docs/roadmap.md](docs/roadmap.md).
+> Status: Data tools, rules, agent and offline evaluation are built. The eval baseline
+> is run (agent clearly beats LLM-only; grounding is the open gap). See [docs/roadmap.md](docs/roadmap.md).
 
 ## The problem
 
@@ -72,9 +72,9 @@ See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results
 | Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding |
 |---|---|---|---|---|
 | LLM-only | 0.0% | 10.0% | 0.0% | 0.0% |
-| Single agent | 92.3% | 40.0% | 50.0% | 85.7% |
+| Single agent | 100.0% | 90.0% | 100.0% | 76.5% |
 
-Live baseline: 40 questions per condition, one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. The agent wins on numbers but misses the verdict bar; causes are in the results doc.
+Dev set (40 questions per condition, tuned on), one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. After four fix rounds the agent passes 39 of 40; 9 of 10 held-out questions pass. Every round, including a regression, is in the results doc.
 
 ## Stack (each picked to match current AI engineer job descriptions)
 

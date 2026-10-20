@@ -7,7 +7,7 @@ Reports: `eval/reports/2026-10-20-llm-only.json`, `eval/reports/2026-10-20-agent
 | Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding | Errors | Steps median | Tokens median / p90 | Seconds median / p90 |
 |---|---|---|---|---|---|---|---|---|
 | LLM only | 0.0% | 10.0% | 0.0% | 0.0% | 8 (timeouts) | 0 | 727 / 1,227 | 118 / 180 |
-| Single agent | 92.3% | 40.0% | 50.0% | 85.7% | 0 | 1 | 8,384 / 9,123 | 52 / 68 |
+| Single agent (first run, before fixes) | 92.3% | 40.0% | 50.0% | 85.7% | 0 | 1 | 8,384 / 9,123 | 52 / 68 |
 
 Bars from `docs/eval.md`: verdict 95%, number 90%, grounding 100%, refusal 5/5.
 Only numbers pass the bar. **Gate:** the agent clearly beats LLM-only on numbers (92% vs 0%) and
@@ -47,3 +47,45 @@ The remaining unsupported numbers are not yet individually reviewed.
    required on the profile tools, so a missing value comes back as "ask the user", not a silent guess.
 3. Code: if a tool returns `eligible: null`, the agent must ask for the missing field (a retry), not state a verdict.
 4. Prompt: one line on BTO and decline cases.
+
+## Fix rounds (same 40 dev questions, same 9B model, all rescored with the final scorer)
+| Run | Change | Pass | Number | Verdict | Refusal | Grounding |
+|---|---|---|---|---|---|---|
+| 0 baseline | none | 30/40 | 92.3% | 40.0% | 50.0% | 85.7% |
+| 1 | drop the inapplicable timer field; three profile fields get no default; prompt lines | 34/40 | 96.2% | 50.0% | 100.0% | 78.6% |
+| 2 | tool errors when a single has no `marital_status` | **30/40** | 88.5% | **30.0%** | 100.0% | 88.5% |
+| 3 | `marital_status` and `family_timers` become required schema fields | 39/40 | 96.2% | 100.0% | 100.0% | 78.5% |
+| 4 | `first_timer` becomes a required schema field | 39/40 | 100.0% | 90.0% | 100.0% | 76.5% |
+
+Run 2 was a regression and is kept on purpose. Returning an error for a missing field did not work: the
+9B model never sent `marital_status` when it was optional, then asked the user for what they had already said.
+What worked (run 3) was making the field required in the tool schema: **this model fills required fields and
+skips optional ones.** Three live spot-checks showed it then copied the value from the question correctly.
+Scorer corrections made along the way (all found by reading failed answers whose content was right): small
+numbers and years are ignored when the expected answer is 10,000 or more, more decline wordings, and clarify
+answers may mention small numbers. Reports for every run are kept in `eval/reports/` (git-ignored).
+
+## Held-out questions (10, run once, after the fixes)
+9 of 10 pass (8 of 10 as first scored; `q_refuse_005` was a scorer false fail on a correct clarifying
+answer, fixed afterwards, so treat 9/10 as slightly optimistic). The miss is `q_eligibility_004`: the model
+left out `category` (Standard/Plus/Prime), the tool returned `eligible: null`, and the model said it could not decide.
+Same family of failure as before. **The held-out set is now spent for tuning purposes** (a fix for that failure
+would be tuned on it); new questions in week 4 are the next clean test.
+
+## Final dev run vs LLM-only (40 questions)
+| Condition | Number | Verdict | Refusal | Grounding |
+|---|---|---|---|---|
+| LLM only | 0.0% | 10.0% | 0.0% | 0.0% |
+| Single agent (run 4) | 100.0% | 90.0% | 100.0% | 76.5% |
+
+Against the bars in `docs/eval.md`: number (90%) and refusal (5/5) pass; verdict (95%) is under on the dev set (90% vs 95%; held-out verdict 1 of 2 on its two eligibility questions)
+(it missed `q_eligibility_012`) and grounding (100%) is far off.
+The agent clearly beats LLM-only, so the gate is cleared.
+
+## What is still open
+1. Grounding 76.5%: the simple check counts numbers in the answer that no tool returned (rule thresholds the model
+   adds from memory, restated question numbers, list numbering variants). Not yet reviewed one by one; `grounding.py`
+   with a rewrite step is week 5.
+2. The model still misreads `eligible: null` / omits optional fields (`category`, `price`). Candidate fix: make `category`
+   required with an `unknown` option. Not done, because the held-out set is spent.
+3. These numbers are for the 9B model only. The 27B on the 5090 is untested until you say.

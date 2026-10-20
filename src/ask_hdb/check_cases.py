@@ -2,6 +2,8 @@
 
 PROFILE = {"scheme": "family", "citizenships": "SC,SC", "ages": "35,35",
            "monthly_household_income": 4400, "family_timers": "both_first",
+           "first_timer": "not_applicable", "marital_status": "married", "previous_hdb_loans": 0,
+           "works_12_months": True, "owns_private_property": False,
            "room": 4, "lease_left_months": 960, "price": 600000, "category": "standard"}
 FAMILY = ("We are a family couple, both SC, both aged 35, both first-timers, "
           "household income $4400 monthly, continuously employed for the past year, "

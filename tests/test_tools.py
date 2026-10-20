@@ -86,3 +86,33 @@ def test_bare_year_means_whole_year():
     year = tools.price_stats.invoke({"town": "TAMPINES", "since": "2024", "until": "2024"})
     months = tools.price_stats.invoke({"town": "TAMPINES", "since": "2024-01", "until": "2024-12"})
     assert year == months
+
+
+SINGLE = {"scheme": "single", "citizenships": "SC", "ages": "35", "monthly_household_income": 2000,
+          "room": 3, "lease_left_months": 960} | {
+    "previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
+    "marital_status": "unmarried", "family_timers": "not_applicable"}
+
+
+def test_single_with_both_timer_fields_still_works():
+    # Models send family_timers too; the wrapper keeps only first_timer for a single.
+    result = tools.ehg_amount.invoke(SINGLE | {"first_timer": "yes", "family_timers": "none_first"})
+    assert "error" not in result and result["amount"] == 40000
+
+
+def test_missing_required_profile_fields_are_named():
+    args = {k: v for k, v in SINGLE.items() if k != "works_12_months"}
+    result = tools.ehg_amount.invoke(args | {"first_timer": "yes"})
+    assert "works_12_months" in result["error"]
+
+
+def test_single_without_marital_status_gets_an_error():
+    args = {k: v for k, v in SINGLE.items() if k != "marital_status"}
+    result = tools.can_buy_resale.invoke(args | {"first_timer": "yes"})
+    assert "marital_status" in result["error"]
+
+
+def test_unknown_marital_status_is_a_needs_check_not_a_guess():
+    args = SINGLE | {"ages": "30", "first_timer": "yes", "marital_status": "unknown"}
+    result = tools.can_buy_resale.invoke(args)
+    assert result["eligible"] is None and "marital_status" in result["needs_check"]
