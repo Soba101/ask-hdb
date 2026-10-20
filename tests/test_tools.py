@@ -143,3 +143,9 @@ def test_calculate_does_arithmetic_and_rejects_everything_else():
     assert tools.calculate.invoke({"expression": "10 / 4"})["result"] == 2.5
     for bad in ("__import__('os').system('x')", "2 ** 9999", "abs(-1)", "1; 2", "a + 1"):
         assert "error" in tools.calculate.invoke({"expression": bad})
+
+
+def test_text_none_means_no_filter():
+    args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM", "min_n": 1,
+            "as_of": "latest", "storey_mid": "None", "lease_left_months": "null", "floor_area_sqm": ""}
+    assert "n_comparables" in tools.compare_price.invoke(args)
