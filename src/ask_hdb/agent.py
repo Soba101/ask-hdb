@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage, convert_to_messages
 from langchain_core.runnables import RunnableLambda
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
 
@@ -41,6 +42,19 @@ class LimitReached(Exception):
     """Leave the graph before it can do more work."""
 
 
+def _strip_titles(node):
+    if isinstance(node, dict):
+        return {k: _strip_titles(v) for k, v in node.items() if k != "title"}
+    if isinstance(node, list):
+        return [_strip_titles(v) for v in node]
+    return node
+
+
+def _compact(tools):
+    # For small-context servers (8k per slot): same tools and fields, without the repeated "title" keys.
+    return [_strip_titles(convert_to_openai_tool(tool)) for tool in tools]
+
+
 def _size(value):
     # Bytes give a conservative fallback when a local server omits token usage.
     return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
@@ -65,7 +79,7 @@ def _ask(question, history, tools):
     stopped_reason = None
     answer = ""
     plain = get_chat_model()
-    model = plain.bind_tools(tools)
+    model = plain.bind_tools(_compact(tools) if os.getenv("LLM_COMPACT_TOOLS") == "1" else tools)
     schemas = [tool.args_schema if isinstance(tool.args_schema, dict)
                else tool.args_schema.model_json_schema() for tool in tools]
 
@@ -75,6 +89,8 @@ def _ask(question, history, tools):
         # Bytes over-count tokens, so use them only until a real usage figure is reported.
         input_bound = 0 if reported else (_size([m.model_dump() for m in messages]) + _size(schemas)) // 3
         remaining = TOKEN_BUDGET - tokens - input_bound - 1024
+        # Small-context servers (8k per slot): cap the reply so prompt + reply always fits.
+        remaining = min(remaining, int(os.getenv("LLM_MAX_TOKENS", remaining)))
         if remaining <= 0:
             raise LimitReached("tokens")
         # After the last allowed tool call the model may still write its answer, but with no tools.

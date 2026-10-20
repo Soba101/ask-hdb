@@ -1,6 +1,7 @@
 """Expose the unchanged deterministic functions as JSON tools."""
 
 import json
+import os
 import sys
 from dataclasses import asdict
 from functools import lru_cache
@@ -55,6 +56,11 @@ def _tool(name, description, schema, function, *, rule=False):
         try:
             # Include defaults here so the flat and profile are complete.
             values = schema.model_validate(kwargs).model_dump()
+            if os.getenv("LLM_COMPACT_TOOLS") == "1":
+                # Small-context servers: shorter example lists keep tool results small.
+                for key, cap in (("max_examples", 3), ("limit", 5)):
+                    if key in values:
+                        values[key] = min(values[key], cap)
             if str(values.get("as_of")).lower() == "latest":
                 values["as_of"] = None  # compare_price anchors to the newest data month
             distance_filter, unlocated_frame = False, None

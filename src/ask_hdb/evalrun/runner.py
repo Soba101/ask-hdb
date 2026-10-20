@@ -48,6 +48,9 @@ def run(condition='agent', *, only=None, verbose=False, heldout=False, limit=Non
     day = day or date.today().isoformat()
     # MCP runs get their own file so direct and MCP reports never mix.
     suffix = '-mcp' if settings['tools'] == 'mcp' else ''
+    if os.getenv('ASK_HDB_REPORT_TAG'):
+        # A tag gives another model its own report file, so two models can run at the same time.
+        suffix += '-' + os.getenv('ASK_HDB_REPORT_TAG')
     path = Path(reports_dir) / f'{day}-{condition}{suffix}.json'
     report = {'date': day, 'condition': condition, 'model': settings, 'results': []}
     if path.exists():
