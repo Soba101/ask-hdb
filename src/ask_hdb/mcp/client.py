@@ -12,6 +12,8 @@ from langchain_core.tools import StructuredTool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools as load_session_tools
 
+SAFE_ENV = ("PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "VIRTUAL_ENV", "PYTHONPATH")
+
 
 def result_dict(content):
     # The adapter preserves MCP text as content blocks; direct tools return dicts.
@@ -36,7 +38,8 @@ def load_mcp_tools():
         client = MultiServerMCPClient({"housing": {
             "transport": "stdio", "command": sys.executable,
             "args": ["-m", "ask_hdb.mcp"],
-            "env": {**os.environ, "ASK_HDB_MCP_QUIET": "1"},
+            # Pass only what Python needs: the server must never see ONEMAP or LLM credentials.
+            "env": {**{k: os.environ[k] for k in SAFE_ENV if k in os.environ}, "ASK_HDB_MCP_QUIET": "1"},
         }})
         try:
             async with client.session("housing") as session:

@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 from mcp import types
 from mcp.server.fastmcp import FastMCP
@@ -32,7 +33,10 @@ class HousingMCP(FastMCP):
 
 def main():
     if os.getenv("ASK_HDB_MCP_QUIET") == "1":
-        # The client owns this subprocess. Keep SDK logs out of terminal chat.
-        with open(os.devnull, "w") as sink:
+        # The client owns this subprocess. Keep SDK logs out of terminal chat but keep tool failure
+        # traces in a git-ignored log file.
+        log = Path(__file__).resolve().parents[3] / "data/mcp.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with open(log, "a") as sink:
             os.dup2(sink.fileno(), sys.stderr.fileno())
     HousingMCP("ask-hdb").run(transport="stdio")
