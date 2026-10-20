@@ -97,8 +97,8 @@ questions are not in these numbers. All runs scored with the final scorer (`scri
 
 | Run | Tools | Pass | Number | Verdict | Refusal | Grounding | Seconds median / p90 |
 |---|---|---|---|---|---|---|---|
-| 1 (before fixes) | direct | 45/52 | 86.8% | 100% | 100% | 75.8% | 63 / 125 |
-| 1 (before fixes) | MCP | 48/52 | 92.1% | 100% | 100% | 77.8% | 39 / 64 |
+| 1 (before fixes) | direct | 47/52 | 86.8% | 100% | 100% | 75.8% | 63 / 125 |
+| 1 (before fixes) | MCP | 49/52 | 92.1% | 100% | 100% | 77.8% | 39 / 64 |
 | 2 (after fixes) | direct | 50/52 | 97.4% | 90.0% | 100% | 74.3% | 53 / 91 |
 | 2 (after fixes) | MCP | 51/52 | 97.4% | 100% | 100% | 74.1% | 46 / 101 |
 
@@ -119,7 +119,7 @@ difference is one timeout). Gate met.
 | Question | Run | What happened | Cause |
 |---|---|---|---|
 | q_eligibility_001 | direct | Timeout, no answer | OpenAITimeoutError at 180 s; the MacBook model was slow on that call. Infrastructure, not a wrong answer. |
-| q_multi_step_009 | direct and MCP | Premium difference -72,000, expected 27,000 | The model left out `lease_left_months` in both `compare_price` calls, so no lease filter was applied and the medians were wrong (625,000 and 523,000 instead of 529,000 and 520,000-ish). Same pattern again: **the 9B model skips optional fields.** |
+| q_multi_step_009 | direct and MCP | Premium difference -72,000, expected 27,000 | The model left out `lease_left_months` in both `compare_price` calls, so no lease filter was applied and the medians were wrong (625,000 and 523,000 instead of 529,000 and 526,000). Same pattern again: **the 9B model skips optional fields.** |
 
 ## Findings
 - The 9B model skips optional tool fields: `category`, `price`, `as_of`, now `lease_left_months`. Making a field required with an escape value fixed
