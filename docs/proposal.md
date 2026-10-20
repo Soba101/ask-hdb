@@ -27,7 +27,7 @@
 | Numbers | Only from tool results. Enforced by a grounding checker |
 | Cost safety | Hard limit on steps and tokens per question. Stops and says so |
 | Human in the loop | Agent shows the buyer profile it understood and asks "Is this right?" before computing |
-| UI | Streamlit chat page |
+| UI | Web app: FastAPI server + web front end with chat, tool results and a 3D map (changed from Streamlit on 2026-10-20) |
 | Deploy | Docker Compose, one small VM, public demo link |
 
 ## In scope (v1)

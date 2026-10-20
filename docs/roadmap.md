@@ -93,10 +93,14 @@ Scope decided by the user: rules + launch info + map. Plan to be shown and appro
 
 ## Week 6: ship
 - [ ] Langfuse tracing on every run.
-- [ ] Streamlit chat page: chat on the left, tool results and sources on the right.
-- [ ] Docker Compose: app, MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
+- [ ] Web app (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
+      (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
+      chat on the left, tool results and sources on the right, 3D map panel (MapLibre) with block, MRT and school markers.
+      Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
+      Needs: rate limit per visitor, a cost cap, no personal data stored, a clear "not financial advice" line.
+- [ ] Docker Compose: web app (FastAPI + static front end), MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
 - [ ] Deploy to one small VM with a cloud model (no GPU needed there).
-- [ ] Stretch: 3D block map (building outlines extruded by floors, MRT and school markers, approximate facing).
+- [ ] 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
 - [ ] README: demo GIF, results table, architecture picture, "what I learned".
 - **Exit:** a stranger uses the public link with no help.
 
