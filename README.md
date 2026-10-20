@@ -87,7 +87,7 @@ Dev set (40 questions per condition, tuned on), one 9B local model (qwen3.5-9b-1
 | RAG | pgvector over HDB policy pages, used only to *explain* rules |
 | Data | data.gov.sg resale prices, OneMap (geocoding, MRT, schools) |
 | Tracing | Langfuse |
-| UI | Streamlit |
+| UI | FastAPI + web front end (MapLibre 3D map) |
 | Deploy | Docker Compose on one small cloud VM |
 
 ## Docs
