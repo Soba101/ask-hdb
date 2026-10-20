@@ -45,7 +45,7 @@ download the new dependencies. See `docs/week2-notes.md`; the exit check remains
 - [x] `ask-hdb eval` runner: scores, steps, tokens, time. JSON + markdown report.
       The previous routing check remains available as `ask-hdb routing`.
 - [x] Run LLM-only and single-agent conditions (9B Mac model, 2026-10-20): LLM-only 0/10/0 (number/verdict/refusal);
-      agent 100/90/100 after five fix rounds, 9/10 held-out. Grounding 76.5% is the open gap. See `docs/eval-results.md`.
+      agent 100/90/100 after four fix rounds, 9/10 held-out. Grounding 76.5% is the open gap. See `docs/eval-results.md`.
 - **Exit:** a results table. **Gate:** if the agent does not clearly beat LLM-only,
   stop and find out why before adding anything.
 

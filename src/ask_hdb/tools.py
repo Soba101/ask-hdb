@@ -23,8 +23,8 @@ def load_sales():
 
 def _rule_call(function, values):
     values = values.copy()
-    if values["scheme"] == "family":
-        values["marital_status"] = None  # only singles use it
+    if values["scheme"] == "family" or values["marital_status"] == "unknown":
+        values["marital_status"] = None  # only singles use it; unknown becomes a needs_check
     # Models often send both timer fields. Keep the one that fits the scheme.
     if values["scheme"] == "family":
         values["first_timer"] = "not_applicable"

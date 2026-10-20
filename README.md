@@ -74,7 +74,7 @@ See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results
 | LLM-only | 0.0% | 10.0% | 0.0% | 0.0% |
 | Single agent | 100.0% | 90.0% | 100.0% | 76.5% |
 
-Live baseline: 40 questions per condition, one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. After five fix rounds the agent passes 39 of 40; 9 of 10 held-out questions pass. Every round, including a regression, is in the results doc.
+Dev set (40 questions per condition, tuned on), one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. After four fix rounds the agent passes 39 of 40; 9 of 10 held-out questions pass. Every round, including a regression, is in the results doc.
 
 ## Stack (each picked to match current AI engineer job descriptions)
 

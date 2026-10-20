@@ -9,10 +9,6 @@ from ask_hdb import tools
 from ask_hdb.check_cases import PROFILE
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 
-# The three profile fields that have no default, so tests must pass them.
-REQUIRED = {"first_timer": "not_applicable", "family_timers": "both_first", "previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
-            "marital_status": "married"}
-
 
 @pytest.fixture(autouse=True)
 def fake_data(monkeypatch, sales):
@@ -46,7 +42,7 @@ def test_rules_keep_dicts_and_citations(name, function, extra):
     profile = BuyerProfile(scheme="family", citizenships=["SC", "SC"], ages=[35, 35],
                            monthly_household_income=4400, family_timers="both_first")
     flat = Flat(room=4, lease_left_months=960, price=600000, category="standard")
-    result = getattr(tools, name).invoke(PROFILE | REQUIRED | extra)
+    result = getattr(tools, name).invoke(PROFILE | extra)
     assert result == asdict(function(profile, flat, **extra))
     assert result["rules"]
     assert all({"source", "as_of"} <= rule.keys() for rule in result["rules"])
@@ -93,7 +89,9 @@ def test_bare_year_means_whole_year():
 
 
 SINGLE = {"scheme": "single", "citizenships": "SC", "ages": "35", "monthly_household_income": 2000,
-          "room": 3, "lease_left_months": 960} | REQUIRED | {"marital_status": "unmarried", "family_timers": "not_applicable"}
+          "room": 3, "lease_left_months": 960} | {
+    "previous_hdb_loans": 0, "works_12_months": True, "owns_private_property": False,
+    "marital_status": "unmarried", "family_timers": "not_applicable"}
 
 
 def test_single_with_both_timer_fields_still_works():
@@ -112,3 +110,9 @@ def test_single_without_marital_status_gets_an_error():
     args = {k: v for k, v in SINGLE.items() if k != "marital_status"}
     result = tools.can_buy_resale.invoke(args | {"first_timer": "yes"})
     assert "marital_status" in result["error"]
+
+
+def test_unknown_marital_status_is_a_needs_check_not_a_guess():
+    args = SINGLE | {"ages": "30", "first_timer": "yes", "marital_status": "unknown"}
+    result = tools.can_buy_resale.invoke(args)
+    assert result["eligible"] is None and "marital_status" in result["needs_check"]

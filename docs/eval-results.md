@@ -78,7 +78,7 @@ would be tuned on it); new questions in week 4 are the next clean test.
 | LLM only | 0.0% | 10.0% | 0.0% | 0.0% |
 | Single agent (run 4) | 100.0% | 90.0% | 100.0% | 76.5% |
 
-Against the bars in `docs/eval.md`: number (90%) and refusal (5/5) pass; verdict (95%) is just under on the dev set
+Against the bars in `docs/eval.md`: number (90%) and refusal (5/5) pass; verdict (95%) is under on the dev set (90% vs 95%; held-out verdict 1 of 2 on its two eligibility questions)
 (it missed `q_eligibility_012`) and grounding (100%) is far off.
 The agent clearly beats LLM-only, so the gate is cleared.
 

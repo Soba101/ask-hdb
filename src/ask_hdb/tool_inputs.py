@@ -74,8 +74,9 @@ class RuleArgs(Arguments):
         description="Family scheme: are both, one or none first-timers. Single scheme: not_applicable")
     first_timer: Literal["yes", "no", "not_applicable"] = Field(
         description="Single scheme: is the buyer a first-timer. Family scheme: not_applicable")
-    marital_status: Literal["unmarried", "divorced", "widowed", "married"] = Field(
-        description="Always set. Family scheme: married. Single scheme: what the user said")
+    marital_status: Literal["unmarried", "divorced", "widowed", "married", "unknown"] = Field(
+        description="Always set. Family scheme: married. Single scheme: what the user said, "
+                    "or unknown if the user did not say")
     previous_hdb_loans: Count = Field(description="Number of previous HDB loans; ask if unknown")
     works_12_months: bool = Field(description="Worked continuously for the past 12 months; ask if unknown")
     owns_private_property: bool = Field(description="Owns private property; ask if unknown")
