@@ -76,6 +76,7 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 - [ ] Streamlit chat page: chat on the left, tool results and sources on the right.
 - [ ] Docker Compose: app, MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
 - [ ] Deploy to one small VM with a cloud model (no GPU needed there).
+- [ ] Stretch: 3D block map (building outlines extruded by floors, MRT and school markers, approximate facing).
 - [ ] README: demo GIF, results table, architecture picture, "what I learned".
 - **Exit:** a stranger uses the public link with no help.
 
