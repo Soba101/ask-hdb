@@ -26,7 +26,8 @@ def local_builder():
 
 
 def test_old_fingerprints_and_order_are_frozen():
-    original = load_questions()[:50]
+    # Only the `retired` flag (added to q_refuse_003 on 2026-10-21) may differ from the frozen text.
+    original = [{k: v for k, v in q.items() if k != 'retired'} for q in load_questions()[:50]]
     digest = hashlib.sha256(''.join(fingerprint(q) for q in original).encode()).hexdigest()
     assert digest == '1ba0dd61dd7b6574bb2a7e6e7fd5b640791a6a6651a9f0269722984908d92ea1'
 
@@ -60,7 +61,7 @@ def test_distance_formula_has_known_geometric_answers():
 
 
 def test_new_question_contracts():
-    questions = load_questions()[50:]
+    questions = load_questions()[50:74]  # the 24 distance and multi-step questions of week 4
     for q in questions:
         query = q['query']
         if q['expect']['tolerance']:

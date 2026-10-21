@@ -70,7 +70,7 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 
 ## Week 4b: BTO (added 2026-10-20, scope extended 2026-10-21; plan: docs/week4b-plan.md)
 Three phases; each gets approval before building.
-- [ ] **4b-1** BTO rules from hdb.gov.sg only (new dated YAML), launch data (HDB annexes, approval per download), BTO sites geocoded (approximate), `list_bto_projects`,
+- [x] **4b-1** (done 2026-10-21; eval 3/5 held-out, launch-filter input fix pending) BTO rules from hdb.gov.sg only (new dated YAML), launch data (HDB annexes, approval per download), BTO sites geocoded (approximate), `list_bto_projects`,
       `bto_nearby`, BTO rule tools, about 14 eval questions (5 held out); retire `q_refuse_003` and add a replacement decline question.
 - [ ] **4b-2** History: launch price vs resale after MOP for past BTOs, surrounding-area growth, government plans shown as dated facts (URA Master Plan, planned MRT). Feasibility check first.
 - [ ] **4b-3** Illustrative scenario calculator with grants, HDB/bank loan and net proceeds (labelled "illustrative, from past growth, not a forecast"); update the prediction rule in AGENTS.md.

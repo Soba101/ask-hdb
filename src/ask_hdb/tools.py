@@ -11,18 +11,27 @@ import pandas as pd
 from langchain_core.tools import StructuredTool
 
 from ask_hdb import calc, compare, sales
+from ask_hdb.bto import queries as bto
 from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
+from ask_hdb.rules import bto as bto_rules
 from ask_hdb.tool_inputs import (
+    BtoListArgs,
+    BtoNearbyArgs,
+    BtoRuleArgs,
     CalcArgs,
     CompareArgs,
     FindArgs,
     LoanArgs,
     NearestArgs,
     PhgArgs,
+    ProfileArgs,
     RuleArgs,
     SalesArgs,
 )
+
+# Tools that read their own tables instead of the resale sales frame.
+NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby"}
 
 
 @lru_cache(maxsize=1)
@@ -32,7 +41,7 @@ def load_sales():
     return pd.read_parquet(path)
 
 
-def _rule_call(function, values):
+def _profile_values(values):
     values = values.copy()
     if values["scheme"] == "family" or values["marital_status"] == "unknown":
         values["marital_status"] = None  # only singles use it; unknown becomes a needs_check
@@ -44,6 +53,11 @@ def _rule_call(function, values):
     values["first_timer"] = {"yes": True, "no": False}.get(values["first_timer"])
     if values["family_timers"] == "not_applicable":
         values["family_timers"] = None
+    return values
+
+
+def _rule_call(function, values):
+    values = _profile_values(values)
     flat = Flat(**{key: values.pop(key) for key in Flat.model_fields})
     extra = {key: values.pop(key) for key in ("relation", "qualifying_rate_pct") if key in values}
     values["citizenships"] = [part.strip() for part in values["citizenships"].split(",")]
@@ -51,7 +65,27 @@ def _rule_call(function, values):
     return asdict(function(BuyerProfile(**values), flat, **extra))
 
 
-def _tool(name, description, schema, function, *, rule=False):
+def _bto_call(function, values):
+    values = _profile_values(values)
+    extra = {key: values.pop(key) for key in ("category", "flat_type", "hfe_after_revision") if key in values}
+    values["citizenships"] = [part.strip() for part in values["citizenships"].split(",")]
+    values["ages"] = [int(part.strip()) for part in values["ages"].split(",")]
+    return asdict(function(BuyerProfile(**values), **extra))
+
+
+def _validation_error(name):
+    def handle(exc):
+        errors = exc.errors()
+        extra = sorted({str(e["loc"][0]) for e in errors if e["type"] == "extra_forbidden"})
+        bad = sorted({str(e["loc"][0]) for e in errors if e["type"] != "extra_forbidden"})
+        parts = ([f"Missing or invalid: {', '.join(bad)}."] if bad else []) + (
+            [f"Not accepted by this tool, leave out: {', '.join(extra)}."] if extra else [])
+        return {"error": f"Invalid arguments for {name}. " + " ".join(parts)
+                + " Fix these or ask the user for missing details, then call again."}
+    return handle
+
+
+def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
     def invoke(**kwargs):
         try:
             # Include defaults here so the flat and profile are complete.
@@ -64,8 +98,10 @@ def _tool(name, description, schema, function, *, rule=False):
             if str(values.get("as_of")).lower() == "latest":
                 values["as_of"] = None  # compare_price anchors to the newest data month
             distance_filter, unlocated_frame = False, None
-            if name in {"nearest_places", "calculate"}:
+            if name in NO_FRAME:
                 result = function(**values)
+            elif bto_rule:
+                result = _bto_call(function, values)
             elif rule:
                 result = _rule_call(function, values)
             else:
@@ -87,15 +123,13 @@ def _tool(name, description, schema, function, *, rule=False):
         except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:
             # Keep a trace so a real bug is not mistaken for a bad model argument.
             print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
-            if name in {"nearest_places", "calculate"} or "near_kind" in kwargs or "near_km" in kwargs:
+            if name in NO_FRAME or "near_kind" in kwargs or "near_km" in kwargs:
                 return {"error": f"{name}: {exc}"}
             return {"error": f"Invalid arguments or unavailable data for {name}"}
 
     return StructuredTool.from_function(
         func=invoke, name=name, description=description, args_schema=schema,
-        handle_validation_error=lambda exc: {"error": f"Invalid arguments for {name}. Missing or invalid: "
-                                             + ", ".join(sorted({str(e["loc"][0]) for e in exc.errors()}))
-                                             + ". Ask the user for missing details, then call again."},
+        handle_validation_error=_validation_error(name),
     )
 
 
@@ -122,5 +156,15 @@ nearest_places = _tool("nearest_places", "Find nearest places by straight-line d
 calculate = _tool("calculate", "Add, subtract, multiply or divide numbers taken from tool results. Use it for ALL arithmetic.",
                   CalcArgs, lambda expression: calc.calculate(expression))
 
+list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HDB launches with units and indicative launch prices (excluding grants).",
+                          BtoListArgs, bto.list_bto_projects)
+bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a BTO project's approximate site.",
+                   BtoNearbyArgs, bto.bto_nearby)
+
+can_apply_bto = _tool("can_apply_bto", "Check BTO (new flat) eligibility: income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
+                      BtoRuleArgs, bto_rules.can_apply_bto, bto_rule=True)
+bto_ehg_amount = _tool("bto_ehg_amount", "Compute the Enhanced CPF Housing Grant for a new (BTO) flat.",
+                       ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
+
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
-         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate]
+         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount]

@@ -7,7 +7,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 QUESTION_PATH = ROOT / 'eval/questions.yaml'
-KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step')
+KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step', 'bto')
 
 
 def load_questions(path=QUESTION_PATH):
@@ -25,8 +25,9 @@ def load_questions(path=QUESTION_PATH):
             not isinstance(q[key], str) or not q[key].strip() for key in ('question', 'source')
         ):
             raise ValueError(f"Invalid question {q['id']}")
-        if 'heldout' in q and not isinstance(q['heldout'], bool):
-            raise ValueError('heldout must be boolean')
+        for flag in ('heldout', 'retired'):
+            if flag in q and not isinstance(q[flag], bool):
+                raise ValueError(f'{flag} must be boolean')
         expect = q['expect']
         if not isinstance(expect, dict):
             raise TypeError(f"Invalid expectation for {q['id']}")
@@ -39,11 +40,11 @@ def load_questions(path=QUESTION_PATH):
                         or not math.isfinite(value)):
                     raise ValueError('Expected number and tolerance must be finite')
             if expect['tolerance'] < 0 or q['kind'] not in {
-                'price', 'grants', 'price_check', 'distance', 'multi_step'
+                'price', 'grants', 'price_check', 'distance', 'multi_step', 'bto'
             }:
                 raise ValueError('Invalid numeric expectation')
         elif 'verdict' in expect:
-            if (q['kind'] not in {'eligibility', 'grants'}
+            if (q['kind'] not in {'eligibility', 'grants', 'bto'}
                     or expect['verdict'] not in {'yes', 'no'}
                     or not isinstance(expect.get('answer_keywords'), list)
                     or not expect['answer_keywords']
@@ -62,6 +63,7 @@ def select_questions(questions, *, only=None, heldout=False, limit=None):
         raise ValueError('Unknown question kind')
     if limit is not None and limit < 1:
         raise ValueError('limit must be positive')
-    selected = [q for q in questions if (heldout or not q.get('heldout', False))
+    # A retired question stays in the bank (its old results keep their meaning) but is never run again.
+    selected = [q for q in questions if not q.get('retired', False) and (heldout or not q.get('heldout', False))
                 and (only is None or q['kind'] == only)]
     return selected if limit is None else selected[:limit]

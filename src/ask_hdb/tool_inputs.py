@@ -93,7 +93,7 @@ class CompareArgs(Arguments):
     max_examples: Annotated[int, Field(ge=0, le=50)] = 10
 
 
-class RuleArgs(Arguments):
+class ProfileArgs(Arguments):
     scheme: Literal["family", "single"]
     citizenships: str = Field(description="Comma-separated SC, SPR or foreigner")
     ages: str = Field(description="Comma-separated applicant ages in years")
@@ -113,6 +113,9 @@ class RuleArgs(Arguments):
     buying_with: Literal["alone", "parents", "family_or_singles"] = "alone"
     extended_family: bool = False
     confirmed: bool = False
+
+
+class RuleArgs(ProfileArgs):
     room: Annotated[int, Field(ge=1, le=6)]
     lease_left_months: Count
     price: Count | None = Field(None, description="Flat price in dollars; set it when given")
@@ -130,3 +133,27 @@ class LoanArgs(RuleArgs):
 
 class CalcArgs(Arguments):
     expression: str = Field(description="Arithmetic on numbers from tool results, e.g. 80000 + 70000 - 25000")
+
+
+class BtoListArgs(Arguments):
+    # Required but nullable, like the other filters: the model must write a value or null.
+    name: str | None = Field(description="Part of a project name such as 'Tampines Nova', or null for any project")
+    town: str | None = Field(description="Town name such as TAMPINES, or null for any town")
+    flat_type: str | None = Field(description="2-room Flexi, 3-room, 4-room, 5-room, 3Gen or CCA, or null")
+    launch_month: str | None = Field(description="Launch month YYYY-MM (2025-02, 2025-07, 2025-10, 2026-02, 2026-06), or null")
+    category: Literal["Standard", "Plus", "Prime"] | None = Field(description="Project category, or null for all")
+    max_price: Nonnegative | None = Field(description="Keep flats whose lowest indicative price is at most this, or null")
+    limit: Annotated[int, Field(ge=1, le=20)] = 10
+
+
+class BtoNearbyArgs(Arguments):
+    project_id: str = Field(description="BTO project id such as bto_tampines-nova")
+    kind: PlaceKind
+    n: Annotated[int, Field(ge=1)] = 3
+
+
+class BtoRuleArgs(ProfileArgs):
+    category: Literal["Standard", "Plus", "Prime"] = Field(description="BTO project category")
+    flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room", "3Gen"] = Field(description="BTO flat type")
+    hfe_after_revision: bool | None = Field(
+        description="True if the HFE letter was applied for on or after 24 Aug 2026 (revised income ceilings), False if before, null if unknown")

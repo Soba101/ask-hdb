@@ -18,11 +18,11 @@ def builder():
 
 def test_question_bank():
     qs = load_questions()
-    assert len(qs) == 74
-    assert len({q['id'] for q in qs}) == 74
+    assert len(qs) == 89
+    assert len({q['id'] for q in qs}) == 89
     assert Counter(q['kind'] for q in qs) == {
-        'price': 15, 'eligibility': 12, 'grants': 10, 'price_check': 8, 'refuse': 5,
-        'distance': 8, 'multi_step': 16}
+        'price': 15, 'eligibility': 12, 'grants': 10, 'price_check': 8, 'refuse': 6,
+        'distance': 8, 'multi_step': 16, 'bto': 14}
     assert {q['id'] for q in qs if q.get('heldout')} == {
         'q_price_003', 'q_price_009', 'q_price_015', 'q_eligibility_004',
         'q_eligibility_011', 'q_grants_003', 'q_grants_009',
@@ -30,12 +30,15 @@ def test_question_bank():
         'q_distance_003', 'q_distance_006', 'q_distance_008',
         'q_multi_step_002', 'q_multi_step_006', 'q_multi_step_010',
         'q_multi_step_011', 'q_multi_step_012', 'q_multi_step_013',
-        'q_multi_step_014', 'q_multi_step_015', 'q_multi_step_016'}
-    assert sum(bool(q.get('heldout')) for q in qs) == 22
-    assert len(select_questions(qs)) == 52
-    assert len(select_questions(qs, heldout=True)) == 74
+        'q_multi_step_014', 'q_multi_step_015', 'q_multi_step_016',
+        'q_bto_004', 'q_bto_006', 'q_bto_011', 'q_bto_012', 'q_bto_014'}
+    assert sum(bool(q.get('heldout')) for q in qs) == 27
+    assert len(select_questions(qs)) == 61
+    assert len(select_questions(qs, heldout=True)) == 88
     assert len(select_questions(qs, only='distance')) == 5
     assert len(select_questions(qs, only='multi_step')) == 7
+    assert len(select_questions(qs, only='bto')) == 9
+    assert 'q_refuse_003' not in {q['id'] for q in select_questions(qs, heldout=True)}
     assert len(select_questions(qs, only='price')) == 12
     assert len(select_questions(qs, only='price', limit=2)) == 2
     with pytest.raises(ValueError):
@@ -121,7 +124,7 @@ def test_clarify_schema_and_question_wording(tmp_path):
     qs = {q['id']: q for q in load_questions()}
     assert qs['q_refuse_005']['expect'] == {'clarify': True}
     assert qs['q_refuse_005']['heldout'] is True
-    assert sum(q['expect'].get('decline', False) for q in qs.values()) == 4
+    assert sum(q['expect'].get('decline', False) for q in qs.values()) == 5
     assert sum(q['expect'].get('clarify', False) for q in qs.values()) == 1
     assert 'both of us have only been employed for 6 months' in qs['q_grants_003']['question']
     for qid in ('q_grants_005', 'q_grants_006', 'q_grants_009'):

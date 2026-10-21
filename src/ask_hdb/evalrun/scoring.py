@@ -96,7 +96,7 @@ def answer_passes(question, result):
         if calls:
             # Grant tools also return eligible; only purchase verdicts are evidence here.
             verdicts = [call['result'].get('eligible') for call in calls
-                        if call.get('name') == 'can_buy_resale'
+                        if call.get('name') in {'can_buy_resale', 'can_apply_bto'}
                         and isinstance(call.get('result'), dict)]
             prose = prose and any(v is positive for v in verdicts)
         return bool(prose)

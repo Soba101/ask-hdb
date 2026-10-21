@@ -1,0 +1,76 @@
+# BTO rules for citizen buyers. Every value comes from an HDB annex PDF named in `source` (read 2026-10-21).
+# Notes: docs/week4b-rules-notes.md. Unresolved items are NOT in this file; the rule functions flag them as needs_check.
+eligibility:
+  # Households that apply for an HFE letter on or after this date are assessed under the revised income ceilings.
+  hfe_revision_date:
+    value: '2026-08-24'
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-B.pdf
+    as_of: 2026-10-21
+  families_previous:
+    value: 14000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  families_revised:
+    value: 16000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  # Each family nucleus is also capped (see nucleus).
+  extended_families_previous:
+    value: 21000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/20260617-HDB-Launches-6952-Flats-Across-7-Projects-in-June-2026-BTO-Sales-Exercise/Annex-B.pdf
+    as_of: 2026-10-21
+  extended_families_revised:
+    value: 24000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  nucleus_previous:
+    value: 14000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/20260617-HDB-Launches-6952-Flats-Across-7-Projects-in-June-2026-BTO-Sales-Exercise/Annex-B.pdf
+    as_of: 2026-10-21
+  nucleus_revised:
+    value: 16000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  # 2-room Flexi, 99-year lease.
+  flexi_99yr_previous:
+    value: 7000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  flexi_99yr_revised:
+    value: 8000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  # Single Singapore Citizen scheme, 2-room Flexi 99-year.
+  singles_flexi_99yr_previous:
+    value: 7000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  singles_flexi_99yr_revised:
+    value: 8000
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    as_of: 2026-10-21
+  # Singles can buy only 2-room Flexi in BTO (Standard, Plus and Prime projects).
+  singles_bto_flat_type:
+    value: '2-room Flexi'
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
+    as_of: 2026-10-21
+loan:
+  # HDB loan limit 75% from the Oct 2024 exercise (was 80%); the quote is in Annex-C footnote 4. The bank_ltv value is the same figure and is not separately confirmed.
+  hdb_ltv:
+    value: 0.75
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-C.pdf
+    as_of: 2026-10-21
+  bank_ltv:
+    value: 0.75
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-C.pdf
+    as_of: 2026-10-21
+mop:
+  standard_years:
+    value: 5
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
+    as_of: 2026-10-21
+  # Plus and Prime: whole-flat renting not allowed; subsidy recovery on resale (rate not found).
+  plus_prime_years:
+    value: 10
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
+    as_of: 2026-10-21
