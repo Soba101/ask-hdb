@@ -268,3 +268,6 @@ Remaining failures (4): q_multi_step_005 and 007 (counts and sums, as before), q
 Plainly: 5-2 was chosen by reading these dev failures, so the dev verdict of 100% was measured on the questions used to tune it. It is not evidence of generalisation.
 After the PR #45 review the grounding check became stricter (no digits from tool strings, narrower year skip, day dates checked). Offline, all recorded 5-2 final answers still pass it (99/99 numbers); a re-run is needed to see the effect on first drafts and rewrites.
 The Mac model was the only model used; the 5090 was not touched.
+
+After the review fixes (stricter grounding: years next to money words are checked, digits inside ids, dates and prose no longer count as evidence, question numbers cannot stand in as rule thresholds; scenario growth figures returned as numbers), dev re-run (`eval/reports/2026-10-22-agent-week5-3.json`): number 93.6%, verdict 100%, refusal 83.3%, grounding 100%, 4 answers rewritten, 1 replaced.
+The replaced answer is q_grants_006: the model again used the BTO grant tool on a resale question and then wrote "$0", which no tool result supports, so the check replaced a wrong answer (correct behaviour, still a failed question). Remaining failures: q_grants_006, q_multi_step_005, q_scenario_002, q_refuse_008. Held-out is still due.
