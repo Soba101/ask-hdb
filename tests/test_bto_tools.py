@@ -30,7 +30,7 @@ def tables(monkeypatch):
 ALL = {"name": None, "town": None, "flat_type": None, "launch_month": None, "category": None, "max_price": None}
 
 
-def test_filters_and_required_nullable_arguments():
+def test_filters_are_optional():
     assert tools.list_bto_projects.invoke(ALL)["n_projects"] == 2
     town = tools.list_bto_projects.invoke(ALL | {"town": "tampines"})
     assert [p["name"] for p in town["projects"]] == ["A"]
@@ -39,7 +39,8 @@ def test_filters_and_required_nullable_arguments():
     assert tools.list_bto_projects.invoke(ALL | {"launch_month": "2025-10"})["projects"][0]["name"] == "B"
     assert tools.list_bto_projects.invoke(ALL | {"category": "Prime"})["projects"][0]["town"].startswith("unknown")
     assert "note" in cheap and "indicative" in cheap["note"].lower()
-    assert "category" in tools.list_bto_projects.invoke({k: v for k, v in ALL.items() if k != "category"})["error"]
+    assert tools.list_bto_projects.invoke({"name": "A"})["n_projects"] == 1  # filters can be left out
+    assert tools.list_bto_projects.invoke({"name": "A", "category": "", "max_price": "None"})["n_projects"] == 1
 
 
 def test_nearby_uses_the_approximate_site_and_reports_missing_coordinates():

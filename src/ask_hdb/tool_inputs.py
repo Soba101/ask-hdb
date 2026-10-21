@@ -19,8 +19,10 @@ class Arguments(BaseModel):
             return data
         data = dict(data)
         for key, value in list(data.items()):
-            if isinstance(value, str) and value.strip().lower() in {"none", "null"}:
-                field = cls.model_fields.get(key)
+            field = cls.model_fields.get(key)
+            empty = isinstance(value, str) and value.strip() == "" and field is not None and not field.is_required() \
+                and field.default is None
+            if empty or (isinstance(value, str) and value.strip().lower() in {"none", "null"}):
                 if field is not None and field.is_required():
                     data[key] = None
                 else:
@@ -136,13 +138,13 @@ class CalcArgs(Arguments):
 
 
 class BtoListArgs(Arguments):
-    # Required but nullable, like the other filters: the model must write a value or null.
-    name: str | None = Field(description="Part of a project name such as 'Tampines Nova', or null for any project")
-    town: str | None = Field(description="Town name such as TAMPINES, or null for any town")
-    flat_type: str | None = Field(description="2-room Flexi, 3-room, 4-room, 5-room, 3Gen or CCA, or null")
-    launch_month: str | None = Field(description="Launch month YYYY-MM (2025-02, 2025-07, 2025-10, 2026-02, 2026-06), or null")
-    category: Literal["Standard", "Plus", "Prime"] | None = Field(description="Project category, or null for all")
-    max_price: Nonnegative | None = Field(description="Keep flats whose lowest indicative price is at most this, or null")
+    # Optional filters: leave out what the user did not ask for. (Required-nullable made the 9B model invent values.)
+    name: str | None = Field(None, description="Part of a project name such as 'Tampines Nova'")
+    town: str | None = Field(None, description="Town name such as TAMPINES")
+    flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room", "3Gen", "CCA"] | None = Field(None, description="2-room Flexi, 3-room, 4-room, 5-room, 3Gen or CCA")
+    launch_month: str | None = Field(None, description="Launch month YYYY-MM (2025-02, 2025-07, 2025-10, 2026-02, 2026-06)")
+    category: Literal["Standard", "Plus", "Prime"] | None = Field(None, description="Project category")
+    max_price: Nonnegative | None = Field(None, description="Keep flats whose lowest indicative price is at most this")
     limit: Annotated[int, Field(ge=1, le=20)] = 10
 
 
