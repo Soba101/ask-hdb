@@ -60,7 +60,7 @@ def bto_scenario(sales, price, grants, loan_kind, interest_rate_pct, loan_years,
     out["growth_basis"] = (f"{town.upper()} {ROOM[flat_type]} yearly median resale prices {growth['years']}, "
                            f"{growth['n_years']} year-on-year changes; rates floored at 0 and capped at 3% a year (past low {growth['low'] * 100:.1f}%, past median {growth['median'] * 100:.1f}%)")
     left = balance(loan, interest_rate_pct, loan_years, mop * 12)
-    for name, rate in (("flat", 0.0), ("low past growth (headline)", min(growth["low"], GROWTH_CAP)), ("median past growth", min(growth["median"], GROWTH_CAP))):
+    for name, rate in (("flat", 0.0), ("low past growth (headline)", min(growth["low"], GROWTH_CAP)), ("median past growth (capped)", min(growth["median"], GROWTH_CAP))):
         sale = price * (1 + rate) ** mop
         out["scenarios"].append({"name": name, "annual_growth_pct": round(rate * 100, 1), "sale_price": round(sale),
                                  "loan_balance_at_sale": round(left),
