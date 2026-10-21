@@ -77,11 +77,12 @@ Three phases; each gets approval before building.
 - [ ] BTO sites on the 3D map (with the week 6 UI).
 - **Exit:** BTO eligibility and "what is open near X" questions pass; launch-vs-MOP and scenario answers come only from tool results, with the caveats shown.
 
-## Week 5: trust features
+## Week 5: trust features (plan: docs/week5-plan.md)
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
-- [ ] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably".
-- [ ] Supervisor + workers graph (profile, tools, answer).
-- [ ] RAG over HDB policy pages for explanations, with links.
+- [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
+      offline tests only, agent score change not yet measured: needs an eval run on the local model).
+- [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
+- [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
 - [ ] Refusal handling for out-of-scope questions.
 - **Exit:** grounding 100% on the eval; full condition beats single agent.
 

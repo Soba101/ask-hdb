@@ -10,6 +10,7 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
 
+from ask_hdb import grounding
 from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
 
@@ -126,13 +127,17 @@ def _ask(question, history, tools):
                 if isinstance(message, (HumanMessage, AIMessage))
                 and not (isinstance(message, AIMessage) and message.tool_calls)]
     messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=question)]
-    try:
+
+    def run(messages):
+        # Stream one graph run; keep every message so a rewrite can continue the same turn.
+        answer = ""
         # A ReAct round has a model node and a tool node. Calls are capped above.
         for update in graph.stream({"messages": messages},
                                    {"recursion_limit": MAX_TOOL_CALLS * 2 + 2},
                                    stream_mode="updates"):
             for value in update.values():
                 for message in value.get("messages", []):
+                    messages = messages + [message]
                     if isinstance(message, AIMessage):
                         pending.update({call["id"]: call for call in message.tool_calls})
                         if not message.tool_calls:
@@ -144,6 +149,21 @@ def _ask(question, history, tools):
                         except (ValueError, TypeError):
                             result = {"error": "Tool returned unreadable output"}
                         calls.append({"name": call["name"], "args": call["args"], "result": result})
+        return answer, messages
+
+    checked = None
+    try:
+        answer, messages = run(messages)
+        checked = grounding.check(answer, question, [c["result"] for c in calls])
+        first = checked["ungrounded"]
+        if first:
+            # One rewrite, inside the same budgets and tool cap, then an honest fallback.
+            answer, _ = run(messages + [HumanMessage(content=grounding.rewrite_request(first))])
+            checked = grounding.check(answer, question, [c["result"] for c in calls])
+            if checked["ungrounded"] or not answer.strip():
+                answer = grounding.CANNOT_ANSWER
+        checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
+                   "replaced": answer == grounding.CANNOT_ANSWER}
     except LimitReached as exc:
         stopped_reason = str(exc)
     except GraphRecursionError:
@@ -151,4 +171,4 @@ def _ask(question, history, tools):
     if stopped_reason:
         answer = f"stopped: limit ({stopped_reason}). Please narrow the question."
     return {"answer": answer, "tool_calls": calls, "tokens": tokens,
-            "stopped_reason": stopped_reason}
+            "stopped_reason": stopped_reason, "grounding": checked}
