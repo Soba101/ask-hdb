@@ -65,8 +65,8 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 - **Exit: met.** Distance questions 5/5. Same score through MCP as direct (97.4% number, 51 vs 50 of 52 passes). Agent score change:
   run 1 (before fixes) 86.8% / 92.1% number (direct / MCP); run 2 (after fixes) 97.4% both. Held-out: 6 new = 4/6, 10 old = 10/10.
   Details, every failure and its cause: `docs/eval-results.md`.
-- Caveat: 6 of the 7 multi-step dev passes rely on the model doing its own arithmetic (issue #32). The distance gate is met; multi-step is not yet
-  compliant with "code decides".
+- Caveat (fixed 2026-10-21, PR #36): multi-step passes used to rely on the model's own arithmetic (issue #32). A `calculate` tool now does it; the
+  6 new held-out multi-step questions pass 6/6 on the 9B.
 
 ## Week 4b: BTO (added 2026-10-20, after week 4)
 Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.

@@ -194,12 +194,12 @@ replies capped at 1,200 tokens, `find_sales` limited to 5 rows and `compare_pric
 
 | Set | Pass | Notes |
 |---|---|---|
-| 52 dev | 50/52 | 94.7% number, 100% verdict, 100% refusal, 20 minutes, 0 errors |
+| 52 dev | 50/52 | 94.7% number, 100% verdict, 100% refusal, 0 errors |
 | older 16 held-out | 15/16 | |
 | new 6 held-out | 4/6 | |
 | all 74 | | 91.2% number, 100% verdict, 100% refusal, 76.3% grounding, 2 errors |
 
-Failures (4 questions, all multi-step counts and grant sums):
+Failures (5 questions, all multi-step counts and grant sums):
 - q_multi_step_005, 007 (dev) and 014 (held-out): the model counted rows from `find_sales` (capped at 5 per town by my compact setting) and answered 10, instead
   of reading `n_sales` from `price_stats`. **Mostly my setup:** the cap hides the real rows. Partly the model's tool choice.
 - q_multi_step_002 and 012 (held-out grant sums with parents): the request was rejected (OpenAIInvalidRequestError) on the first call, with no tool call made.

@@ -149,3 +149,8 @@ def test_text_none_means_no_filter():
     args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM", "min_n": 1,
             "as_of": "latest", "storey_mid": "None", "lease_left_months": "null", "floor_area_sqm": "None", "max_examples": "None"}
     assert "n_comparables" in tools.compare_price.invoke(args)
+
+
+def test_calculate_does_not_glue_numbers_across_stray_commas():
+    assert "error" in tools.calculate.invoke({"expression": "(1,2)"})
+    assert tools.calculate.invoke({"expression": "1,250 + 1"})["result"] == 1251

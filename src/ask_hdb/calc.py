@@ -2,6 +2,7 @@
 
 import ast
 import operator
+import re
 
 OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
        ast.Div: operator.truediv, ast.USub: operator.neg, ast.UAdd: operator.pos}
@@ -22,7 +23,7 @@ def _eval(node):
 
 def calculate(expression: str) -> dict:
     # Commas and $ are common in copied amounts; strip them. Nothing else is allowed through ast.
-    cleaned = expression.replace(",", "").replace("$", "").strip()
+    cleaned = re.sub(r"(?<=\d),(?=\d{3}\b)", "", expression).replace("$", "").strip()
     if len(cleaned) > 200:
         raise ValueError("Expression too long")
     try:
