@@ -65,3 +65,19 @@ def test_tools_accept_the_buyer_fields_only():
     bto = tools.can_apply_bto.invoke(base | {"category": "Plus", "flat_type": "4-room", "hfe_after_revision": None})
     assert bto["eligible"] is True and bto["detail"]["mop_years"] == 10
     assert "hfe_after_revision" in tools.can_apply_bto.invoke(base | {"category": "Plus", "flat_type": "4-room"})["error"]
+
+
+def test_bto_ehg_applies_applicant_and_property_checks():
+    assert bto_ehg(family(4000)).amount
+    assert bto_ehg(family(4000, owns_private_property=True)).eligible is False
+    foreign = BuyerProfile(scheme="family", citizenships=["foreigner", "foreigner"], ages=[35, 33],
+                           monthly_household_income=4000, family_timers="both_first")
+    assert bto_ehg(foreign).eligible is not True
+    assert bto_ehg(single(2000, age=30)).eligible is False
+
+
+def test_3gen_uses_extended_ceiling_and_flexi_55_flagged():
+    assert can_apply_bto(family(18000), "Standard", "3Gen", False).eligible is not False
+    assert can_apply_bto(family(18000), "Standard", "4-room", False).eligible is False
+    flagged = can_apply_bto(single(5000, age=58), "Standard", "2-room Flexi", False)
+    assert "short_lease_flexi_income_ceiling" in flagged.needs_check

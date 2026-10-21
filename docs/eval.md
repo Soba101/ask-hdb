@@ -26,10 +26,10 @@ Each has a frozen expected answer that code can check.
 | price check | 8 | comparable sales picked by code (same block/street, storey band, lease band) |
 | distance | 8 | independent spherical law of cosines on local block and place coordinates |
 | multi_step | 16 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
-| refuse | 6 (1 retired) | four declines and one request for missing details: "will prices rise?", "should I buy now?", BTO questions |
+| refuse | 6 (1 retired) | four declines and one request for missing details: "will prices rise?", "should I buy now?", Executive Condominium questions |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
-- 27 questions are marked held out; the 52 development questions exclude them by default.
+- 27 questions are marked held out; the 61 development questions exclude them by default.
 - The original 10 held-out questions remain marked, but are spent for tuning (see results).
   The 6 new held-out IDs were fixed before tuning: `q_distance_003`, `q_distance_006`,
   `q_distance_008`, `q_multi_step_002`, `q_multi_step_006`, `q_multi_step_010`.

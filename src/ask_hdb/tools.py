@@ -73,6 +73,18 @@ def _bto_call(function, values):
     return asdict(function(BuyerProfile(**values), **extra))
 
 
+def _validation_error(name):
+    def handle(exc):
+        errors = exc.errors()
+        extra = sorted({str(e["loc"][0]) for e in errors if e["type"] == "extra_forbidden"})
+        bad = sorted({str(e["loc"][0]) for e in errors if e["type"] != "extra_forbidden"})
+        parts = ([f"Missing or invalid: {', '.join(bad)}."] if bad else []) + (
+            [f"Not accepted by this tool, leave out: {', '.join(extra)}."] if extra else [])
+        return {"error": f"Invalid arguments for {name}. " + " ".join(parts)
+                + " Fix these or ask the user for missing details, then call again."}
+    return handle
+
+
 def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
     def invoke(**kwargs):
         try:
@@ -117,9 +129,7 @@ def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
 
     return StructuredTool.from_function(
         func=invoke, name=name, description=description, args_schema=schema,
-        handle_validation_error=lambda exc: {"error": f"Invalid arguments for {name}. Missing or invalid: "
-                                             + ", ".join(sorted({str(e["loc"][0]) for e in exc.errors()}))
-                                             + ". Ask the user for missing details, then call again."},
+        handle_validation_error=_validation_error(name),
     )
 
 

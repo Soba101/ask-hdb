@@ -154,6 +154,6 @@ class BtoNearbyArgs(Arguments):
 
 class BtoRuleArgs(ProfileArgs):
     category: Literal["Standard", "Plus", "Prime"] = Field(description="BTO project category")
-    flat_type: str = Field(description="2-room Flexi, 3-room, 4-room, 5-room or 3Gen")
+    flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room", "3Gen"] = Field(description="BTO flat type")
     hfe_after_revision: bool | None = Field(
         description="True if the HFE letter was applied for on or after 24 Aug 2026 (revised income ceilings), False if before, null if unknown")

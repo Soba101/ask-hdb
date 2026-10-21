@@ -1,6 +1,6 @@
 """BTO (new flat) eligibility and EHG. Only values confirmed in HDB annexes are used; the rest is flagged."""
 
-from ._checks import RuleUse, applicant_checks
+from ._checks import RuleUse, applicant_checks, first_timer_checks, property_check
 from .loader import RULES_DIR, Rules, load_rules
 from .profile import BuyerProfile
 from .result import RuleResult
@@ -15,7 +15,8 @@ def _ceilings(use: RuleUse, profile: BuyerProfile, flat_type: str) -> tuple[int,
         return use.get("eligibility.singles_flexi_99yr_previous"), use.get("eligibility.singles_flexi_99yr_revised")
     if flat_type == FLEXI:
         return use.get("eligibility.flexi_99yr_previous"), use.get("eligibility.flexi_99yr_revised")
-    kind = "extended_families" if profile.extended_family else "families"
+    # A 3Gen flat uses the extended-family ceiling whatever the household shape.
+    kind = "extended_families" if profile.extended_family or flat_type == "3Gen" else "families"
     return use.get(f"eligibility.{kind}_previous"), use.get(f"eligibility.{kind}_revised")
 
 
@@ -33,6 +34,9 @@ def can_apply_bto(profile: BuyerProfile, category: str, flat_type: str, hfe_afte
     elif timers_known in {"none_first", False}:
         # HDB's second-timer flat-type and supply rules were not found, so no verdict is given.
         use.unknown("second_timer_flat_types_and_quota")
+    if flat_type == FLEXI and max(profile.ages) >= 55:
+        # Short-lease 2-room Flexi (age 55+) has a higher ceiling that is not modelled; the 99-year one is used below.
+        use.unknown("short_lease_flexi_income_ceiling")
     previous, revised = _ceilings(use, profile, flat_type)
     income = profile.monthly_household_income
     if hfe_after_revision is None:
@@ -60,12 +64,14 @@ def bto_ehg(profile: BuyerProfile, rules: Rules | None = None) -> RuleResult:
     """Enhanced CPF Housing Grant for a new flat. The income tables are the same ones used for resale."""
     use = RuleUse(rules)
     prefix = "grants.ehg."
-    first = profile.family_timers if profile.scheme == "family" else profile.first_timer
-    if first is None:
-        use.unknown("first_or_second_timer")
+    applicant_checks(use, profile)
+    first_timer_checks(use, profile)
+    property_check(use, profile)
+    if use.result.eligible is not True:
         return use.result
-    if first in {"none_first", False}:
-        use.deny("EHG needs at least one first-timer applicant")
+    joint = profile.scheme == "single" and profile.buying_with != "alone"
+    if joint and profile.own_monthly_income is None:
+        use.unknown("own_monthly_income")
         return use.result
     if not profile.works_12_months:
         use.unknown("ehg_work_rule_for_new_flats")
@@ -76,9 +82,11 @@ def bto_ehg(profile: BuyerProfile, rules: Rules | None = None) -> RuleResult:
         ceiling = use.get(prefix + ("mixed_couple_assessed_income_ceiling_half_of_household" if mixed else "families_income_ceiling"))
         tiers = use.get(prefix + ("mixed_couple_tiers_on_half_income" if mixed else "families_tiers"))
     else:
-        if profile.buying_with != "alone":
+        if profile.buying_with == "family_or_singles":
             use.unknown("ehg_joint_singles_assessment")
-        ceiling = use.get(prefix + "singles_income_ceiling_alone")
+        ceiling = use.get(prefix + ("singles_income_ceiling_alone" if not joint
+                                    else "singles_income_ceiling_household_with_other_singles_or_parents"))
+        income = profile.own_monthly_income if joint else income
         tiers = use.get(prefix + "singles_tiers_alone_or_with_parents")
     if income > ceiling:
         use.deny("Income exceeds the EHG ceiling")

@@ -17,7 +17,7 @@ eligibility:
   # Each family nucleus is also capped (see nucleus).
   extended_families_previous:
     value: 21000
-    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/20260617-HDB-Launches-6952-Flats-Across-7-Projects-in-June-2026-BTO-Sales-Exercise/Annex-B.pdf
     as_of: 2026-10-21
   extended_families_revised:
     value: 24000
@@ -25,7 +25,7 @@ eligibility:
     as_of: 2026-10-21
   nucleus_previous:
     value: 14000
-    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-A.pdf
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/20260617-HDB-Launches-6952-Flats-Across-7-Projects-in-June-2026-BTO-Sales-Exercise/Annex-B.pdf
     as_of: 2026-10-21
   nucleus_revised:
     value: 16000
@@ -52,17 +52,17 @@ eligibility:
   # Singles can buy only 2-room Flexi in BTO (Standard, Plus and Prime projects).
   singles_bto_flat_type:
     value: '2-room Flexi'
-    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2026/increase-in-income-ceilings-and-greater-support-for-families-with-children/Annex-B.pdf
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
     as_of: 2026-10-21
 loan:
-  # HDB loan limit 75% from the Oct 2024 exercise (was 80%).
+  # HDB loan limit 75% from the Oct 2024 exercise (was 80%); the quote is in Annex-C footnote 4. The bank_ltv value is the same figure and is not separately confirmed.
   hdb_ltv:
     value: 0.75
-    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-C.pdf
     as_of: 2026-10-21
   bank_ltv:
     value: 0.75
-    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-A.pdf
+    source: https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-C.pdf
     as_of: 2026-10-21
 mop:
   standard_years:
