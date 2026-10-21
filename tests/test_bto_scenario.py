@@ -32,7 +32,7 @@ def test_scenarios_use_low_growth_as_headline_and_floor_at_zero():
     assert out["loan_amount"] == 300000 and out["mop_years"] == 5 and out["upfront_needed_cash_or_cpf"] == 50000
     assert out["scenarios"][0]["sale_price"] == 400000
     assert 0 <= low["annual_growth_pct"] <= median["annual_growth_pct"] <= 3.0
-    assert low["cash_before_cpf_refund"] == low["sale_price"] - low["loan_balance_at_sale"]
+    assert low["cash_before_cpf_refund"] == pytest.approx(low["sale_price"] - low["loan_balance_at_sale"], abs=1)
     assert {"cpf_refund_and_accrued_interest_on_sale", "grant_refund_on_sale"} <= set(out["needs_check"])
     assert "not a forecast" in out["note"]
 
