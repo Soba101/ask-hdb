@@ -30,7 +30,7 @@ def tables(monkeypatch):
 ALL = {"name": None, "town": None, "flat_type": None, "launch_month": None, "category": None, "max_price": None}
 
 
-def test_filters_and_required_nullable_arguments():
+def test_filters_are_optional():
     assert tools.list_bto_projects.invoke(ALL)["n_projects"] == 2
     town = tools.list_bto_projects.invoke(ALL | {"town": "tampines"})
     assert [p["name"] for p in town["projects"]] == ["A"]
@@ -39,7 +39,8 @@ def test_filters_and_required_nullable_arguments():
     assert tools.list_bto_projects.invoke(ALL | {"launch_month": "2025-10"})["projects"][0]["name"] == "B"
     assert tools.list_bto_projects.invoke(ALL | {"category": "Prime"})["projects"][0]["town"].startswith("unknown")
     assert "note" in cheap and "indicative" in cheap["note"].lower()
-    assert "category" in tools.list_bto_projects.invoke({k: v for k, v in ALL.items() if k != "category"})["error"]
+    assert tools.list_bto_projects.invoke({"name": "A"})["n_projects"] == 1  # filters can be left out
+    assert tools.list_bto_projects.invoke({"name": "A", "category": "", "max_price": "None"})["n_projects"] == 1
 
 
 def test_nearby_uses_the_approximate_site_and_reports_missing_coordinates():
@@ -48,3 +49,12 @@ def test_nearby_uses_the_approximate_site_and_reports_missing_coordinates():
     assert near["places"][0]["km"] == pytest.approx(0.111, abs=0.01)
     assert "No site coordinates" in tools.bto_nearby.invoke({"project_id": "bto_b", "kind": "mrt"})["error"]
     assert "Unknown project_id" in tools.bto_nearby.invoke({"project_id": "bto_z", "kind": "mrt"})["error"]
+
+
+def test_empty_text_is_only_no_value_for_bto_filters():
+    from pydantic import ValidationError
+
+    from ask_hdb.tool_inputs import CompareArgs
+    with pytest.raises(ValidationError):
+        CompareArgs.model_validate({"block_id": "x", "flat_type": "4 ROOM", "price": 1, "storey_mid": "",
+                                    "lease_left_months": None, "floor_area_sqm": None, "as_of": "latest"})
