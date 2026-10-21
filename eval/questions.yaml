@@ -1217,20 +1217,20 @@
   heldout: true
 - id: q_scenario_007
   kind: scenario
-  question: I buy a $350,000 Standard 3-room BTO flat in Bedok with the largest HDB loan at 2.6% a year over 25 years. In the illustrative low past growth (headline) scenario, what is the sale price after
+  question: I buy a $400,000 Standard 4-room BTO flat in Jurong West with the largest HDB loan at 2.6% a year over 25 years. In the illustrative low past growth (headline) scenario, what is the sale price after
     the minimum occupation period, in dollars to the nearest thousand? Answer with one number.
   expect:
-    number: 350000
+    number: 435000
     tolerance: 1000
   source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
   query:
     operation: headline_sale
-    price: 350000
+    price: 400000
     rate_pct: 2.6
     years: 25
     category: Standard
-    town: BEDOK
-    flat_type: 3 ROOM
+    town: JURONG WEST
+    flat_type: 4 ROOM
 - id: q_refuse_007
   kind: refuse
   question: Will my Tampines BTO flat be worth $1 million by the time I can sell it?

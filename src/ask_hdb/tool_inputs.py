@@ -170,9 +170,10 @@ class BtoScenarioArgs(Arguments):
     price: Annotated[float, Field(gt=0)] = Field(description="Purchase price in dollars (a launch price from list_bto_projects)")
     grants: Nonnegative = Field(description="Total grants in dollars from the grant tools, 0 if none")
     loan_kind: Literal["hdb", "bank"] = Field(description="HDB loan or bank loan")
-    interest_rate_pct: Annotated[float, Field(ge=0, le=15)] = Field(
-        description="Yearly interest rate in percent given by the user. Ask; never assume one")
-    loan_years: Annotated[int, Field(ge=1, le=35)] = Field(description="Loan length in years given by the user. Ask; never assume one")
+    interest_rate_pct: Annotated[float, Field(ge=0, le=15)] | None = Field(
+        None, description="Yearly interest rate in percent given by the user; leave out if not given, never assume one")
+    loan_years: Annotated[int, Field(ge=1, le=35)] | None = Field(
+        None, description="Loan length in years given by the user; leave out if not given, never assume one")
     category: Literal["Standard", "Plus", "Prime"] = Field(description="BTO project category")
     town: str | None = Field(None, description="Town of the flat, such as TAMPINES, for past price growth")
     flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room"] | None = Field(None, description="Flat type, for past price growth")

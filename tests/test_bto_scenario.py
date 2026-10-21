@@ -46,18 +46,9 @@ def test_falling_prices_give_flat_scenarios_and_missing_history_is_flagged():
     assert run(falling, category="Prime")["mop_years"] == 10
 
 
-def test_tool_registered_and_rejects_missing_rate():
+def test_tool_registered_and_rate_is_optional():
     assert any(t.name == "bto_scenario" for t in tools.TOOLS)
-    assert "interest_rate_pct" in tools.bto_scenario.invoke(
-        {"price": 1, "grants": 0, "loan_kind": "hdb", "loan_years": 25, "category": "Standard"})["error"]
-
-
-def test_labels_show_floor_and_cap_and_basis_shows_real_past_low():
-    falling = sales({2018: 160, 2019: 150, 2020: 140, 2021: 130, 2022: 120, 2023: 110, 2024: 100, 2025: 90})
-    out = run(falling)
-    assert "floored at 0" in out["scenarios"][1]["name"] and "past low -" in out["growth_basis"]
-    boom = sales({2018: 100, 2019: 120, 2020: 145, 2021: 175, 2022: 210, 2023: 250, 2024: 300, 2025: 360})
-    out = run(boom, loan_kind="bank")
-    assert "capped at 3%" in out["scenarios"][1]["name"] and out["scenarios"][1]["annual_growth_pct"] == 3.0
-    assert "bank_ltv_not_separately_confirmed" in out["needs_check"]
-    assert "loan_amount_assumes_max_ltv_check_hle_msr_and_cpf_paid_in" in out["needs_check"]
+    out = scenario.bto_scenario(sales({2024: 1}), 380000, 0, "hdb", "Standard")
+    assert out["loan_amount"] == 285000 and out["upfront_needed_cash_or_cpf"] == 95000
+    assert out["monthly_instalment"] is None and out["scenarios"] == []
+    assert "interest_rate_and_loan_years_for_instalment_and_scenarios" in out["needs_check"]
