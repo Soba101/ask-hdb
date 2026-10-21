@@ -184,6 +184,9 @@ model arithmetic needed. This resolves issue 32 for these questions. Grounding i
 **Known scorer limit (not weakened):** q_distance_005's answer is right ("only 2 primary schools") but lists three distances first and the first-number rule reads
 0.056. A "last number" rule was tried and rejected: it broke 10 tests that guard against false passes.
 
+## MCP parity (9B, 52 dev questions)
+Through MCP: 51/52, the same single miss as direct (q_distance_005, scorer limit). MCP matches direct after the fixes, including the new `calculate` tool and nullable fields.
+
 ## 27B model on the 5090 (qwen3.8:27b, llama-server)
 Approved by the user on 2026-10-21 after coordinating with the Whisperwick session. One call at a time, nothing changed on the PC.
 The server has 4 slots of 8,192 tokens, and our first request is 6,664 tokens (10 tools of schema). Setup: tool schemas without repeated `title` keys,
