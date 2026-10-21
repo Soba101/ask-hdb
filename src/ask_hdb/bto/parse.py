@@ -58,17 +58,18 @@ def parse_legacy_annex(text: str, launch: str) -> list[dict]:
     text = text[start.end():] if start else text
     text = HEADER.sub(" ", text.split("Note:")[0])
     text = re.sub(r"Project\s+Flat\s+Type.*?\(Excluding\s+Grants\)", " ", text, flags=re.DOTALL)
-    rows, position, project, flat = [], 0, None, None
+    rows, position, project, flat, short = [], 0, None, None, False
     for match in LEGACY_ROW.finditer(text):
         between = " ".join(text[position:match.start()].split())
         position = match.end()
-        short = bool(re.search(r"\d+\s*-?\s*(?:yr|year)\s*Lease", between + " " + (match["mark"] or "")))
         name = re.sub(r"\s+", " ", LEGACY_NOISE.sub(" ", between)).strip()
         if name:
             project = name
         if match["flat"]:
             flat = re.sub(r"\s+", " ", match["flat"])
             flat = "CCA" if flat.startswith("CCA") else flat
+            # A short-lease label applies to every sub-row of that flat type until the next flat-type word.
+            short = bool(re.search(r"\d+\s*-?\s*(?:yr|year)\s*Lease", between + " " + (match["mark"] or "")))
         label = flat + " short lease" if short and flat != "CCA" else flat  # flat is set by the first row
         rows.append({"launch": launch, "project": project, "category": None, "wait_months": None,
                      "flat_type": label, "units": _int(match["units"]),

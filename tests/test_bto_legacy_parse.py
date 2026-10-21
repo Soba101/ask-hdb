@@ -16,6 +16,7 @@ Flexi ^^
 (40-year
 Lease)
 38 36 46 $117,000  -  $136,000
+48 46 90 $139,000  -  $182,000
 Sun Plaza Spring 4-room 93 90 1,150 $381,000  -  $438,000 5-room 113 110 117 $520,000  -  $590,000
 Note:
 1) * Refers to the estimated area
@@ -29,6 +30,7 @@ def test_legacy_rows_inherit_flat_type_and_project():
         ("West Hill @ Bukit Batok", "2-room Flexi", 107),
         ("West Hill @ Bukit Batok", "4-room", 387),
         ("McNair Heights", "2-room Flexi short lease", 46),
+        ("McNair Heights", "2-room Flexi short lease", 90),
         ("Sun Plaza Spring", "4-room", 1150),
         ("Sun Plaza Spring", "5-room", 117),
     ]

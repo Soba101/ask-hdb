@@ -1,7 +1,7 @@
 # BTO history: launch price vs later resale (town level, descriptive)
 
 Data (official, see `data/raw/bto_history/SOURCES.md`): HDB launch annexes 2021-02 to 2024-10 (`bto_flats_history.parquet`, parsed by `scripts/build_bto_history.py`)
-and the data.gov.sg "Price Range of HDB Flats Offered" CSV, FY2008-FY2024 (`bto_price_range_town.parquet`, town and room type only, 14 towns).
+and the data.gov.sg "Price Range of HDB Flats Offered" CSV, FY2008-FY2024 (`bto_price_range_town.parquet`, town and room type only, 13 towns).
 
 Method (`src/ask_hdb/bto/history.py`): for each launch range (financial year FY, town, room type) take resale sales in the same town and flat type
 with lease start FY+3 to FY+5, sold 5 to 7 years after the lease start (first two years after the 5-year MOP), at least 30 sales. Report the resale median
@@ -12,6 +12,11 @@ Median resale / top of launch range, 4-room: FY2008-2012 launches about 1.4-1.55
 Limits (say these whenever the numbers are quoted):
 - Descriptive only, not a forecast. Resale prices include the effect of the 2021-2023 price rise, which hits the later cohorts, so ratios are not stable.
 - Launch ranges are before grants, resale prices are what the buyer paid; neither includes loan interest, CPF accrued interest, fees or renovation.
-- Town and flat type level only: no project, floor, MRT distance or lease detail. 14 towns in the CSV (mostly non-mature), so mature-town BTO is not covered.
+- Town and flat type level only: no project, floor, MRT distance or lease detail. 13 towns in the CSV (mostly non-mature), so mature-town BTO is not covered.
 - Lease start FY+3 to FY+5 is an assumption for key collection; the match is approximate. Early resales of 2021/2022 lease-start flats are unexplained (see week4b-plan.md).
 - 2015-2020 per-project launch prices are not available from HDB pages we could reach; per-project history stays limited to 2021-2026 launches.
+- Resale data starts in 2017-01, so the earliest cohorts lose their first sales. Later cohorts are thin: for 4-room, FY2016 and FY2017 have 3 towns each and FY2018 has 1 town
+  (sales from 2026 only), so the quoted FY2013-2018 range rests mostly on FY2013-2015.
+- Medians are across towns; the spread between towns is wider (4-room: 1.26-1.73 for FY2008-2012, 1.53-2.15 for FY2013-2018).
+- Annex rows: "2-room Flexi short lease" (seniors, 15-45 years) is a flat type that only exists in the 2021-2022 history rows. The Prime Location (PLH) flag is not carried in the history table.
+- If these ratios ever reach a tool or an answer, the limits above must travel with the number; a ratio near 2 must not read as an expected gain.

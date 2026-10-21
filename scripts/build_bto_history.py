@@ -2,7 +2,8 @@
 
 Reads data/raw/bto_history/ (HDB annexes and the data.gov.sg price-range CSV, see SOURCES.md there).
 Writes data/clean/bto_flats_history.parquet (same columns as bto_flats.parquet) and
-data/clean/bto_price_range_town.parquet (launch price range by financial year, town and room type).
+data/clean/bto_price_range_town.parquet (launch price range by financial year, town and room type) and
+data/clean/bto_launch_vs_resale_town.parquet (descriptive comparison, see docs/bto-history.md).
 """
 
 from pathlib import Path
@@ -10,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 from pypdf import PdfReader
 
+from ask_hdb.bto.history import launch_vs_resale
 from ask_hdb.bto.parse import parse_annex_a, parse_legacy_annex
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,8 +39,10 @@ def main():
 
     town = pd.read_csv(RAW / "price_range_of_hdb_flats_offered.csv")
     town = town.rename(columns={"min_selling_price": "price_low", "max_selling_price": "price_high"})
-    town["town"] = town.town.str.upper()
+    town["town"] = town.town.str.strip().str.upper()
     town.to_parquet(CLEAN / "bto_price_range_town.parquet", index=False)
+    sales = pd.read_parquet(CLEAN / "resale.parquet")
+    launch_vs_resale(sales, town).to_parquet(CLEAN / "bto_launch_vs_resale_town.parquet", index=False)
     print(len(town), "town price-range rows,", town.financial_year.min(), "to", town.financial_year.max())
 
 
