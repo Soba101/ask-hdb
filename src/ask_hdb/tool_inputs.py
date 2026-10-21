@@ -1,6 +1,6 @@
 """Flat JSON fields keep tool calls manageable for small local models."""
 
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -10,6 +10,9 @@ PlaceKind = Literal["mrt", "primary_school"]
 
 
 class Arguments(BaseModel):
+    # Only the BTO list filters read empty text as "no value"; elsewhere an empty filter stays an error or an exact match.
+    empty_means_none: ClassVar[bool] = False
+
     @model_validator(mode="before")
     @classmethod
     def _text_none(cls, data):
@@ -20,8 +23,8 @@ class Arguments(BaseModel):
         data = dict(data)
         for key, value in list(data.items()):
             field = cls.model_fields.get(key)
-            empty = isinstance(value, str) and value.strip() == "" and field is not None and not field.is_required() \
-                and field.default is None
+            empty = cls.empty_means_none and isinstance(value, str) and value.strip() == "" and field is not None \
+                and not field.is_required() and field.default is None
             if empty or (isinstance(value, str) and value.strip().lower() in {"none", "null"}):
                 if field is not None and field.is_required():
                     data[key] = None
@@ -138,6 +141,7 @@ class CalcArgs(Arguments):
 
 
 class BtoListArgs(Arguments):
+    empty_means_none: ClassVar[bool] = True
     # Optional filters: leave out what the user did not ask for. (Required-nullable made the 9B model invent values.)
     name: str | None = Field(None, description="Part of a project name such as 'Tampines Nova'")
     town: str | None = Field(None, description="Town name such as TAMPINES")

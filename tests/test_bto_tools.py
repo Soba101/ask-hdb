@@ -49,3 +49,12 @@ def test_nearby_uses_the_approximate_site_and_reports_missing_coordinates():
     assert near["places"][0]["km"] == pytest.approx(0.111, abs=0.01)
     assert "No site coordinates" in tools.bto_nearby.invoke({"project_id": "bto_b", "kind": "mrt"})["error"]
     assert "Unknown project_id" in tools.bto_nearby.invoke({"project_id": "bto_z", "kind": "mrt"})["error"]
+
+
+def test_empty_text_is_only_no_value_for_bto_filters():
+    from pydantic import ValidationError
+
+    from ask_hdb.tool_inputs import CompareArgs
+    with pytest.raises(ValidationError):
+        CompareArgs.model_validate({"block_id": "x", "flat_type": "4 ROOM", "price": 1, "storey_mid": "",
+                                    "lease_left_months": None, "floor_area_sqm": None, "as_of": "latest"})

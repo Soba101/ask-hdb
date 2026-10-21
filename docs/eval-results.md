@@ -235,4 +235,4 @@ loan tenure/MSR, current HDB interest rate, second-timer flat types. Six project
 Change: `list_bto_projects` filters are now optional (the model had invented values for the required-nullable ones), `flat_type` is a fixed list, and empty text counts as no value.
 Re-ran the 9 BTO dev questions in a separate report (`eval/reports/2026-10-22-agent-bto-fix.json`): 8 pass, 1 request timeout (q_bto_002, a verdict question; the first run
 of it passed too). Asked once more outside the harness it gave the correct "no" (income above the 16,000 revised ceiling) in 61 s, but that run is not counted.
-So q_bto_008, 009 and 010 now pass. The held-out BTO questions (011, 012 failed before) were not re-run: they are spent for tuning, so their 3/5 stays as reported above.
+q_bto_009 and 010 now pass because of this change; q_bto_008 passes because of the clearer tool error added in 4b-1 (the model now drops the extra fields). Grounding in this re-run was 72.7% (q_bto_001 1/3 and q_bto_013 0/1 are weak). The held-out BTO questions (011, 012 failed before) were not re-run: they are spent for tuning, so their 3/5 stays as reported above.
