@@ -78,6 +78,8 @@ class NearestArgs(Arguments):
     block_id: str
     kind: PlaceKind
     n: Annotated[int, Field(ge=1)] = 3
+    within_km: Annotated[float, Field(gt=0, le=50)] | None = Field(
+        None, description="For 'how many within X km' questions: returns every place within X km (inclusive) and n_within")
 
 
 class CompareArgs(Arguments):

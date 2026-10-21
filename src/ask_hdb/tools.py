@@ -152,7 +152,7 @@ phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living
 max_loan = _tool("max_loan", "Estimate the HDB loan cap; disclose needs_check and valuation limits.",
                  LoanArgs, loan.max_loan, rule=True)
 
-nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance.",
+nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance. For 'how many within X km', pass within_km and quote n_within.",
                        NearestArgs, geo_filters.nearest_places)
 
 calculate = _tool("calculate", "Add, subtract, multiply or divide numbers taken from tool results. Use it for ALL arithmetic.",

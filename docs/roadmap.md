@@ -80,7 +80,8 @@ Three phases; each gets approval before building.
 ## Week 5: trust features (plan: docs/week5-plan.md)
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
 - [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
-      offline tests only, agent score change not yet measured: needs an eval run on the local model).
+      dev eval 9B: grounding 100%, number 93.6%, verdict 78.6% -> 57.1% from memory thresholds).
+- [x] 5-2: tools return the rule values and counts answers quote (re-run of the dev eval pending).
 - [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
 - [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
 - [ ] Refusal handling for out-of-scope questions.

@@ -8,7 +8,7 @@ Rule: small and verifiable beats big. Each phase is tested offline with fake cha
 | Phase | What | Status |
 |---|---|---|
 | 5-1 | `grounding.py` number check in `agent.ask()`: check, one rewrite, re-check, else an honest "can't answer reliably". Eval grounding column uses the same function. | built (this branch) |
-| 5-2 | Tools return the numbers models like to add from memory (rule thresholds used, counts within a radius). | next, needs approval |
+| 5-2 | Tools return the numbers models like to add from memory (rule thresholds used, counts within a radius). | built (this branch), eval pending |
 | 5-3 | Profile confirmation: "Is this right?" before any eligibility or grant tool runs. | after 5-2 |
 | 5-4 | `full` eval condition (single agent + grounding + confirmation) vs single agent, same questions and model. | after 5-3 |
 | deferred | Supervisor + workers graph; RAG over HDB policy pages. | see below |
@@ -37,6 +37,18 @@ The rewrite can only remove a memory number, not ground it. Two small tool chang
 - Rule tools add the rule values they used (for example `min_age_years: 35`, `ltv_max_pct: 75`) to their result, from `rules/*.yaml`.
 - `nearest_places` adds `n_within_km` when asked for a radius, so counts come from code.
 Test: unit tests on each tool output, plus grounding tests with those outputs. Risk: longer tool results on 8k-slot servers.
+
+Why (5-1 dev eval, 9B, 2026-10-22): grounding 100% and number 93.6%, but verdict fell from 78.6% to 57.1%: 6 answers were replaced
+because they quoted thresholds from memory (21, 35, 24 from "24 Aug 2026", 75% LTV), a school count, and numbers in a decline.
+
+Built:
+- `RuleUse.get` puts the rule value into each citation in `rules` (`value`; fractions also get `value_pct`, so 0.75 is 75).
+  Tier tables are left out to keep results short. Singles checks cite both minimum ages (35 and 21).
+- `can_apply_bto` cites the HFE revision date (2026-08-24); `bto_ehg` cites the 12-month work rule when work history fails.
+- `bto_scenario` returns `ltv_pct`. Its growth percentages were already in `annual_growth_pct` and `growth_basis`.
+- `nearest_places(within_km=...)` returns every place within that distance (inclusive) and `n_within`.
+- System prompt: thresholds only from the rules `value`/`value_pct`; counts from `n_within`; a decline states no numbers.
+- `grounding.py` is unchanged. Tests: `tests/test_rule_values_grounding.py` replays the memory-number answers against the new tool outputs.
 
 ## 5-3 Profile confirmation (after 5-2)
 Code decides, not the prompt. The agent intercepts a call to `can_buy_resale`, `can_apply_bto`, `cpf_housing_grant`, `ehg_amount`,

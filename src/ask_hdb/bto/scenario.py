@@ -48,7 +48,8 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
     loan = ltv * price
     known = interest_rate_pct is not None and loan_years is not None
     payment = instalment(loan, interest_rate_pct, loan_years) if known else None
-    out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "loan_amount": round(loan),
+    out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "ltv_pct": round(ltv * 100, 6),
+           "loan_amount": round(loan),
            "interest_rate_pct": interest_rate_pct, "loan_years": loan_years,
            "monthly_instalment": round(payment) if known else None, "upfront_needed_cash_or_cpf": round(max(0.0, price - loan - grants)),
            "mop_years": mop, "rules": use.result.rules, "note": NOTE,

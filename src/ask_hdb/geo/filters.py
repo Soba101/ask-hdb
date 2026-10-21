@@ -30,5 +30,11 @@ def filter_sales(frame, values):
     return frame, values, kind is not None, unlocated
 
 
-def nearest_places(block_id, kind, n=3):
-    return {"places": nearest(load_blocks(), load_places(), block_id, kind, n), "note": NOTE}
+def nearest_places(block_id, kind, n=3, within_km=None):
+    if within_km is None:
+        return {"places": nearest(load_blocks(), load_places(), block_id, kind, n), "note": NOTE}
+    # Count in code, inclusive, over every place of this kind, so the model never counts list items.
+    places = load_places()
+    found = [p for p in nearest(load_blocks(), places, block_id, kind, max(len(places), 1))
+             if p["km"] <= within_km]
+    return {"places": found, "n_within": len(found), "within_km": within_km, "note": NOTE}

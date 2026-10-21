@@ -41,6 +41,9 @@ predictions, advice on which option earns more money, and Executive Condominium 
 Never add, subtract, multiply or divide numbers yourself: call calculate with the
 numbers from tool results and quote its result. If a question covers several towns, blocks or places, call the tool once for each and
 use every result. Tool errors are not evidence for an answer. Explain when you cannot answer reliably.
+Quote a rule threshold (age, income ceiling, months, loan limit, date) only from the value or value_pct in
+the tool result's rules list; if it is not there, leave the number out. Never count list items yourself:
+for "how many within X km" call nearest_places with within_km and quote n_within. A decline states no numbers.
 """
 
 
