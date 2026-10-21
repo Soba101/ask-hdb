@@ -58,3 +58,14 @@ def test_empty_text_is_only_no_value_for_bto_filters():
     with pytest.raises(ValidationError):
         CompareArgs.model_validate({"block_id": "x", "flat_type": "4 ROOM", "price": 1, "storey_mid": "",
                                     "lease_left_months": None, "floor_area_sqm": None, "as_of": "latest"})
+
+
+def test_resale_flat_type_accepts_bto_style_names():
+    from ask_hdb.tool_inputs import CompareArgs, SalesArgs
+    for text in ("3-room", "3 room", "3-ROOM", "3 rooms"):
+        assert SalesArgs(flat_type=text).flat_type == "3 ROOM"
+    assert SalesArgs(flat_type="Multi-Generation").flat_type == "MULTI-GENERATION"
+    assert SalesArgs(flat_type="3ROOM").flat_type == "3 ROOM"
+    compare = CompareArgs(block_id="x", price=1, flat_type="4-room", storey_mid=None, lease_left_months=None,
+                          floor_area_sqm=None, as_of="latest")
+    assert compare.flat_type == "4 ROOM"
