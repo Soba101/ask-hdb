@@ -40,16 +40,17 @@ def past_growth(sales: pd.DataFrame, town: str, room: str) -> dict | None:
             "years": f"{medians.index.min()}-{medians.index.max()}", "n_years": len(growth)}
 
 
-def bto_scenario(sales, price, grants, loan_kind, interest_rate_pct, loan_years, category,
+def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_pct=None, loan_years=None,
                  town=None, flat_type=None) -> dict:
     use = RuleUse(load_rules(BTO_FILE))
     ltv = use.get(f"loan.{'hdb' if loan_kind == 'hdb' else 'bank'}_ltv")
-    mop = use.get(f"mop.{'plus_prime_years' if category in {'Plus', 'Prime'} else 'standard_years'}")
+    mop = use.get(f"mop.{'plus_prime_years' if category in {'Plus', 'Prime'} else 'standard_years'}") if category else None
     loan = ltv * price
-    payment = instalment(loan, interest_rate_pct, loan_years)
+    known = interest_rate_pct is not None and loan_years is not None
+    payment = instalment(loan, interest_rate_pct, loan_years) if known else None
     out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "loan_amount": round(loan),
            "interest_rate_pct": interest_rate_pct, "loan_years": loan_years,
-           "monthly_instalment": round(payment), "upfront_needed_cash_or_cpf": round(max(0.0, price - loan - grants)),
+           "monthly_instalment": round(payment) if known else None, "upfront_needed_cash_or_cpf": round(max(0.0, price - loan - grants)),
            "mop_years": mop, "rules": use.result.rules, "note": NOTE,
            "needs_check": ["cpf_refund_and_accrued_interest_on_sale", "grant_refund_on_sale",
                          "loan_amount_assumes_max_ltv_check_hle_msr_and_cpf_paid_in"], "scenarios": []}
@@ -57,6 +58,12 @@ def bto_scenario(sales, price, grants, loan_kind, interest_rate_pct, loan_years,
         out["needs_check"].append("bank_ltv_not_separately_confirmed")
     if category in {"Plus", "Prime"}:
         out["needs_check"].append("plus_prime_subsidy_recovery")
+    if not known:
+        out["needs_check"].append("interest_rate_and_loan_years_for_instalment_and_scenarios")
+    if mop is None:
+        out["needs_check"].append("category_for_mop_years_and_sale_scenarios")
+    if not known or mop is None:
+        return out
     growth = past_growth(sales, town, ROOM[flat_type]) if town and flat_type in ROOM else None
     if growth is None:
         out["needs_check"].append("growth_history_for_town_and_flat_type")

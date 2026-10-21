@@ -236,3 +236,20 @@ Change: `list_bto_projects` filters are now optional (the model had invented val
 Re-ran the 9 BTO dev questions in a separate report (`eval/reports/2026-10-22-agent-bto-fix.json`): 8 pass, 1 request timeout (q_bto_002, a verdict question; the first run
 of it passed too). Asked once more outside the harness it gave the correct "no" (income above the 16,000 revised ceiling) in 61 s, but that run is not counted.
 q_bto_009 and 010 now pass because of this change; q_bto_008 passes because of the clearer tool error added in 4b-1 (the model now drops the extra fields). Grounding in this re-run was 72.7% (q_bto_001 1/3 and q_bto_013 0/1 are weak). The held-out BTO questions (011, 012 failed before) were not re-run: they are spent for tuning, so their 3/5 stays as reported above.
+
+## Week 4b-3: scenario questions (9B on the MacBook, direct tools, 2026-10-22)
+7 `scenario` number questions (3 held out) and 2 declines (q_refuse_007, 008). Expected values come from `scripts/build_scenario_expected.py` (month-by-month amortisation, independent of the app code).
+
+Dev tuning (separate reports `eval/reports/*-agent-scenario*.json`, git-ignored): first run 0/4 scenario and q_refuse_008 failing. Causes, all on my side or the model's tool choice:
+the model used `calculate` or `max_loan` instead of `bto_scenario`; q_scenario_002 and 003 gave no rate or years while the tool required them (now optional); q_scenario_007's expected
+value equalled a number in its question, which the scorer ignores (case changed to Jurong West 4-room); q_scenario_002 also read as the income-based personal loan limit (reworded to "ignoring income limits").
+After the fixes dev is 4/4. q_refuse_008 ("which loan makes more money") still fails: the model gives a balanced list of factors instead of declining.
+Dev questions were reworded after seeing results, so the dev pass rate is tuned, not independent.
+
+Held-out (run once, after the fixes): 1/3 pass (q_scenario_006 passes; 004 and 005 fail). Cause: I had made `category` optional, and the model then left it out even when the question
+named Standard or Plus, so no balance or sale scenario was returned and it answered with the instalment or the upfront cost instead. Fixed afterwards by making `category`
+required but nullable (the week 4 lesson: required-nullable for fields the model must consider, optional for filters). The held-out set is spent, so its 1/3 stays as reported; dev re-run after the fix is 4/4.
+Grounding column is low in these runs (37-100%) because the tool rounds sale prices to $1,000 and the model sometimes quotes unrounded figures; week 5 `grounding.py` will judge this properly.
+Review follow-up: q_scenario_001 now says "the largest HDB loan" (the loan size was ambiguous; 1531 assumes the largest loan). q_scenario_005 (held out, already run) still does not say "before any subsidy recovery"; its wording is left as run.
+Stability note: after the review fixes the dev set was re-run three more times and q_scenario_002 failed each time (3/4) although it passed in two earlier runs with the same tool schema. Asked directly four times it answered
+285,000 every time (via `max_loan` plus `calculate`, not `bto_scenario`), so the loss is the 9B's run-to-run variation in tool choice and in answer format, not a wrong number. Not tuned further.
