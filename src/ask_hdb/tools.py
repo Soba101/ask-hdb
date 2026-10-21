@@ -14,15 +14,18 @@ from ask_hdb import calc, compare, sales
 from ask_hdb.bto import queries as bto
 from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
+from ask_hdb.rules import bto as bto_rules
 from ask_hdb.tool_inputs import (
     BtoListArgs,
     BtoNearbyArgs,
+    BtoRuleArgs,
     CalcArgs,
     CompareArgs,
     FindArgs,
     LoanArgs,
     NearestArgs,
     PhgArgs,
+    ProfileArgs,
     RuleArgs,
     SalesArgs,
 )
@@ -38,7 +41,7 @@ def load_sales():
     return pd.read_parquet(path)
 
 
-def _rule_call(function, values):
+def _profile_values(values):
     values = values.copy()
     if values["scheme"] == "family" or values["marital_status"] == "unknown":
         values["marital_status"] = None  # only singles use it; unknown becomes a needs_check
@@ -50,6 +53,11 @@ def _rule_call(function, values):
     values["first_timer"] = {"yes": True, "no": False}.get(values["first_timer"])
     if values["family_timers"] == "not_applicable":
         values["family_timers"] = None
+    return values
+
+
+def _rule_call(function, values):
+    values = _profile_values(values)
     flat = Flat(**{key: values.pop(key) for key in Flat.model_fields})
     extra = {key: values.pop(key) for key in ("relation", "qualifying_rate_pct") if key in values}
     values["citizenships"] = [part.strip() for part in values["citizenships"].split(",")]
@@ -57,7 +65,15 @@ def _rule_call(function, values):
     return asdict(function(BuyerProfile(**values), flat, **extra))
 
 
-def _tool(name, description, schema, function, *, rule=False):
+def _bto_call(function, values):
+    values = _profile_values(values)
+    extra = {key: values.pop(key) for key in ("category", "flat_type", "hfe_after_revision") if key in values}
+    values["citizenships"] = [part.strip() for part in values["citizenships"].split(",")]
+    values["ages"] = [int(part.strip()) for part in values["ages"].split(",")]
+    return asdict(function(BuyerProfile(**values), **extra))
+
+
+def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
     def invoke(**kwargs):
         try:
             # Include defaults here so the flat and profile are complete.
@@ -72,6 +88,8 @@ def _tool(name, description, schema, function, *, rule=False):
             distance_filter, unlocated_frame = False, None
             if name in NO_FRAME:
                 result = function(**values)
+            elif bto_rule:
+                result = _bto_call(function, values)
             elif rule:
                 result = _rule_call(function, values)
             else:
@@ -133,5 +151,10 @@ list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HD
 bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a BTO project's approximate site.",
                    BtoNearbyArgs, bto.bto_nearby)
 
+can_apply_bto = _tool("can_apply_bto", "Check BTO (new flat) eligibility: income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
+                      BtoRuleArgs, bto_rules.can_apply_bto, bto_rule=True)
+bto_ehg_amount = _tool("bto_ehg_amount", "Compute the Enhanced CPF Housing Grant for a new (BTO) flat.",
+                       ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
+
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
-         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby]
+         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount]

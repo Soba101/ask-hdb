@@ -26,6 +26,9 @@ def local_data(monkeypatch, sales):
         "place_id": ["mrt_a"], "name": ["A"], "kind": ["mrt"], "lat": [1.], "lng": [103.]}))
     return block
 
+# The buyer fields only (no flat fields), for the BTO rule tools.
+BTO_PROFILE = {k: v for k, v in PROFILE.items() if k not in {"room", "lease_left_months", "price", "category"}}
+
 
 @pytest.fixture(autouse=True)
 def bto_tables(monkeypatch):
@@ -60,6 +63,8 @@ def test_protocol_schemas_and_every_tool(local_data):
                     "list_bto_projects": {"town": "TAMPINES", "flat_type": None, "launch_month": None,
                                           "category": None, "max_price": None},
                     "bto_nearby": {"project_id": "bto_a", "kind": "mrt"},
+                    "can_apply_bto": BTO_PROFILE | {"category": "Standard", "flat_type": "4-room", "hfe_after_revision": None},
+                    "bto_ehg_amount": BTO_PROFILE,
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)
                 result = await session.call_tool(spec.name, args)

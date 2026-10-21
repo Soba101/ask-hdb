@@ -93,7 +93,7 @@ class CompareArgs(Arguments):
     max_examples: Annotated[int, Field(ge=0, le=50)] = 10
 
 
-class RuleArgs(Arguments):
+class ProfileArgs(Arguments):
     scheme: Literal["family", "single"]
     citizenships: str = Field(description="Comma-separated SC, SPR or foreigner")
     ages: str = Field(description="Comma-separated applicant ages in years")
@@ -113,6 +113,9 @@ class RuleArgs(Arguments):
     buying_with: Literal["alone", "parents", "family_or_singles"] = "alone"
     extended_family: bool = False
     confirmed: bool = False
+
+
+class RuleArgs(ProfileArgs):
     room: Annotated[int, Field(ge=1, le=6)]
     lease_left_months: Count
     price: Count | None = Field(None, description="Flat price in dollars; set it when given")
@@ -146,3 +149,10 @@ class BtoNearbyArgs(Arguments):
     project_id: str = Field(description="BTO project id such as bto_tampines-nova")
     kind: PlaceKind
     n: Annotated[int, Field(ge=1)] = 3
+
+
+class BtoRuleArgs(ProfileArgs):
+    category: Literal["Standard", "Plus", "Prime"] = Field(description="BTO project category")
+    flat_type: str = Field(description="2-room Flexi, 3-room, 4-room, 5-room or 3Gen")
+    hfe_after_revision: bool | None = Field(
+        description="True if the HFE letter was applied for on or after 24 Aug 2026 (revised income ceilings), False if before, null if unknown")
