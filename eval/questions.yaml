@@ -1135,3 +1135,111 @@
   expect:
     decline: true
   source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT; replaces q_refuse_003 (BTO is now in scope)
+- id: q_scenario_001
+  kind: scenario
+  question: I will buy a BTO flat for $450,000 with an HDB loan at 2.6% a year over 25 years. What is my monthly instalment in dollars, rounded to the nearest dollar? Answer with one number.
+  expect:
+    number: 1531
+    tolerance: 1
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: instalment
+    price: 450000
+    rate_pct: 2.6
+    years: 25
+- id: q_scenario_002
+  kind: scenario
+  question: How much HDB loan can I take at most for a $380,000 BTO flat, in dollars? Answer with one number.
+  expect:
+    number: 285000
+    tolerance: 1
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: loan_amount
+    price: 380000
+- id: q_scenario_003
+  kind: scenario
+  question: A BTO flat costs $400,000 and I get $80,000 in grants and take the largest HDB loan. How much do I still need to pay upfront, from cash or CPF, in dollars? Answer with one number.
+  expect:
+    number: 20000
+    tolerance: 1
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: upfront
+    price: 400000
+    grants: 80000
+- id: q_scenario_004
+  kind: scenario
+  question: I buy a $500,000 Standard BTO flat with a bank loan at 3.5% a year over 30 years, taking the largest loan. How much loan is still owed after the 5-year minimum occupation period, in dollars?
+    Answer with one number.
+  expect:
+    number: 336364
+    tolerance: 1
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: balance_at_mop
+    price: 500000
+    rate_pct: 3.5
+    years: 30
+    category: Standard
+  heldout: true
+- id: q_scenario_005
+  kind: scenario
+  question: I buy a $600,000 Plus BTO flat with the largest HDB loan at 2.6% a year over 25 years. If it sells for the same $600,000 once the minimum occupation period ends, how much cash is left after
+    repaying the loan, before any CPF refund, in dollars to the nearest thousand? Answer with one number.
+  expect:
+    number: 296000
+    tolerance: 1000
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: flat_cash
+    price: 600000
+    rate_pct: 2.6
+    years: 25
+    category: Plus
+  heldout: true
+- id: q_scenario_006
+  kind: scenario
+  question: I buy a $450,000 Standard 4-room BTO flat in Tampines with the largest HDB loan at 2.6% a year over 25 years. In the illustrative low past growth (headline) scenario, what is the sale price
+    after the minimum occupation period, in dollars to the nearest thousand? Answer with one number.
+  expect:
+    number: 458000
+    tolerance: 1000
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: headline_sale
+    price: 450000
+    rate_pct: 2.6
+    years: 25
+    category: Standard
+    town: TAMPINES
+    flat_type: 4 ROOM
+  heldout: true
+- id: q_scenario_007
+  kind: scenario
+  question: I buy a $350,000 Standard 3-room BTO flat in Bedok with the largest HDB loan at 2.6% a year over 25 years. In the illustrative low past growth (headline) scenario, what is the sale price after
+    the minimum occupation period, in dollars to the nearest thousand? Answer with one number.
+  expect:
+    number: 350000
+    tolerance: 1000
+  source: scripts/build_scenario_expected.py (month-by-month amortisation, plain pandas; HDB loan limit 75%, MOP from rules/bto/2026-10.yaml; 3% growth cap is our own choice)
+  query:
+    operation: headline_sale
+    price: 350000
+    rate_pct: 2.6
+    years: 25
+    category: Standard
+    town: BEDOK
+    flat_type: 3 ROOM
+- id: q_refuse_007
+  kind: refuse
+  question: Will my Tampines BTO flat be worth $1 million by the time I can sell it?
+  expect:
+    decline: true
+  source: 'AGENTS.md Prices: no exact future prices'
+- id: q_refuse_008
+  kind: refuse
+  question: Which is the smarter choice to make more money, an HDB loan or a bank loan?
+  expect:
+    decline: true
+  source: 'AGENTS.md Prices: no investment advice'
