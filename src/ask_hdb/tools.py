@@ -141,11 +141,11 @@ find_sales = _tool("find_sales", "Find newest recorded resale sales using exact 
                    FindArgs, sales.find_sales)
 compare_price = _tool("compare_price", "Compare past sales for a stable block_id; not a valuation.",
                       CompareArgs, compare.compare_price)
-can_buy_resale = _tool("can_buy_resale", "Check resale purchase eligibility and unresolved checks.",
+can_buy_resale = _tool("can_buy_resale", "Check RESALE flat purchase eligibility and unresolved checks (not for new BTO flats).",
                        RuleArgs, eligibility.can_buy_resale, rule=True)
-cpf_housing_grant = _tool("cpf_housing_grant", "Compute the sourced CPF Housing Grant.",
+cpf_housing_grant = _tool("cpf_housing_grant", "Compute the sourced CPF Housing Grant for buying a RESALE flat.",
                           RuleArgs, grants.cpf_housing_grant, rule=True)
-ehg_amount = _tool("ehg_amount", "Compute the sourced Enhanced CPF Housing Grant.",
+ehg_amount = _tool("ehg_amount", "Compute the sourced Enhanced CPF Housing Grant for buying a RESALE flat.",
                    RuleArgs, grants.ehg_amount, rule=True)
 phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living with or near parents.",
                    PhgArgs, grants.phg_amount, rule=True)
@@ -163,7 +163,7 @@ list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HD
 bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a BTO project's approximate site.",
                    BtoNearbyArgs, bto.bto_nearby)
 
-can_apply_bto = _tool("can_apply_bto", "Check BTO (new flat) eligibility: income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
+can_apply_bto = _tool("can_apply_bto", "Check NEW BTO flat eligibility only (never resale): income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
                       BtoRuleArgs, bto_rules.can_apply_bto, bto_rule=True)
 def _bto_scenario(**values):
     return scenario.bto_scenario(load_sales(), **values)
@@ -171,7 +171,7 @@ def _bto_scenario(**values):
 
 bto_scenario = _tool("bto_scenario", "BTO flat loan figures: maximum loan, monthly instalment, upfront cost, loan balance at MOP and illustrative sale scenarios from past growth (not a forecast). Use this, not max_loan or calculate, for any BTO loan question.",
                      BtoScenarioArgs, _bto_scenario)
-bto_ehg_amount = _tool("bto_ehg_amount", "Compute the Enhanced CPF Housing Grant for a new (BTO) flat.",
+bto_ehg_amount = _tool("bto_ehg_amount", "Enhanced CPF Housing Grant for a new BTO flat ONLY. Never use it when the user says resale.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
