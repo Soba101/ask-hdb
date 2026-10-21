@@ -40,3 +40,37 @@ def parse_annex_a(text: str, launch: str) -> list[dict]:
                      "flat_type": "CCA" if flat.startswith("CCA") else flat, "units": int(match["units"]),
                      "price_low": _int(match["low"]), "price_high": _int(match["high"])})
     return rows
+
+
+# Older annexes (2021 to mid-2022): no waiting-time column, and a flat type may be left out when it repeats.
+LFLAT = r"(?:2-room\s+Flexi|3-room|4-room|5-room|3Gen|CCA)"
+LEASE = r"\(\d+\s*-?\s*(?:yr|year)\s*Lease\)"
+LEGACY_ROW = re.compile(rf"(?:(?P<flat>{LFLAT})(?P<mark>[\s+~^#]*(?:{LEASE}[\s+~^#]*)?)\s*)?(?P<area>{NUM})\s+(?P<internal>{NUM})\s+(?P<units>[\d,]+)\s+"
+                        r"\$(?P<low>[\d,]+)\s*-\s*\$(?P<high>[\d,]+)")
+LEGACY_NOISE = re.compile(r"Non-Mature Towns?|Mature Towns?(?:\s*/\s*Estates)?|Prime Location Public Housing Model|"
+                          r"\(\d+\s*-\s*year\s*Lease\)|2-room\s+Flexi|\^\^|[+~^#]+")
+LEGACY_START = re.compile(r"Table A\(1\)\([a-z]\):[^\n]*Pricing Details")
+
+
+def parse_legacy_annex(text: str, launch: str) -> list[dict]:
+    """Same output as parse_annex_a for the 2021 to mid-2022 layout; wait_months is None, category is None."""
+    start = LEGACY_START.search(text)
+    text = text[start.end():] if start else text
+    text = HEADER.sub(" ", text.split("Note:")[0])
+    text = re.sub(r"Project\s+Flat\s+Type.*?\(Excluding\s+Grants\)", " ", text, flags=re.DOTALL)
+    rows, position, project, flat = [], 0, None, None
+    for match in LEGACY_ROW.finditer(text):
+        between = " ".join(text[position:match.start()].split())
+        position = match.end()
+        short = bool(re.search(r"\d+\s*-?\s*(?:yr|year)\s*Lease", between + " " + (match["mark"] or "")))
+        name = re.sub(r"\s+", " ", LEGACY_NOISE.sub(" ", between)).strip()
+        if name:
+            project = name
+        if match["flat"]:
+            flat = re.sub(r"\s+", " ", match["flat"])
+            flat = "CCA" if flat.startswith("CCA") else flat
+        label = flat + " short lease" if short and flat != "CCA" else flat  # flat is set by the first row
+        rows.append({"launch": launch, "project": project, "category": None, "wait_months": None,
+                     "flat_type": label, "units": _int(match["units"]),
+                     "price_low": _int(match["low"]), "price_high": _int(match["high"])})
+    return rows
