@@ -169,7 +169,7 @@ def _bto_scenario(**values):
     return scenario.bto_scenario(load_sales(), **values)
 
 
-bto_scenario = _tool("bto_scenario", "Illustrative BTO loan, upfront cost and sale-after-MOP picture from past growth; not a forecast.",
+bto_scenario = _tool("bto_scenario", "BTO flat loan figures: maximum loan, monthly instalment, upfront cost, loan balance at MOP and illustrative sale scenarios from past growth (not a forecast). Use this, not max_loan or calculate, for any BTO loan question.",
                      BtoScenarioArgs, _bto_scenario)
 bto_ehg_amount = _tool("bto_ehg_amount", "Compute the Enhanced CPF Housing Grant for a new (BTO) flat.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
