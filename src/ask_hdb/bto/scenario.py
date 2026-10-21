@@ -48,7 +48,8 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
     loan = ltv * price
     known = interest_rate_pct is not None and loan_years is not None
     payment = instalment(loan, interest_rate_pct, loan_years) if known else None
-    out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "loan_amount": round(loan),
+    out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "ltv_pct": round(ltv * 100, 6),
+           "loan_amount": round(loan),
            "interest_rate_pct": interest_rate_pct, "loan_years": loan_years,
            "monthly_instalment": round(payment) if known else None, "upfront_needed_cash_or_cpf": round(max(0.0, price - loan - grants)),
            "mop_years": mop, "rules": use.result.rules, "note": NOTE,
@@ -71,6 +72,12 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
     out["growth_basis"] = (f"{town.upper()} {ROOM[flat_type]} yearly median resale prices {growth['years']}, "
                            f"{growth['n_years']} year-on-year changes; past low {growth['low'] * 100:.1f}%, past median "
                            f"{growth['median'] * 100:.1f}%; scenario rates are floored at 0 and capped at 3% a year")
+    # The same figures as numbers: text digits are not grounding evidence.
+    first, last = (int(y) for y in growth["years"].split("-"))
+    out.update({"past_low_growth_pct": round(growth["low"] * 100, 1),
+                "past_median_growth_pct": round(growth["median"] * 100, 1),
+                "history_first_year": first, "history_last_year": last,
+                "history_n_years": growth["n_years"], "growth_cap_pct": round(GROWTH_CAP * 100, 6)})
     left = balance(loan, interest_rate_pct, loan_years, mop * 12)
     for name, raw in (("low past growth (headline)", growth["low"]), ("median past growth", growth["median"])):
         rate = min(max(raw, 0.0), GROWTH_CAP)

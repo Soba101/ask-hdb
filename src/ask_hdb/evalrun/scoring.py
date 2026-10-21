@@ -1,8 +1,9 @@
 """Small answer checks; no model judges or changes to the agent."""
 
-import json
 import re
 from decimal import Decimal
+
+from ask_hdb.grounding import check
 
 # Only explicit price scales count; metre and kilometre units never scale values.
 NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
@@ -113,13 +114,13 @@ def answer_passes(question, result):
 
 
 def grounding(question, result):
-    # Question echoes are explicitly excluded. Only current tool results count as evidence.
-    given = numbers(question['question'])
-    claimed = [n for n in numbers(result['answer']) if not any(_near(n, g) for g in given)]
-    evidence = numbers(json.dumps([c.get('result') for c in result.get('tool_calls', [])]))
-    supported = sum(any(_near(n, e) for e in evidence) for n in claimed)
-    return {'supported': supported, 'total': len(claimed),
-            'rate': supported / len(claimed) if claimed else 1.0}
+    # The same check the agent enforces (ask_hdb.grounding), so the column measures it.
+    # Question echoes are excluded. Only current tool results count as evidence.
+    checked = check(result['answer'], question['question'],
+                    [c.get('result') for c in result.get('tool_calls', [])])
+    total = len(checked['numbers'])
+    supported = total - len(checked['ungrounded'])
+    return {'supported': supported, 'total': total, 'rate': supported / total if total else 1.0}
 
 
 def score(question, result):

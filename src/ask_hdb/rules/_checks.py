@@ -13,6 +13,13 @@ class RuleUse:
     def get(self, path: str):
         value = self.rules.get(path)
         citation = self.rules.cite(path)
+        # The value used goes into the citation, so a threshold the answer explains (an age,
+        # ceiling, month count or loan limit) comes from the tool, not the model's memory.
+        # Tier tables stay out to keep results short; their amount is the result.
+        if isinstance(value, (int, float, str)) and not isinstance(value, bool):
+            citation["value"] = value
+            if isinstance(value, float) and 0 < value < 1:
+                citation["value_pct"] = round(value * 100, 6)  # 0.75 is quoted as 75%
         if citation not in self.result.rules:
             self.result.rules.append(citation)
         return value
@@ -46,6 +53,9 @@ def applicant_checks(use: RuleUse, profile: BuyerProfile, *, purchase=False):
             if profile.marital_status == "widowed"
             else "min_age_years_unmarried_or_divorced"
         )
+        # Cite both single minimum ages: answers often contrast them (35, or 21 if widowed).
+        other = ({"min_age_years_widowed_or_orphan", "min_age_years_unmarried_or_divorced"} - {age_key}).pop()
+        use.get(f"eligibility.singles.{other}")
         minimum = use.get(f"eligibility.singles.{age_key}")
         if any(c != "SC" for c in profile.citizenships):
             use.deny("The singles scheme requires citizen applicants")

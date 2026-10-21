@@ -37,6 +37,7 @@ def can_apply_bto(profile: BuyerProfile, category: str, flat_type: str, hfe_afte
     if flat_type == FLEXI and max(profile.ages) >= 55:
         # Short-lease 2-room Flexi (age 55+) has a higher ceiling that is not modelled; the 99-year one is used below.
         use.unknown("short_lease_flexi_income_ceiling")
+    use.get("eligibility.hfe_revision_date")  # cited so the answer can quote the revision date
     previous, revised = _ceilings(use, profile, flat_type)
     income = profile.monthly_household_income
     if hfe_after_revision is None:
@@ -74,6 +75,9 @@ def bto_ehg(profile: BuyerProfile, rules: Rules | None = None) -> RuleResult:
         use.unknown("own_monthly_income")
         return use.result
     if not profile.works_12_months:
+        # Cited for the explanation, but it is the RESALE work rule; the new-flat rule is unconfirmed.
+        use.get("grants.ehg.min_continuous_work_months")
+        use.result.reasons.append("The 12-month work rule cited is the resale EHG rule; the new-flat rule is not confirmed")
         use.unknown("ehg_work_rule_for_new_flats")
     income = profile.monthly_household_income
     if profile.scheme == "family":

@@ -253,3 +253,21 @@ Grounding column is low in these runs (37-100%) because the tool rounds sale pri
 Review follow-up: q_scenario_001 now says "the largest HDB loan" (the loan size was ambiguous; 1531 assumes the largest loan). q_scenario_005 (held out, already run) still does not say "before any subsidy recovery"; its wording is left as run.
 Stability note: after the review fixes the dev set was re-run three more times and q_scenario_002 failed each time (3/4) although it passed in two earlier runs with the same tool schema. Asked directly four times it answered
 285,000 every time (via `max_loan` plus `calculate`, not `bto_scenario`), so the loss is the 9B's run-to-run variation in tool choice and in answer format, not a wrong number. Not tuned further.
+
+## Week 5: grounding check and rule values in tool results (9B on the MacBook, direct tools, 2026-10-22)
+Dev split, 67 questions, reports `eval/reports/2026-10-22-agent-week5-*.json` (git-ignored). The grounding column uses the new `grounding.py` definition (every number in the answer must come from this question's tool results, or the question).
+
+| Run | Number | Verdict | Refusal | Grounding | Rewritten | Replaced by "can't answer reliably" |
+|---|---:|---:|---:|---:|---:|---:|
+| fixed main, old grounding check (reference) | 95.7% | 78.6% | 83.3% | 72.7% (old definition) | n/a | n/a |
+| 5-1 check only | 93.6% | 57.1% | 83.3% | 100% | 14 | 6 |
+| 5-1 + 5-2 (rule values and counts in tool results) | 93.6% | 100% | 83.3% | 100% | 3 | 0 |
+
+5-1 alone made grounding 100% by construction but cost verdict accuracy: the six replaced answers quoted thresholds the model supplied from memory (ages 35 and 21, the 24-month rule, the 75% loan limit, a school count). 5-2 fixed the tools, not the check: rule tools now return the values they used, nearest_places returns a count, bto_scenario returns the loan percentage.
+Remaining failures (4): q_multi_step_005 and 007 (counts and sums, as before), q_scenario_002 (9B routes to `max_loan`; tool choice varies run to run), q_refuse_008 (balanced answer instead of a decline). Held-out questions were not run for week 5; the grounding check changes answers, so a held-out run is still due before this counts as validated.
+Plainly: 5-2 was chosen by reading these dev failures, so the dev verdict of 100% was measured on the questions used to tune it. It is not evidence of generalisation.
+After the PR #45 review the grounding check became stricter (no digits from tool strings, narrower year skip, day dates checked). Offline, all recorded 5-2 final answers still pass it (99/99 numbers); a re-run is needed to see the effect on first drafts and rewrites.
+The Mac model was the only model used; the 5090 was not touched.
+
+After the review fixes (stricter grounding: years next to money words are checked, digits inside ids, dates and prose no longer count as evidence, question numbers cannot stand in as rule thresholds; scenario growth figures returned as numbers), dev re-run (`eval/reports/2026-10-22-agent-week5-3.json`): number 93.6%, verdict 100%, refusal 83.3%, grounding 100%, 4 answers rewritten, 1 replaced.
+The replaced answer is q_grants_006: the model again used the BTO grant tool on a resale question and then wrote "$0", which no tool result supports, so the check replaced a wrong answer (correct behaviour, still a failed question). Remaining failures: q_grants_006, q_multi_step_005, q_scenario_002, q_refuse_008. Held-out is still due.
