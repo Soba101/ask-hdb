@@ -12,6 +12,7 @@ from langchain_core.tools import StructuredTool
 
 from ask_hdb import calc, compare, sales
 from ask_hdb.bto import queries as bto
+from ask_hdb.bto import scenario
 from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 from ask_hdb.rules import bto as bto_rules
@@ -19,6 +20,7 @@ from ask_hdb.tool_inputs import (
     BtoListArgs,
     BtoNearbyArgs,
     BtoRuleArgs,
+    BtoScenarioArgs,
     CalcArgs,
     CompareArgs,
     FindArgs,
@@ -31,7 +33,7 @@ from ask_hdb.tool_inputs import (
 )
 
 # Tools that read their own tables instead of the resale sales frame.
-NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby"}
+NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario"}
 
 
 @lru_cache(maxsize=1)
@@ -163,8 +165,15 @@ bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a B
 
 can_apply_bto = _tool("can_apply_bto", "Check BTO (new flat) eligibility: income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
                       BtoRuleArgs, bto_rules.can_apply_bto, bto_rule=True)
+def _bto_scenario(**values):
+    return scenario.bto_scenario(load_sales(), **values)
+
+
+bto_scenario = _tool("bto_scenario", "Illustrative BTO loan, upfront cost and sale-after-MOP picture from past growth; not a forecast.",
+                     BtoScenarioArgs, _bto_scenario)
 bto_ehg_amount = _tool("bto_ehg_amount", "Compute the Enhanced CPF Housing Grant for a new (BTO) flat.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
-         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount]
+         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount,
+         bto_scenario]

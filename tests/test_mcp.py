@@ -65,6 +65,8 @@ def test_protocol_schemas_and_every_tool(local_data):
                     "bto_nearby": {"project_id": "bto_a", "kind": "mrt"},
                     "can_apply_bto": BTO_PROFILE | {"category": "Standard", "flat_type": "4-room", "hfe_after_revision": None},
                     "bto_ehg_amount": BTO_PROFILE,
+                    "bto_scenario": {"price": 400000, "grants": 0, "loan_kind": "hdb", "interest_rate_pct": 2.6,
+                                     "loan_years": 25, "category": "Standard", "town": None, "flat_type": None},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)
                 result = await session.call_tool(spec.name, args)

@@ -67,3 +67,10 @@ did not), but cannot separate the plan from everything else that changed. Such c
 Resale data has sales of flats with lease start 2021 (from Oct 2024) and 2022 (from Apr 2026), earlier than a 5-year MOP allows. Cause not known.
 Until checked, count only sales at least 5 years after lease start as post-MOP. Official history data downloaded to `data/raw/bto_history/` (see SOURCES.md there):
 town-level launch price CSV (FY2008-2024) and 19 launch annexes (Feb 2021 - Oct 2024); Feb 2022 and Nov 2022 annexes and all 2015-2020 per-project prices are not available.
+
+## 4b-3 first try (2026-10-22)
+`bto_scenario` (src/ask_hdb/bto/scenario.py): loan from the sourced 75% limit, monthly instalment, upfront cost, and three sale-after-MOP scenarios (flat, low past growth as headline, median past growth),
+each capped at 3% a year (our own conservative choice; recent median growth in Tampines 4-room is about 7%, which would overpromise). Interest rate and loan years come from the user, never assumed.
+Not computed, flagged as needs_check: CPF refund with accrued interest, grant refund on sale, Plus/Prime subsidy recovery. AGENTS.md "Prices" section records the exception to "no predictions".
+Informal check on the 9B (2 questions, not an eval): the instalment/scenario question used `bto_scenario` once and quoted its label and caveats; "what will it be worth, will it hit $700,000?" was declined and the tool offered with the inputs it needs.
+Still to do: eval questions with independently computed expected values (instalment, balance, scenario cash), grounding check on the quoted numbers, held-out set.

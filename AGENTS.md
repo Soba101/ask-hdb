@@ -8,6 +8,10 @@ The LLM talks. Code decides.
 - Every number in a final answer must appear in a tool result from the same turn.
   `grounding.py` checks this. Never weaken that check to make a test pass.
 
+## Prices
+- No exact future prices, no investment timing. The only forward-looking numbers are the `bto_scenario` scenarios: modest, from sourced past growth,
+  headline = low growth, always labelled "illustrative, from past growth, not a forecast". Under-promise.
+
 ## Rules data
 - HDB rules change (income ceilings, grant amounts, loan limits).
 - Rules live in `rules/*.yaml`, never hard-coded in Python.

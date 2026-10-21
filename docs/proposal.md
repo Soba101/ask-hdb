@@ -46,7 +46,8 @@
 ## Out of scope (v1)
 - EC applications, BTO ballots and priority schemes (BTO eligibility and launch info are planned for week 4b).
 - Ethnic Integration Policy (EIP) and SPR quota checks. Needs HDB's own e-service.
-- Price prediction ("will prices go up?") and predicting the official valuation. Past sales only.
+- Price prediction ("will prices go up?"), exact future prices, and predicting the official valuation. Past sales only.
+  Exception (week 4b-3): the `bto_scenario` tool shows modest, labelled "illustrative, from past growth, not a forecast" sale scenarios for a BTO flat, with the limits attached.
 - Advice on whether to buy. The agent refuses and says why.
 - Logging in to HDB or CPF, or filling in any form.
 
