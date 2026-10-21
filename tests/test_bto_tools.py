@@ -65,4 +65,7 @@ def test_resale_flat_type_accepts_bto_style_names():
     for text in ("3-room", "3 room", "3-ROOM", "3 rooms"):
         assert SalesArgs(flat_type=text).flat_type == "3 ROOM"
     assert SalesArgs(flat_type="Multi-Generation").flat_type == "MULTI-GENERATION"
-    assert CompareArgs.model_fields["flat_type"] is not None
+    assert SalesArgs(flat_type="3ROOM").flat_type == "3 ROOM"
+    compare = CompareArgs(block_id="x", price=1, flat_type="4-room", storey_mid=None, lease_left_months=None,
+                          floor_area_sqm=None, as_of="latest")
+    assert compare.flat_type == "4 ROOM"

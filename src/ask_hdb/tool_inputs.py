@@ -57,7 +57,7 @@ class SalesArgs(Arguments):
         if not isinstance(value, str):
             return value
         # BTO tools say "4-room"; the resale data says "4 ROOM".
-        return re.sub(r"^(\d)[- ]ROOMS?$", r"\1 ROOM", value.strip().upper())
+        return re.sub(r"^(\d)\s*-?\s*ROOMS?$", r"\1 ROOM", value.strip().upper())
 
     @field_validator("since", "until", mode="before")
     @classmethod
