@@ -52,3 +52,9 @@ def test_tool_registered_and_rate_is_optional():
     assert out["loan_amount"] == 285000 and out["upfront_needed_cash_or_cpf"] == 95000
     assert out["monthly_instalment"] is None and out["scenarios"] == []
     assert "interest_rate_and_loan_years_for_instalment_and_scenarios" in out["needs_check"]
+
+
+def test_category_is_optional_and_only_needed_for_scenarios():
+    out = scenario.bto_scenario(sales({2024: 1}), 450000, 0, "hdb", None, 2.6, 25)
+    assert out["monthly_instalment"] == 1531 and out["scenarios"] == []
+    assert "category_for_mop_years_and_sale_scenarios" in out["needs_check"]

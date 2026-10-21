@@ -40,11 +40,11 @@ def past_growth(sales: pd.DataFrame, town: str, room: str) -> dict | None:
             "years": f"{medians.index.min()}-{medians.index.max()}", "n_years": len(growth)}
 
 
-def bto_scenario(sales, price, grants, loan_kind, category, interest_rate_pct=None, loan_years=None,
+def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_pct=None, loan_years=None,
                  town=None, flat_type=None) -> dict:
     use = RuleUse(load_rules(BTO_FILE))
     ltv = use.get(f"loan.{'hdb' if loan_kind == 'hdb' else 'bank'}_ltv")
-    mop = use.get(f"mop.{'plus_prime_years' if category in {'Plus', 'Prime'} else 'standard_years'}")
+    mop = use.get(f"mop.{'plus_prime_years' if category in {'Plus', 'Prime'} else 'standard_years'}") if category else None
     loan = ltv * price
     known = interest_rate_pct is not None and loan_years is not None
     payment = instalment(loan, interest_rate_pct, loan_years) if known else None
@@ -60,6 +60,9 @@ def bto_scenario(sales, price, grants, loan_kind, category, interest_rate_pct=No
         out["needs_check"].append("plus_prime_subsidy_recovery")
     if not known:
         out["needs_check"].append("interest_rate_and_loan_years_for_instalment_and_scenarios")
+        return out
+    if mop is None:
+        out["needs_check"].append("category_for_mop_years_and_sale_scenarios")
         return out
     growth = past_growth(sales, town, ROOM[flat_type]) if town and flat_type in ROOM else None
     if growth is None:
