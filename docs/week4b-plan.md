@@ -62,3 +62,8 @@ did not), but cannot separate the plan from everything else that changed. Such c
 ## Working rules
 - No Codex (the user's usage is finished): built directly here, Opus reviews before merge. Files under ~200 lines, short comments. `uv run pytest` and `ruff` stay green.
 - A failed question is a finding; write it down before any prompt change.
+
+## Open question for 4b-2 (2026-10-22)
+Resale data has sales of flats with lease start 2021 (from Oct 2024) and 2022 (from Apr 2026), earlier than a 5-year MOP allows. Cause not known.
+Until checked, count only sales at least 5 years after lease start as post-MOP. Official history data downloaded to `data/raw/bto_history/` (see SOURCES.md there):
+town-level launch price CSV (FY2008-2024) and 19 launch annexes (Feb 2021 - Oct 2024); Feb 2022 and Nov 2022 annexes and all 2015-2020 per-project prices are not available.
