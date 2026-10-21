@@ -25,14 +25,16 @@ Each has a frozen expected answer that code can check.
 | grants | 10 | HDB grant tables (amount by income tier) |
 | price check | 8 | comparable sales picked by code (same block/street, storey band, lease band) |
 | distance | 8 | independent spherical law of cosines on local block and place coordinates |
-| multi_step | 10 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
+| multi_step | 16 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
 | refuse | 5 | four declines and one request for missing details: "will prices rise?", "should I buy now?", BTO questions |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
-- 16 questions are marked held out; the 52 development questions exclude them by default.
+- 22 questions are marked held out; the 52 development questions exclude them by default.
 - The original 10 held-out questions remain marked, but are spent for tuning (see results).
   The 6 new held-out IDs were fixed before tuning: `q_distance_003`, `q_distance_006`,
   `q_distance_008`, `q_multi_step_002`, `q_multi_step_006`, `q_multi_step_010`.
+  Six more (`q_multi_step_011` to `016`, added 2026-10-21) are held out from the start. They test the calculate tool and the
+  required-but-nullable compare filters, which were fixed after the earlier held-out failures. Run them once.
 
 ## Measures
 

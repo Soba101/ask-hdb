@@ -1,6 +1,7 @@
 """Expose the unchanged deterministic functions as JSON tools."""
 
 import json
+import os
 import sys
 from dataclasses import asdict
 from functools import lru_cache
@@ -9,10 +10,11 @@ from pathlib import Path
 import pandas as pd
 from langchain_core.tools import StructuredTool
 
-from ask_hdb import compare, sales
+from ask_hdb import calc, compare, sales
 from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 from ask_hdb.tool_inputs import (
+    CalcArgs,
     CompareArgs,
     FindArgs,
     LoanArgs,
@@ -54,10 +56,15 @@ def _tool(name, description, schema, function, *, rule=False):
         try:
             # Include defaults here so the flat and profile are complete.
             values = schema.model_validate(kwargs).model_dump()
+            if os.getenv("LLM_COMPACT_TOOLS") == "1":
+                # Small-context servers: shorter example lists keep tool results small.
+                for key, cap in (("max_examples", 3), ("limit", 5)):
+                    if key in values:
+                        values[key] = min(values[key], cap)
             if str(values.get("as_of")).lower() == "latest":
                 values["as_of"] = None  # compare_price anchors to the newest data month
             distance_filter, unlocated_frame = False, None
-            if name == "nearest_places":
+            if name in {"nearest_places", "calculate"}:
                 result = function(**values)
             elif rule:
                 result = _rule_call(function, values)
@@ -80,7 +87,7 @@ def _tool(name, description, schema, function, *, rule=False):
         except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:
             # Keep a trace so a real bug is not mistaken for a bad model argument.
             print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
-            if name == "nearest_places" or "near_kind" in kwargs or "near_km" in kwargs:
+            if name in {"nearest_places", "calculate"} or "near_kind" in kwargs or "near_km" in kwargs:
                 return {"error": f"{name}: {exc}"}
             return {"error": f"Invalid arguments or unavailable data for {name}"}
 
@@ -112,5 +119,8 @@ max_loan = _tool("max_loan", "Estimate the HDB loan cap; disclose needs_check an
 nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance.",
                        NearestArgs, geo_filters.nearest_places)
 
+calculate = _tool("calculate", "Add, subtract, multiply or divide numbers taken from tool results. Use it for ALL arithmetic.",
+                  CalcArgs, lambda expression: calc.calculate(expression))
+
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
-         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places]
+         cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate]

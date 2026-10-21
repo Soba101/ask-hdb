@@ -151,3 +151,14 @@ def test_duplicate_listing_of_one_block_is_found_but_far_apart_is_uncertain():
 def test_commonwealth_abbreviation():
     from ask_hdb.geo.streets import normalize_street
     assert normalize_street("C'WEALTH CRES") == "COMMONWEALTH CRESCENT"
+
+
+def test_outline_postals_break_a_same_road_tie():
+    from ask_hdb.geo.matching import match_with_outlines
+    far = {"BLK_NO": "102", "ROAD_NAME": "TOWNER ROAD", "POSTAL": "327826", "LATITUDE": "1.32", "LONGITUDE": "103.86"}
+    hdb = {"BLK_NO": "102", "ROAD_NAME": "TOWNER ROAD", "POSTAL": "322102", "LATITUDE": "1.33", "LONGITUDE": "103.85"}
+    body = {"results": [far, hdb]}
+    assert match_with_outlines("102", "TOWNER RD", body, {("102", "322102")})["postal"] == "322102"
+    # No outline match, or two outline matches: stay not found rather than guess.
+    assert match_with_outlines("102", "TOWNER RD", body, set())["status"] == "not_found"
+    assert match_with_outlines("102", "TOWNER RD", body, {("102", "322102"), ("102", "327826")})["status"] == "not_found"

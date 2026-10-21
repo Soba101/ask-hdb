@@ -8,7 +8,7 @@ WORDS = {
     "DR": "DRIVE", "CRES": "CRESCENT", "CL": "CLOSE", "PL": "PLACE",
     "PK": "PARK", "GDNS": "GARDENS", "JLN": "JALAN", "BT": "BUKIT",
     "LOR": "LORONG", "KG": "KAMPONG", "UPP": "UPPER", "TER": "TERRACE",
-    "HTS": "HEIGHTS", "TG": "TANJONG",
+    "HTS": "HEIGHTS", "TG": "TANJONG", "MKT": "MARKET",
 }
 
 

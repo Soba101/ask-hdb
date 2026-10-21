@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Nonnegative = Annotated[float, Field(ge=0)]
 Count = Annotated[int, Field(ge=0)]
@@ -10,6 +10,23 @@ PlaceKind = Literal["mrt", "primary_school"]
 
 
 class Arguments(BaseModel):
+    @model_validator(mode="before")
+    @classmethod
+    def _text_none(cls, data):
+        # The 9B model writes the text "None" or "null" for "no value". For a required-but-nullable field that
+        # means null; for a field with a default it means "use the default", so drop the key.
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        for key, value in list(data.items()):
+            if isinstance(value, str) and value.strip().lower() in {"none", "null"}:
+                field = cls.model_fields.get(key)
+                if field is not None and field.is_required():
+                    data[key] = None
+                else:
+                    del data[key]
+        return data
+
     # Reject misspelled filters rather than silently broadening a query.
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
@@ -60,9 +77,11 @@ class CompareArgs(Arguments):
     flat_type: str
 
     _upper = field_validator("flat_type", mode="before")(SalesArgs._upper.__func__)
-    storey_mid: Nonnegative | None = None
-    lease_left_months: Count | None = None
-    floor_area_sqm: Nonnegative | None = None
+    # Required but nullable: the model must write a value or null, so it cannot silently skip a filter
+    # (omitting lease_left_months gave wrong medians in two eval questions).
+    storey_mid: Nonnegative | None = Field(description="Storey midpoint to match, or null for no storey filter")
+    lease_left_months: Count | None = Field(description="Remaining lease in months, or null for no lease filter")
+    floor_area_sqm: Nonnegative | None = Field(description="Floor area in sqm, or null for no area filter")
     # Required: the 9B model skips optional fields, which silently moved the window by a month.
     as_of: str = Field(description="Month YYYY-MM the comparison is as of, or 'latest' if none given")
 
@@ -107,3 +126,7 @@ class PhgArgs(RuleArgs):
 
 class LoanArgs(RuleArgs):
     qualifying_rate_pct: Nonnegative | None = None
+
+
+class CalcArgs(Arguments):
+    expression: str = Field(description="Arithmetic on numbers from tool results, e.g. 80000 + 70000 - 25000")

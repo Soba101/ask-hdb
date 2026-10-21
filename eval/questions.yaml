@@ -872,3 +872,123 @@
       price: 620000
       as_of: 2026-09
   heldout: true
+- id: q_multi_step_011
+  kind: multi_step
+  question: We are a married couple, both SC, both age 35, both first-timers, income $3000 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. What is the total of CPF Housing Grant + Enhanced CPF Housing Grant, in dollars? Answer with only the total.
+  expect:
+    number: 175000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_2_to_4_room_sc_sc; grants.ehg.families_tiers.value (up_to>=3000)
+  query:
+    operation: grant_sum
+    income: 3000
+    with_parents: false
+  heldout: true
+- id: q_multi_step_012
+  kind: multi_step
+  question: We are a married couple, both SC, both age 35, both first-timers, income $2500 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. We will live with our SC parents in this flat and have never received PHG. The Standard resale flat is 4-room, $600000, with 960 months lease left. What is the total of CPF Housing Grant + Enhanced CPF Housing Grant + Proximity Housing Grant, in dollars? Answer with only the total.
+  expect:
+    number: 215000
+    tolerance: 0
+  source: rules/2026-10.yaml grants.cpf_family, ehg.families_tiers, phg.families_live_with_parents_or_child
+  query:
+    operation: grant_sum
+    income: 2500
+    with_parents: true
+  heldout: true
+- id: q_multi_step_013
+  kind: multi_step
+  question: Using straight-line distance, take the median resale price of 4 ROOM flats sold from 2025-01 to 2025-12 inclusive in geocoded blocks within 1 km inclusive of an MRT station in each town. What is the QUEENSTOWN median minus the TOA PAYOH median, in dollars? Round each median to the nearest dollar, ties to even, before subtracting. Answer with one number.
+  expect:
+    number: -20888
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_difference
+    sales:
+    - town: QUEENSTOWN
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 1
+      metric: median
+    - town: TOA PAYOH
+      flat_type: 4 ROOM
+      since: 2025-01
+      until: 2025-12
+      near_kind: mrt
+      near_km: 1
+      metric: median
+  heldout: true
+- id: q_multi_step_014
+  kind: multi_step
+  question: Using straight-line distance, what is the combined number of recorded sales of 4 ROOM flats sold from 2024-01 to 2024-12 inclusive in geocoded blocks within 0.5 km inclusive of a primary school in CLEMENTI and BUKIT MERAH? Count sales, not distinct blocks. Answer with one exact count.
+  expect:
+    number: 449
+    tolerance: 0
+  source: data/clean/resale.parquet joined to blocks.parquet; places.parquet; independent pandas and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: sale_sum
+    sales:
+    - town: CLEMENTI
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: count
+    - town: BUKIT MERAH
+      flat_type: 4 ROOM
+      since: 2024-01
+      until: 2024-12
+      near_kind: primary_school
+      near_km: 0.5
+      metric: count
+  heldout: true
+- id: q_multi_step_015
+  kind: multi_step
+  question: 'As of 2026-09, consider two 4 ROOM flats: blk_316_jurong-east-st-32, asking $580000, storey midpoint 8, lease left 685 months; and blk_336_hougang-ave-7, asking $548000, storey midpoint 8, lease left 700 months. For each comparable median use the last 12 inclusive months ending 2026-09, +/-3 storeys, +/-60 lease months, minimum 5 sales, widening block then street within town then town; keep the town sample if all are thin. No area filter. Round each median to the nearest dollar, ties to even. Define premium as asking price minus comparable median. What is the JURONG EAST block premium minus the HOUGANG block premium, in dollars? Answer with one number.'
+  expect:
+    number: 24944
+    tolerance: 0
+  source: data/clean/resale.parquet; independent pandas comparable rule in scripts/build_distance_expected.py
+  query:
+    operation: premium_difference
+    comparables:
+    - block_id: blk_316_jurong-east-st-32
+      flat_type: 4 ROOM
+      storey_mid: 8
+      lease_left_months: 685
+      price: 580000
+      as_of: 2026-09
+    - block_id: blk_336_hougang-ave-7
+      flat_type: 4 ROOM
+      storey_mid: 8
+      lease_left_months: 700
+      price: 548000
+      as_of: 2026-09
+  heldout: true
+- id: q_multi_step_016
+  kind: multi_step
+  question: 'As of 2026-09, consider two 4 ROOM flats: blk_215_serangoon-ave-4, asking $665000, storey midpoint 2, lease left 701 months; and blk_21_teban-gdns-rd, asking $569000, storey midpoint 2, lease left 1034 months. For each comparable median use the last 12 inclusive months ending 2026-09, +/-3 storeys, +/-60 lease months, minimum 5 sales, widening block then street within town then town; keep the town sample if all are thin. No area filter. Round each median to the nearest dollar, ties to even. Define premium as asking price minus comparable median. For the block with the higher premium, what is the straight-line distance to its nearest MRT station, in kilometres rounded to 2 decimals? Answer with one number.'
+  expect:
+    number: 0.85
+    tolerance: 0.05
+  source: data/clean/resale.parquet; blocks.parquet; places.parquet; independent comparable rule and spherical law of cosines in scripts/build_distance_expected.py
+  query:
+    operation: premium_nearest
+    comparables:
+    - block_id: blk_215_serangoon-ave-4
+      flat_type: 4 ROOM
+      storey_mid: 2
+      lease_left_months: 701
+      price: 665000
+      as_of: 2026-09
+    - block_id: blk_21_teban-gdns-rd
+      flat_type: 4 ROOM
+      storey_mid: 2
+      lease_left_months: 1034
+      price: 569000
+      as_of: 2026-09
+  heldout: true

@@ -43,3 +43,21 @@ def match_result(block: str, street: str, body: dict) -> dict:
             raise ValueError("Invalid coordinates")
         record.update(lat=lat, lng=lng, postal=row.get("POSTAL"), road_name=row.get("ROAD_NAME"))
     return record
+
+
+def match_with_outlines(block: str, street: str, body: dict, hdb_postals: set) -> dict:
+    """Break a tie between same-road listings using HDB's own building outlines.
+
+    OneMap can list a road twice with different postal codes (an HDB block and a nearby non-HDB
+    building). Keep only listings whose (block, postal) pair is an HDB building; accept if one remains.
+    """
+    record = match_result(block, street, body)
+    if record["status"] == "found":
+        return record
+    candidates = [row for row in body.get("results", [])
+                  if str(row.get("BLK_NO", "")).strip().casefold() == block.strip().casefold()
+                  and normalize_street(str(row.get("ROAD_NAME", ""))) == normalize_street(street)
+                  and (block.strip().upper(), str(row.get("POSTAL", "")).strip()) in hdb_postals]
+    if len(candidates) == 1:
+        return match_result(block, street, {"results": candidates})
+    return record
