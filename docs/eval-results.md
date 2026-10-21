@@ -210,3 +210,23 @@ context (for example 16k per slot), which I did not change.
 ## Data and tools
 - All 9,496 recent blocks now have coordinates (the Towner Rd blocks needed HDB's building outlines to choose between two OneMap listings; New Market Rd needed `MKT = MARKET`).
 - `sales_without_coordinates` is reported on distance-filtered results.
+
+## Week 4b-1: BTO (9B on the MacBook, direct tools, 2026-10-21)
+Added 14 BTO questions (5 held out) and replaced q_refuse_003 with q_refuse_006 (Executive Condominium decline). Whole bank: 88 questions, 0 errors,
+90.8% number, 100% verdict, 100% refusal, 68.5% grounding.
+
+| Set | Result |
+|---|---|
+| BTO dev (9) | 6/9 |
+| BTO held-out (5, run once) | 3/5 (004, 006, 014 pass; 011, 012 fail) |
+| Verdict and refusal questions (BTO eligibility, EHG, decline) | all pass |
+
+Failures (5 BTO questions plus the known q_distance_005 scorer limit), all launch-lookup or tool-input errors, none a wrong rule:
+- q_bto_009, 010, 011, 012 (launch counts and prices): `list_bto_projects` has several required-but-nullable filters. The model fills them with
+  invented values (a wrong town, `category: Standard`, `flat_type: 3-room`, `max_price: 1000000`), so the lookup returns 0 or a partial list and the model reports it.
+  This is the required-nullable lesson from week 4 turning against us: fields the model must fill invite made-up values.
+- q_bto_008 (EHG): the model added `room` and `lease_left_months`, which `bto_ehg_amount` does not take. The call was rejected with a clear error and the model repeated it.
+Not fixed here, and no scorer change. Next step: make the launch filters optional with defaults, or reject unfamiliar values with the list of valid ones. Tracked in issue #29.
+
+Unresolved BTO rules (kept as needs_check, not guessed): grant refund on sale, Plus/Prime subsidy recovery rates, EHG work rule for new flats,
+loan tenure/MSR, current HDB interest rate, second-timer flat types. Six projects have no OneMap site (distances unknown).
