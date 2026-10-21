@@ -1,5 +1,6 @@
 """Flat JSON fields keep tool calls manageable for small local models."""
 
+import re
 from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -38,7 +39,7 @@ class Arguments(BaseModel):
 
 class SalesArgs(Arguments):
     town: str | None = None
-    flat_type: str | None = None
+    flat_type: str | None = Field(None, description="Resale flat type as recorded, such as 4 ROOM or EXECUTIVE")
     block_id: str | None = None
     storey_min: Nonnegative | None = None
     storey_max: Nonnegative | None = None
@@ -53,7 +54,10 @@ class SalesArgs(Arguments):
     @classmethod
     def _upper(cls, value):
         # The data stores TAMPINES and 4 ROOM; accept any casing from the model.
-        return value.strip().upper() if isinstance(value, str) else value
+        if not isinstance(value, str):
+            return value
+        # BTO tools say "4-room"; the resale data says "4 ROOM".
+        return re.sub(r"^(\d)\s*-?\s*ROOMS?$", r"\1 ROOM", value.strip().upper())
 
     @field_validator("since", "until", mode="before")
     @classmethod
@@ -125,7 +129,7 @@ class RuleArgs(ProfileArgs):
     lease_left_months: Count
     price: Count | None = Field(None, description="Flat price in dollars; set it when given")
     category: Literal["standard", "plus", "prime"] | None = Field(
-        None, description="Standard, Plus or Prime flat; set it when given")
+        None, description="Flat category. ALWAYS set it when the user names one (for example \"the Standard resale flat\"): the verdict needs it")
 
 
 class PhgArgs(RuleArgs):
