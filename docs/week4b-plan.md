@@ -44,7 +44,12 @@ did not), but cannot separate the plan from everything else that changed. Such c
 6. **Runs** on the MacBook model (9B), direct and MCP. The 5090 only after asking you.
 7. **Docs, issues, wiki, Obsidian, board** updated at each step.
 
-## Decisions for you
+## Decisions (user, 2026-10-21)
+- Launch data: HDB press-release annexes approved, download them. BTO prices shown only as "indicative at launch". Retire `q_refuse_003` and add a replacement: approved.
+- Forecast stance: a **modest** projection. With history available, show conservative scenarios (lean to under-promise): the headline scenario uses the low-to-median
+  past growth, never the high end, and every projection carries the "illustrative, from past growth, not a forecast" label.
+
+## Decisions asked earlier (now answered)
 - OK to use HDB's launch press-release annexes (PDF tables) as the launch-data source, one launch at a time, with your approval per download? Alternative: HDB's launch web pages if they render as plain text.
 - OK that BTO prices are shown only as "indicative at launch", and that ballot odds / priority schemes are out of scope?
 - OK to retire `q_refuse_003` and add a replacement (the one change to the frozen bank)?
