@@ -68,14 +68,14 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 - Caveat (fixed 2026-10-21, PR #36): multi-step passes used to rely on the model's own arithmetic (issue #32). A `calculate` tool now does it; the
   6 new held-out multi-step questions pass 6/6 on the 9B.
 
-## Week 4b: BTO (added 2026-10-20, after week 4)
-Scope decided by the user: rules + launch info + map. Plan to be shown and approved before building.
-- [ ] BTO rules from hdb.gov.sg only, in a new dated YAML (eligibility, grants, loan limits that differ from resale).
-- [ ] BTO launch data: find a clean source first (HDB publishes launches as web pages). Show the user the source before using it.
-- [ ] BTO sites geocoded and added to the places table (nearest MRT and primary schools, straight-line).
-- [ ] New eval questions; the current "How do I apply for a BTO flat?" decline question (q_refuse_003) must change with the scope.
+## Week 4b: BTO (added 2026-10-20, scope extended 2026-10-21; plan: docs/week4b-plan.md)
+Three phases; each gets approval before building.
+- [ ] **4b-1** BTO rules from hdb.gov.sg only (new dated YAML), launch data (HDB annexes, approval per download), BTO sites geocoded (approximate), `list_bto_projects`,
+      `bto_nearby`, BTO rule tools, about 14 eval questions (5 held out); retire `q_refuse_003` and add a replacement decline question.
+- [ ] **4b-2** History: launch price vs resale after MOP for past BTOs, surrounding-area growth, government plans shown as dated facts (URA Master Plan, planned MRT). Feasibility check first.
+- [ ] **4b-3** Illustrative scenario calculator with grants, HDB/bank loan and net proceeds (labelled "illustrative, from past growth, not a forecast"); update the prediction rule in AGENTS.md.
 - [ ] BTO sites on the 3D map (with the week 6 UI).
-- **Exit:** BTO eligibility and "what is open near X" questions pass in the eval.
+- **Exit:** BTO eligibility and "what is open near X" questions pass; launch-vs-MOP and scenario answers come only from tool results, with the caveats shown.
 
 ## Week 5: trust features
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
