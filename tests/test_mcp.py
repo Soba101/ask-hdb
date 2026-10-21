@@ -27,6 +27,17 @@ def local_data(monkeypatch, sales):
     return block
 
 
+@pytest.fixture(autouse=True)
+def bto_tables(monkeypatch):
+    # Tiny BTO tables so the every-tool check does not need the downloaded launch data.
+    from test_bto_tools import FLATS, PLACES, PROJECTS
+
+    from ask_hdb.bto import queries
+    monkeypatch.setattr(queries, "load_projects", lambda: PROJECTS)
+    monkeypatch.setattr(queries, "load_flats", lambda: FLATS)
+    monkeypatch.setattr(queries, "load_places", lambda: PLACES)
+
+
 def test_protocol_schemas_and_every_tool(local_data):
     async def check():
         async with create_connected_server_and_client_session(HousingMCP("test")) as session:
@@ -46,6 +57,9 @@ def test_protocol_schemas_and_every_tool(local_data):
                                       "floor_area_sqm": None},
                     "nearest_places": {"block_id": local_data, "kind": "mrt"},
                     "calculate": {"expression": "1 + 2"},
+                    "list_bto_projects": {"town": "TAMPINES", "flat_type": None, "launch_month": None,
+                                          "category": None, "max_price": None},
+                    "bto_nearby": {"project_id": "bto_a", "kind": "mrt"},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)
                 result = await session.call_tool(spec.name, args)

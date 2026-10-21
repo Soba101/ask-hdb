@@ -130,3 +130,19 @@ class LoanArgs(RuleArgs):
 
 class CalcArgs(Arguments):
     expression: str = Field(description="Arithmetic on numbers from tool results, e.g. 80000 + 70000 - 25000")
+
+
+class BtoListArgs(Arguments):
+    # Required but nullable, like the other filters: the model must write a value or null.
+    town: str | None = Field(description="Town name such as TAMPINES, or null for any town")
+    flat_type: str | None = Field(description="2-room Flexi, 3-room, 4-room, 5-room, 3Gen or CCA, or null")
+    launch_month: str | None = Field(description="Launch month YYYY-MM (2025-02, 2025-07, 2025-10, 2026-02, 2026-06), or null")
+    category: Literal["Standard", "Plus", "Prime"] | None = Field(description="Project category, or null for all")
+    max_price: Nonnegative | None = Field(description="Keep flats whose lowest indicative price is at most this, or null")
+    limit: Annotated[int, Field(ge=1, le=20)] = 10
+
+
+class BtoNearbyArgs(Arguments):
+    project_id: str = Field(description="BTO project id such as bto_tampines-nova")
+    kind: PlaceKind
+    n: Annotated[int, Field(ge=1)] = 3
