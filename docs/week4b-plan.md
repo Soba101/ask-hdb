@@ -1,7 +1,23 @@
-# Week 4b plan: BTO (rules, launch info, map)
+# Week 4b plan: BTO (rules, launch info, appreciation, scenarios, map)
 
 Draft 2026-10-21, waiting for approval. Scope decided by the user on 2026-10-20: rules + launch info + map. Nothing is built or
 downloaded before approval.
+
+## Scope update 2026-10-21 (user request, decisions made)
+The user also wants: appreciation around a BTO site and government plans, a projected resale price, a comparison with surrounding-area prices, the difference between
+launch price and prices after MOP, all with grants and bank/HDB loans taken into account. Decisions: **illustrative scenarios** (not a forecast) and **three phases**.
+
+| Phase | What | Needs |
+|---|---|---|
+| **4b-1** | Everything in "Steps" below: BTO rules, launch data, sites, distances, tools, eval | This plan's approvals |
+| **4b-2** | History: for past BTOs (launched about 2015 to 2020, now past MOP) compare indicative launch price with resale prices after MOP in the same blocks and in the surrounding area; growth by town, flat type and distance band to MRT/schools; government plans (URA Master Plan, planned MRT) shown as facts with dates | A **feasibility check first**: HDB launch price history for older exercises, and matching a project to its blocks (our data has town, street and lease commence year) |
+| **4b-3** | Scenario calculator: launch price plus grants and loan (CPF Housing Grant, EHG, HDB/bank loan at stated rates, MSR) to a range of resale outcomes after MOP, with net proceeds (loan payoff, CPF refund with accrued interest, fees) | HDB rules read first and flagged where unclear; its own plan, eval and Opus review |
+
+**Prediction policy change (needs recording in AGENTS.md and the proposal when 4b-3 is built).** Today the agent declines price predictions. After 4b-3 it may show an
+*illustrative scenario range*: code applies past growth (low / median / high of comparable towns) to a price over the MOP years and labels it "illustrative, from past
+growth, not a forecast". The model never invents the number; every figure comes from a tool. "What will my flat sell for?" (an exact figure) is still declined.
+**What cannot be promised:** how much a government plan adds to a price. Past data can show correlation (for example, blocks that gained an MRT within 1 km versus blocks that
+did not), but cannot separate the plan from everything else that changed. Such comparisons are shown as descriptive history with that caveat, never as a causal uplift.
 
 ## What I found first (searched 2026-10-21)
 - No clean per-project BTO dataset on data.gov.sg. HDB publishes launches as press-release pages with administrative annexes (PDF tables
