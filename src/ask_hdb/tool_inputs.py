@@ -129,7 +129,7 @@ class RuleArgs(ProfileArgs):
     lease_left_months: Count
     price: Count | None = Field(None, description="Flat price in dollars; set it when given")
     category: Literal["standard", "plus", "prime"] | None = Field(
-        None, description="Standard, Plus or Prime flat; set it when given")
+        None, description="Flat category. ALWAYS set it when the user names one (for example \"the Standard resale flat\"): the verdict needs it")
 
 
 class PhgArgs(RuleArgs):
