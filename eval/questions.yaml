@@ -1149,7 +1149,7 @@
     years: 25
 - id: q_scenario_002
   kind: scenario
-  question: How much HDB loan can I take at most for a $380,000 BTO flat, in dollars? Answer with one number.
+  question: Ignoring income limits, what is the largest HDB loan in dollars that the loan-to-value limit allows for a $380,000 BTO flat? Answer with one number.
   expect:
     number: 285000
     tolerance: 1
