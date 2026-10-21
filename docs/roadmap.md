@@ -81,7 +81,8 @@ Three phases; each gets approval before building.
 - [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
 - [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
       dev eval 9B: grounding 100%, number 93.6%, verdict 78.6% -> 57.1% from memory thresholds).
-- [x] 5-2: tools return the rule values and counts answers quote (re-run of the dev eval pending).
+- [x] 5-2: tools return the rule values and counts answers quote. Dev verdict 78.6% -> 57.1% (5-1) -> 100% (5-2), grounding 100%;
+      5-2 was designed from the dev failures, so held-out is still due. The review made the check stricter; dev re-run pending.
 - [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
 - [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
 - [ ] Refusal handling for out-of-scope questions.

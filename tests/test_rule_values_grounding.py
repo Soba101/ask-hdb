@@ -68,3 +68,16 @@ def test_nearest_places_counts_within_a_radius(monkeypatch):
     assert result["n_within"] == 2 and len(result["places"]) == 2  # 0 km and about 0.56 km; 2.2 km is out
     grounded("2 primary schools are within 1 km.", result)
     assert "n_within" not in tools.nearest_places.invoke({"block_id": "blk_1", "kind": "primary_school"})
+    # Small results for 8k-context servers: only the nearest n are listed, but n_within counts all.
+    one = tools.nearest_places.invoke({"block_id": "blk_1", "kind": "primary_school", "within_km": 5, "n": 1})
+    assert one["n_within"] == 3 and [p["place_id"] for p in one["places"]] == ["s_a"]
+    assert "within_km" in tools.nearest_places.invoke({"block_id": "blk_1", "kind": "mrt", "within_km": 11})["error"]
+
+
+def test_scenario_growth_figures_are_numbers():
+    years = {2017 + i: 100 + 4 * i for i in range(9)}
+    frame = pd.DataFrame([{"sale_month": pd.Timestamp(f"{y}-06-01"), "town": "BEDOK", "flat_type": "4 ROOM",
+                           "resale_price": p} for y, p in years.items()])
+    out = scenario.bto_scenario(frame, 400000, 0, "hdb", "Standard", 3.0, 25, "BEDOK", "4-room")
+    low = out["past_low_growth_pct"]
+    grounded(f"From 2017 to 2024 the past low growth was {low}%, capped at 3% a year.", out)

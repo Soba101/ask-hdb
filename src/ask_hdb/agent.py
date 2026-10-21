@@ -155,7 +155,7 @@ def _ask(question, history, tools):
                         calls.append({"name": call["name"], "args": call["args"], "result": result})
         return answer, messages
 
-    checked = None
+    checked, first = None, []
     try:
         answer, messages = run(messages)
         checked = grounding.check(answer, question, [c["result"] for c in calls])
@@ -166,13 +166,15 @@ def _ask(question, history, tools):
             checked = grounding.check(answer, question, [c["result"] for c in calls])
             if checked["ungrounded"] or not answer.strip():
                 answer = grounding.CANNOT_ANSWER
-        checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
-                   "replaced": answer == grounding.CANNOT_ANSWER}
     except LimitReached as exc:
         stopped_reason = str(exc)
     except GraphRecursionError:
         stopped_reason = "recursion_limit"
     if stopped_reason:
         answer = f"stopped: limit ({stopped_reason}). Please narrow the question."
+    if checked is not None:
+        # Same keys even when the rewrite was stopped by a limit.
+        checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
+                   "replaced": answer == grounding.CANNOT_ANSWER}
     return {"answer": answer, "tool_calls": calls, "tokens": tokens,
             "stopped_reason": stopped_reason, "grounding": checked}

@@ -126,6 +126,10 @@ An answer with no scored numbers has a vacuous rate of one; answer accuracy and 
 Since week 5 (2026-10-22) the column uses `ask_hdb.grounding.check`, the same check the agent enforces; its rules are at
 the top of `src/ask_hdb/grounding.py` (labels such as years and flat types are skipped, written decimals may round the tool
 value, tool errors are not evidence). Grounding figures before that date used the older check; rescore to compare.
+After the PR #45 review the check became stricter: digits inside tool strings (sentences, IDs, sources, as_of dates)
+are no longer evidence, a year is skipped only after a date word with no money word nearby, and a day date must match an
+ISO date in a tool result. Known limit: numbers from the question may be restated; one placed right after a threshold
+word ("minimum", "at least", "ceiling") is not treated as an echo, but other phrasings can still present a user's number as a rule.
 
 Median and p90 use all recorded observations; missing token values are excluded from the
 token distribution. P90 uses linear interpolation between sorted observations.

@@ -5,3 +5,5 @@ data/raw/
 data/clean/
 eval/reports/
 data/*.log
+# data/ is git-ignored; worktrees may link it as a symlink, which "data/" alone does not match.
+/data

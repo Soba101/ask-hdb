@@ -91,3 +91,12 @@ def test_question_numbers_may_be_restated(model):
     result = agent.ask("Is $600000 ok for a 4-room?")
     assert result["grounding"]["ungrounded"] == []
     assert len(model.seen) == 1
+
+
+def test_limit_during_rewrite_keeps_grounding_keys(model, monkeypatch):
+    monkeypatch.setattr(agent, "MAX_TOOL_CALLS", 1)
+    model.script = [CALL, "Median $999,999.", CALL]  # the rewrite asks for a tool past the cap
+    result = agent.ask("Median in Tampines?")
+    assert result["stopped_reason"] == "tool_calls"
+    assert result["grounding"]["rewritten"] is True and result["grounding"]["replaced"] is False
+    assert result["grounding"]["first_ungrounded"] == ["$999,999"]

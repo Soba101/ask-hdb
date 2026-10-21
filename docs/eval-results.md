@@ -265,4 +265,6 @@ Dev split, 67 questions, reports `eval/reports/2026-10-22-agent-week5-*.json` (g
 
 5-1 alone made grounding 100% by construction but cost verdict accuracy: the six replaced answers quoted thresholds the model supplied from memory (ages 35 and 21, the 24-month rule, the 75% loan limit, a school count). 5-2 fixed the tools, not the check: rule tools now return the values they used, nearest_places returns a count, bto_scenario returns the loan percentage.
 Remaining failures (4): q_multi_step_005 and 007 (counts and sums, as before), q_scenario_002 (9B routes to `max_loan`; tool choice varies run to run), q_refuse_008 (balanced answer instead of a decline). Held-out questions were not run for week 5; the grounding check changes answers, so a held-out run is still due before this counts as validated.
+Plainly: 5-2 was chosen by reading these dev failures, so the dev verdict of 100% was measured on the questions used to tune it. It is not evidence of generalisation.
+After the PR #45 review the grounding check became stricter (no digits from tool strings, narrower year skip, day dates checked). Offline, all recorded 5-2 final answers still pass it (99/99 numbers); a re-run is needed to see the effect on first drafts and rewrites.
 The Mac model was the only model used; the 5090 was not touched.

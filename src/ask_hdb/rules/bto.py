@@ -75,7 +75,9 @@ def bto_ehg(profile: BuyerProfile, rules: Rules | None = None) -> RuleResult:
         use.unknown("own_monthly_income")
         return use.result
     if not profile.works_12_months:
-        use.get("grants.ehg.min_continuous_work_months")  # the resale work rule, cited for the explanation
+        # Cited for the explanation, but it is the RESALE work rule; the new-flat rule is unconfirmed.
+        use.get("grants.ehg.min_continuous_work_months")
+        use.result.reasons.append("The 12-month work rule cited is the resale EHG rule; the new-flat rule is not confirmed")
         use.unknown("ehg_work_rule_for_new_flats")
     income = profile.monthly_household_income
     if profile.scheme == "family":
