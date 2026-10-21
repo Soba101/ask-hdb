@@ -250,3 +250,4 @@ Held-out (run once, after the fixes): 1/3 pass (q_scenario_006 passes; 004 and 0
 named Standard or Plus, so no balance or sale scenario was returned and it answered with the instalment or the upfront cost instead. Fixed afterwards by making `category`
 required but nullable (the week 4 lesson: required-nullable for fields the model must consider, optional for filters). The held-out set is spent, so its 1/3 stays as reported; dev re-run after the fix is 4/4.
 Grounding column is low in these runs (37-100%) because the tool rounds sale prices to $1,000 and the model sometimes quotes unrounded figures; week 5 `grounding.py` will judge this properly.
+Review follow-up: q_scenario_001 now says "the largest HDB loan" (the loan size was ambiguous; 1531 assumes the largest loan). q_scenario_005 (held out, already run) still does not say "before any subsidy recovery"; its wording is left as run.

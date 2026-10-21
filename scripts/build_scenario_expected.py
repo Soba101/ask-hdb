@@ -50,6 +50,8 @@ def expected(spec, sales):
         return round(bal)
     if op == "flat_cash":
         return round(price - bal, -3)
+    if op != "headline_sale":
+        raise ValueError(f"unknown operation {op}")
     rate = min(max(low_growth(sales, spec["town"], spec["flat_type"]), 0), CAP)
     return round(price * (1 + rate) ** mop, -3)  # headline sale price
 

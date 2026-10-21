@@ -28,7 +28,7 @@ Each has a frozen expected answer that code can check.
 | multi_step | 16 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
 | bto | 14 | BTO eligibility verdicts, EHG amounts, launch facts and site distances |
 | scenario | 7 | loan instalment, loan size, upfront cost, balance at MOP and illustrative sale scenarios, computed independently (month-by-month amortisation) |
-| refuse | 8 (1 retired) | four declines and one request for missing details: "will prices rise?", "should I buy now?", Executive Condominium questions, "worth $1 million?", "which loan makes more money?" |
+| refuse | 8 (1 retired) | six active declines and one request for missing details: "will prices rise?", "should I buy now?", Executive Condominium questions, "worth $1 million?", "which loan makes more money?" |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
 - 30 questions are marked held out; the 67 development questions exclude them by default.

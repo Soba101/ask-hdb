@@ -1137,7 +1137,7 @@
   source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT; replaces q_refuse_003 (BTO is now in scope)
 - id: q_scenario_001
   kind: scenario
-  question: I will buy a BTO flat for $450,000 with an HDB loan at 2.6% a year over 25 years. What is my monthly instalment in dollars, rounded to the nearest dollar? Answer with one number.
+  question: I will buy a BTO flat for $450,000 with the largest HDB loan at 2.6% a year over 25 years. What is my monthly instalment in dollars, rounded to the nearest dollar? Answer with one number.
   expect:
     number: 1531
     tolerance: 1

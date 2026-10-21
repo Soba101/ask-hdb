@@ -58,3 +58,21 @@ def test_category_is_optional_and_only_needed_for_scenarios():
     out = scenario.bto_scenario(sales({2024: 1}), 450000, 0, "hdb", None, 2.6, 25)
     assert out["monthly_instalment"] == 1531 and out["scenarios"] == []
     assert "category_for_mop_years_and_sale_scenarios" in out["needs_check"]
+
+
+def test_labels_show_floor_and_cap_and_basis_shows_real_past_low():
+    falling = sales({2018: 160, 2019: 150, 2020: 140, 2021: 130, 2022: 120, 2023: 110, 2024: 100, 2025: 90})
+    out = run(falling)
+    assert "floored at 0" in out["scenarios"][1]["name"] and "past low -" in out["growth_basis"]
+    boom = sales({2018: 100, 2019: 120, 2020: 145, 2021: 175, 2022: 210, 2023: 250, 2024: 300, 2025: 360})
+    out = run(boom, loan_kind="bank")
+    assert "capped at 3%" in out["scenarios"][1]["name"] and out["scenarios"][1]["annual_growth_pct"] == 3.0
+    assert "bank_ltv_not_separately_confirmed" in out["needs_check"]
+    assert "loan_amount_assumes_max_ltv_check_hle_msr_and_cpf_paid_in" in out["needs_check"]
+
+
+def test_category_is_required_but_nullable_and_both_hints_appear():
+    assert "category" in tools.bto_scenario.invoke({"price": 1, "grants": 0, "loan_kind": "hdb"})["error"]
+    out = scenario.bto_scenario(sales({2024: 1}), 380000, 0, "hdb", None)
+    assert {"interest_rate_and_loan_years_for_instalment_and_scenarios",
+            "category_for_mop_years_and_sale_scenarios"} <= set(out["needs_check"])

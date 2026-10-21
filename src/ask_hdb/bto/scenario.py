@@ -60,9 +60,9 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
         out["needs_check"].append("plus_prime_subsidy_recovery")
     if not known:
         out["needs_check"].append("interest_rate_and_loan_years_for_instalment_and_scenarios")
-        return out
     if mop is None:
         out["needs_check"].append("category_for_mop_years_and_sale_scenarios")
+    if not known or mop is None:
         return out
     growth = past_growth(sales, town, ROOM[flat_type]) if town and flat_type in ROOM else None
     if growth is None:
