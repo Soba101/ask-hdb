@@ -7,7 +7,8 @@ from ask_hdb.rules._checks import RuleUse
 from ask_hdb.rules.bto import BTO_FILE
 
 NOTE = ("Illustrative, from past growth, not a forecast. Starts from the launch price, ignores the resale premium "
-        "of a finished flat, renovation, agent fees and loan interest already paid in CPF.")
+        "of a finished flat, renovation, agent fees and loan interest already paid in CPF. Prices can also fall; "
+        "no scenario is shown below flat.")
 ROOM = {"2-room Flexi": "2 ROOM", "3-room": "3 ROOM", "4-room": "4 ROOM", "5-room": "5 ROOM"}
 MIN_GROWTH_YEARS = 5
 GROWTH_CAP = 0.03  # our own conservative ceiling on every scenario: the 2021-23 run-up would overpromise
@@ -35,7 +36,7 @@ def past_growth(sales: pd.DataFrame, town: str, room: str) -> dict | None:
     growth = medians.pct_change().dropna()
     if len(growth) < MIN_GROWTH_YEARS:
         return None
-    return {"low": max(0.0, float(growth.quantile(.25))), "median": max(0.0, float(growth.median())),
+    return {"low": float(growth.quantile(.25)), "median": float(growth.median()),
             "years": f"{medians.index.min()}-{medians.index.max()}", "n_years": len(growth)}
 
 
@@ -50,7 +51,10 @@ def bto_scenario(sales, price, grants, loan_kind, interest_rate_pct, loan_years,
            "interest_rate_pct": interest_rate_pct, "loan_years": loan_years,
            "monthly_instalment": round(payment), "upfront_needed_cash_or_cpf": round(max(0.0, price - loan - grants)),
            "mop_years": mop, "rules": use.result.rules, "note": NOTE,
-           "needs_check": ["cpf_refund_and_accrued_interest_on_sale", "grant_refund_on_sale"], "scenarios": []}
+           "needs_check": ["cpf_refund_and_accrued_interest_on_sale", "grant_refund_on_sale",
+                         "loan_amount_assumes_max_ltv_check_hle_msr_and_cpf_paid_in"], "scenarios": []}
+    if loan_kind == "bank":
+        out["needs_check"].append("bank_ltv_not_separately_confirmed")
     if category in {"Plus", "Prime"}:
         out["needs_check"].append("plus_prime_subsidy_recovery")
     growth = past_growth(sales, town, ROOM[flat_type]) if town and flat_type in ROOM else None
@@ -58,11 +62,20 @@ def bto_scenario(sales, price, grants, loan_kind, interest_rate_pct, loan_years,
         out["needs_check"].append("growth_history_for_town_and_flat_type")
         return out
     out["growth_basis"] = (f"{town.upper()} {ROOM[flat_type]} yearly median resale prices {growth['years']}, "
-                           f"{growth['n_years']} year-on-year changes; rates floored at 0 and capped at 3% a year (past low {growth['low'] * 100:.1f}%, past median {growth['median'] * 100:.1f}%)")
+                           f"{growth['n_years']} year-on-year changes; past low {growth['low'] * 100:.1f}%, past median "
+                           f"{growth['median'] * 100:.1f}%; scenario rates are floored at 0 and capped at 3% a year")
     left = balance(loan, interest_rate_pct, loan_years, mop * 12)
-    for name, rate in (("flat", 0.0), ("low past growth (headline)", min(growth["low"], GROWTH_CAP)), ("median past growth (capped)", min(growth["median"], GROWTH_CAP))):
-        sale = price * (1 + rate) ** mop
-        out["scenarios"].append({"name": name, "annual_growth_pct": round(rate * 100, 1), "sale_price": round(sale),
-                                 "loan_balance_at_sale": round(left),
-                                 "cash_before_cpf_refund": round(sale - left)})
+    for name, raw in (("low past growth (headline)", growth["low"]), ("median past growth", growth["median"])):
+        rate = min(max(raw, 0.0), GROWTH_CAP)
+        if rate != raw:
+            name += ", capped at 3%" if raw > GROWTH_CAP else ", floored at 0"
+        out["scenarios"].append(_scenario(name, rate, price, mop, left))
+    out["scenarios"].insert(0, _scenario("flat", 0.0, price, mop, left))
     return out
+
+
+def _scenario(name, rate, price, mop, left):
+    sale = price * (1 + rate) ** mop
+    # Rounded to $1,000 so it does not read as an exact future price.
+    return {"name": name, "annual_growth_pct": round(rate * 100, 1), "sale_price": round(sale, -3),
+            "loan_balance_at_sale": round(left), "cash_before_cpf_refund": round(sale - left, -3)}

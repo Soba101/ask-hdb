@@ -10,7 +10,7 @@ PlaceKind = Literal["mrt", "primary_school"]
 
 
 class Arguments(BaseModel):
-    # Only the BTO list filters read empty text as "no value"; elsewhere an empty filter stays an error or an exact match.
+    # Only the BTO list and scenario filters read empty text as "no value"; elsewhere an empty filter stays an error or an exact match.
     empty_means_none: ClassVar[bool] = False
 
     @model_validator(mode="before")
