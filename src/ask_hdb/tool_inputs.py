@@ -137,6 +137,7 @@ class CalcArgs(Arguments):
 
 class BtoListArgs(Arguments):
     # Required but nullable, like the other filters: the model must write a value or null.
+    name: str | None = Field(description="Part of a project name such as 'Tampines Nova', or null for any project")
     town: str | None = Field(description="Town name such as TAMPINES, or null for any town")
     flat_type: str | None = Field(description="2-room Flexi, 3-room, 4-room, 5-room, 3Gen or CCA, or null")
     launch_month: str | None = Field(description="Launch month YYYY-MM (2025-02, 2025-07, 2025-10, 2026-02, 2026-06), or null")

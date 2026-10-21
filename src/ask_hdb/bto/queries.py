@@ -23,8 +23,10 @@ def load_flats():
     return pd.read_parquet(CLEAN / "bto_flats.parquet")
 
 
-def list_bto_projects(town=None, flat_type=None, launch_month=None, category=None, max_price=None, limit=10):
+def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, category=None, max_price=None, limit=10):
     projects, flats = load_projects(), load_flats()
+    if name:
+        projects = projects[projects.name.str.upper().str.contains(name.upper(), regex=False)]
     if town:
         projects = projects[projects.town.fillna("").str.upper().eq(town.upper())]
     if category:

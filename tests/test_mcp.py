@@ -60,7 +60,7 @@ def test_protocol_schemas_and_every_tool(local_data):
                                       "floor_area_sqm": None},
                     "nearest_places": {"block_id": local_data, "kind": "mrt"},
                     "calculate": {"expression": "1 + 2"},
-                    "list_bto_projects": {"town": "TAMPINES", "flat_type": None, "launch_month": None,
+                    "list_bto_projects": {"name": None, "town": "TAMPINES", "flat_type": None, "launch_month": None,
                                           "category": None, "max_price": None},
                     "bto_nearby": {"project_id": "bto_a", "kind": "mrt"},
                     "can_apply_bto": BTO_PROFILE | {"category": "Standard", "flat_type": "4-room", "hfe_after_revision": None},

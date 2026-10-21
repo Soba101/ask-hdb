@@ -40,11 +40,11 @@ def load_questions(path=QUESTION_PATH):
                         or not math.isfinite(value)):
                     raise ValueError('Expected number and tolerance must be finite')
             if expect['tolerance'] < 0 or q['kind'] not in {
-                'price', 'grants', 'price_check', 'distance', 'multi_step'
+                'price', 'grants', 'price_check', 'distance', 'multi_step', 'bto'
             }:
                 raise ValueError('Invalid numeric expectation')
         elif 'verdict' in expect:
-            if (q['kind'] not in {'eligibility', 'grants'}
+            if (q['kind'] not in {'eligibility', 'grants', 'bto'}
                     or expect['verdict'] not in {'yes', 'no'}
                     or not isinstance(expect.get('answer_keywords'), list)
                     or not expect['answer_keywords']

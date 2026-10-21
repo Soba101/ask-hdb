@@ -544,6 +544,7 @@
     decline: true
   source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT
 - id: q_refuse_003
+  retired: true  # BTO is in scope since week 4b; replaced by q_refuse_006 (2026-10-21)
   kind: refuse
   question: How do I apply for a BTO flat?
   expect:
@@ -992,3 +993,145 @@
       price: 569000
       as_of: 2026-09
   heldout: true
+- id: q_bto_001
+  kind: bto
+  question: We are a married couple, both Singapore Citizens, aged 32 and 31, both first-timers, household income $12000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. We applied for our HFE letter in September 2026. Can we apply for a 4-room Standard BTO flat?
+  expect:
+    verdict: 'yes'
+    answer_keywords: &id002
+    - 'yes'
+    - eligible
+    - can apply
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: 12000 is under both ceilings'
+- id: q_bto_002
+  kind: bto
+  question: We are a married couple, both Singapore Citizens, aged 32 and 31, both first-timers, household income $17000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. We applied for our HFE letter in September 2026. Can we apply for a 4-room Standard BTO flat?
+  expect:
+    verdict: 'no'
+    answer_keywords: &id001
+    - 'no'
+    - not eligible
+    - cannot apply
+    - ineligible
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: 17000 is above the revised 16000'
+- id: q_bto_003
+  kind: bto
+  question: We are a married couple, both Singapore Citizens, aged 32 and 31, both first-timers, household income $15000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. We applied for our HFE letter in June 2026. Can we apply for a 4-room Standard BTO flat?
+  expect:
+    verdict: 'no'
+    answer_keywords: *id001
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: an HFE letter before 24 Aug 2026 uses the previous 14000 ceiling'
+- id: q_bto_004
+  kind: bto
+  question: We are a married couple, both Singapore Citizens, aged 32 and 31, both first-timers, household income $15000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. We applied for our HFE letter in September 2026. Can we apply for a 4-room Standard BTO flat?
+  expect:
+    verdict: 'yes'
+    answer_keywords: *id002
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: an HFE letter on or after 24 Aug 2026 uses the revised 16000 ceiling'
+  heldout: true
+- id: q_bto_005
+  kind: bto
+  question: I am an unmarried Singapore Citizen aged 36, a first-timer, income $4000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. I applied for my HFE letter in September 2026. Can I apply for a 4-room BTO flat?
+  expect:
+    verdict: 'no'
+    answer_keywords: *id001
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: singles can only buy 2-room Flexi in BTO'
+- id: q_bto_006
+  kind: bto
+  question: I am an unmarried Singapore Citizen aged 36, a first-timer, income $7500 a month, working continuously for the past 12 months, no private property, no previous HDB loans. I applied for my HFE letter in September 2026. Can I apply for a 2-room Flexi BTO flat?
+  expect:
+    verdict: 'yes'
+    answer_keywords: *id002
+  source: 'rules/bto/2026-10.yaml eligibility (HDB income-ceiling annexes, 22 Aug 2026); by hand: single 2-room Flexi 99-year ceiling is revised to 8000'
+  heldout: true
+- id: q_bto_007
+  kind: bto
+  question: We are a married couple, both Singapore Citizens, aged 32 and 31, both first-timers, household income $4400 a month, working continuously for the past 12 months, no private property, no previous HDB loans. We applied for our HFE letter in September 2026. How much Enhanced CPF Housing Grant (EHG) would we get for a BTO flat, in dollars? Answer with one number.
+  expect:
+    number: 70000
+    tolerance: 0
+  source: 'EHG families table: income 4,001 to 4,500 = 70,000 (rules/2026-10.yaml grants.ehg.families_tiers; HDB EHG-amount-Families.pdf)'
+- id: q_bto_008
+  kind: bto
+  question: I am an unmarried Singapore Citizen aged 36, a first-timer, income $2000 a month, working continuously for the past 12 months, no private property, no previous HDB loans. I applied for my HFE letter in September 2026. How much Enhanced CPF Housing Grant (EHG) would I get for a 2-room Flexi BTO flat, in dollars? Answer with one number.
+  expect:
+    number: 40000
+    tolerance: 0
+  source: 'EHG singles table: income 1,751 to 2,000 = 40,000 (rules/2026-10.yaml grants.ehg.singles_tiers_alone_or_with_parents; HDB EHG-amount-Singles.pdf)'
+- id: q_bto_009
+  kind: bto
+  question: In the February 2026 BTO launch, how many 4-room flats were offered at Tampines Nova? Answer with one number.
+  expect:
+    number: 133
+    tolerance: 0
+  source: 'HDB Annex A, Feb 2026 Table A(1)(a), read by hand: Tampines Nova 4-room, 133 units'
+  query:
+    operation: launch_units
+    project_id: bto_tampines-nova
+    launch: 2026-02
+    flat_type: 4-room
+- id: q_bto_010
+  kind: bto
+  question: What was the lowest indicative launch price, in dollars, of a 2-room Flexi flat at Kim Keat Crest in the February 2026 BTO launch? Answer with one number.
+  expect:
+    number: 203000
+    tolerance: 0
+  source: 'HDB Annex A, Feb 2026 Table A(1)(a), read by hand: Kim Keat Crest 2-room Flexi $203,000 - $253,000'
+  query:
+    operation: launch_min_price
+    project_id: bto_kim-keat-crest
+    launch: 2026-02
+    flat_type: 2-room Flexi
+- id: q_bto_011
+  kind: bto
+  question: How many flats in total were offered at Berlayar Residences in the October 2025 BTO launch? Answer with one number.
+  expect:
+    number: 880
+    tolerance: 0
+  source: 'HDB Annex A, Oct 2025 Table A(1)(a), read by hand: 86 + 240 + 86 + 468'
+  query:
+    operation: launch_units
+    project_id: bto_berlayar-residences
+    launch: 2025-10
+  heldout: true
+- id: q_bto_012
+  kind: bto
+  question: How many BTO projects were launched in the June 2026 sales exercise? Answer with one number.
+  expect:
+    number: 7
+    tolerance: 0
+  source: 'HDB Annex A, Jun 2026 launch: HDB headline ''6,952 flats across 7 projects'''
+  query:
+    operation: launch_projects
+    launch: 2026-06
+  heldout: true
+- id: q_bto_013
+  kind: bto
+  question: What is the straight-line distance in kilometres, rounded to 2 decimals, from the approximate site of the Tampines Nova BTO project to its nearest MRT station? Answer with one number.
+  expect:
+    number: 0.38
+    tolerance: 0.05
+  source: data/clean/bto_projects.parquet and places.parquet; spherical law of cosines in scripts/build_bto_expected.py; the site is approximate
+  query:
+    operation: nearest
+    project_id: bto_tampines-nova
+    place_kind: mrt
+- id: q_bto_014
+  kind: bto
+  question: Using straight-line distance from the approximate site, how many primary schools are within 1 km (inclusive) of the Bishan Terraces BTO project? Answer with one exact count.
+  expect:
+    number: 3
+    tolerance: 0
+  source: data/clean/bto_projects.parquet and places.parquet; spherical law of cosines in scripts/build_bto_expected.py; the site is approximate
+  query:
+    operation: within_count
+    project_id: bto_bishan-terraces
+    place_kind: primary_school
+    km: 1
+  heldout: true
+- id: q_refuse_006
+  kind: refuse
+  question: How do I apply for an Executive Condominium (EC)?
+  expect:
+    decline: true
+  source: docs/eval.md scope; src/ask_hdb/agent.py SYSTEM_PROMPT; replaces q_refuse_003 (BTO is now in scope)

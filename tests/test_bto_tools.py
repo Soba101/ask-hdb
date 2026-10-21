@@ -27,7 +27,7 @@ def tables(monkeypatch):
     monkeypatch.setattr(queries, "load_places", lambda: PLACES)
 
 
-ALL = {"town": None, "flat_type": None, "launch_month": None, "category": None, "max_price": None}
+ALL = {"name": None, "town": None, "flat_type": None, "launch_month": None, "category": None, "max_price": None}
 
 
 def test_filters_and_required_nullable_arguments():
