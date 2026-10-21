@@ -163,3 +163,16 @@ class BtoRuleArgs(ProfileArgs):
     flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room", "3Gen"] = Field(description="BTO flat type")
     hfe_after_revision: bool | None = Field(
         description="True if the HFE letter was applied for on or after 24 Aug 2026 (revised income ceilings), False if before, null if unknown")
+
+
+class BtoScenarioArgs(Arguments):
+    empty_means_none: ClassVar[bool] = True
+    price: Annotated[float, Field(gt=0)] = Field(description="Purchase price in dollars (a launch price from list_bto_projects)")
+    grants: Nonnegative = Field(description="Total grants in dollars from the grant tools, 0 if none")
+    loan_kind: Literal["hdb", "bank"] = Field(description="HDB loan or bank loan")
+    interest_rate_pct: Annotated[float, Field(ge=0, le=15)] = Field(
+        description="Yearly interest rate in percent given by the user. Ask; never assume one")
+    loan_years: Annotated[int, Field(ge=1, le=35)] = Field(description="Loan length in years given by the user. Ask; never assume one")
+    category: Literal["Standard", "Plus", "Prime"] = Field(description="BTO project category")
+    town: str | None = Field(None, description="Town of the flat, such as TAMPINES, for past price growth")
+    flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room"] | None = Field(None, description="Flat type, for past price growth")
