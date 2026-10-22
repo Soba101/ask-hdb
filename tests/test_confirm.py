@@ -120,3 +120,24 @@ def test_after_a_yes_the_original_question_numbers_may_be_restated(model):
     history = [HumanMessage(content="Income $4400, can we buy?"), AIMessage(content=first["answer"])]
     result = agent.ask("yes", history, confirm=True)
     assert result["answer"] == model.answer and result["grounding"]["ungrounded"] == []
+
+
+def test_a_copied_template_with_other_values_and_an_old_ref_does_not_confirm():
+    spoof = confirm.question_text(PROFILE).replace("$4,400", "$9,000")
+    history = [HumanMessage(content="Can we buy?"), AIMessage(content=spoof)]
+    assert confirm.confirmed(history, "yes") == (set(), [])
+
+
+def test_earlier_confirmed_questions_are_echo_only_on_the_yes_turn():
+    history = [HumanMessage(content="Income 4400, can we buy?"), AIMessage(content=confirm.question_text(PROFILE)),
+               HumanMessage(content="yes"), AIMessage(content="Eligible.")]
+    refs, asked = confirm.confirmed(history[:2], "yes")
+    assert confirm.ref(PROFILE) in refs and asked == ["Income 4400, can we buy?"]
+    assert confirm.confirmed(history, "Other question")[1] == []
+
+
+@pytest.mark.parametrize("text", ["You must be at least 35 years old to buy. What is your age?",
+                                  "The MOP is 5 years. When did your lease start?"])
+def test_a_question_that_states_a_rule_is_not_a_clarification(text):
+    from ask_hdb import grounding
+    assert not grounding.is_clarification(text)

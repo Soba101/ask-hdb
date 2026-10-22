@@ -158,6 +158,11 @@ VERDICT = re.compile(r'\b(?:eligible|ineligible|qualify|qualifies|can buy|cannot
                      r'cannot apply|will get|you get|you receive)\b|^\s*(?:yes|no)\b', re.IGNORECASE)
 
 
+# A rule stated as fact ("at least 35 years old", "the MOP is 5 years") is never just a question.
+RULE_WORDS = re.compile(r'\b(?:at least|at most|minimum|maximum|ceiling|limit|must|required?|requires?|MOP)\b|'
+                        r'\byears? old\b', re.IGNORECASE)
+
+
 def is_clarification(text):
     """A request for missing details: it asks, gives no verdict, and states no amount.
 
@@ -166,7 +171,7 @@ def is_clarification(text):
     """
     text = str(text)
     # A decline often ends with "please provide..." for something else; it keeps the normal rewrite.
-    if DECLINE.search(text) or not ASKS.search(text) or VERDICT.search(text) or re.search(r'[$%]', text):
+    if DECLINE.search(text) or not ASKS.search(text) or VERDICT.search(text) or RULE_WORDS.search(text) or re.search(r'[$%]', text):
         return False
     return all(c[1] < 1000 for c in claims(text))
 

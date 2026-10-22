@@ -7,7 +7,6 @@ arguments gives a new reference, so the user is asked again.
 """
 
 import hashlib
-import json
 import re
 from itertools import pairwise
 
@@ -37,8 +36,12 @@ def profile(args):
     return {k: _clean(v) for k, v in sorted(args.items()) if k not in IGNORED and _clean(v) is not None}
 
 
+def _hash(lines):
+    return hashlib.sha256("\n".join(lines).encode()).hexdigest()[:8]
+
+
 def ref(args):
-    return hashlib.sha256(json.dumps(profile(args), sort_keys=True).encode()).hexdigest()[:8]
+    return _hash(_lines(args))
 
 
 def _show(key, value):
@@ -49,12 +52,28 @@ def _show(key, value):
     return str(value).replace("_", " ")
 
 
+def _lines(args):
+    shown = profile(args)
+    return [f"- {key.replace('_', ' ').capitalize()}: {_show(key, value)}" for key, value in shown.items()]
+
+
+HEADER = "Before I check this, please confirm the details I will use:"
+
+
 def question_text(args):
     """The confirmation message, written by code from the tool arguments."""
-    # Shown as the model wrote them (normalised values are only for the reference).
-    lines = [f"- {key.replace('_', ' ').capitalize()}: {_show(key, args[key])}" for key in profile(args)]
-    return ("Before I check this, please confirm the details I will use:\n" + "\n".join(lines)
+    return (HEADER + "\n" + "\n".join(_lines(args))
             + f"\nIs this right? Reply yes to continue, or tell me what to change. (profile ref {ref(args)})")
+
+
+def _shown_ref(text):
+    """The ref of the lines the message actually shows, or None when it is not a code-written message.
+    A model that copies the template with other values and an old ref fails this check."""
+    lines = text.splitlines()
+    found = REF.search(lines[-1]) if len(lines) >= 2 else None
+    if not found or lines[0] != HEADER or _hash(lines[1:-1]) != found.group(1):
+        return None
+    return found.group(1)
 
 
 def confirmed(history, question):
@@ -65,7 +84,10 @@ def confirmed(history, question):
     turns.append(("human", question))
     refs, asked = set(), []
     for index, ((kind, text), (next_kind, reply)) in enumerate(pairwise(turns)):
-        if kind == "ai" and next_kind == "human" and YES.fullmatch(reply) and REF.search(text):
-            refs.update(REF.findall(text))
-            asked += [t for k, t in turns[index - 1:index] if k == "human"]
+        shown = _shown_ref(text) if kind == "ai" else None
+        if shown and next_kind == "human" and YES.fullmatch(reply):
+            refs.add(shown)
+            # Only the turn that says yes may restate the earlier question's numbers.
+            if index == len(turns) - 2:
+                asked += [t for k, t in turns[index - 1:index] if k == "human"]
     return refs, asked
