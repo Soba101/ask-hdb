@@ -9,7 +9,7 @@ Rule: small and verifiable beats big. Each phase is tested offline with fake cha
 |---|---|---|
 | 5-1 | `grounding.py` number check in `agent.ask()`: check, one rewrite, re-check, else an honest "can't answer reliably". Eval grounding column uses the same function. | built (this branch) |
 | 5-2 | Tools return the numbers models like to add from memory (rule thresholds used, counts within a radius). | built (this branch), eval pending |
-| 5-3 | Profile confirmation: "Is this right?" before any eligibility or grant tool runs. | after 5-2 |
+| 5-3 | Profile confirmation: "Is this right?" before any eligibility or grant tool runs. | built (week5-3), eval pending |
 | 5-4 | `full` eval condition (single agent + grounding + confirmation) vs single agent, same questions and model. | after 5-3 |
 | deferred | Supervisor + workers graph; RAG over HDB policy pages. | see below |
 
@@ -59,6 +59,24 @@ Code decides, not the prompt. The agent intercepts a call to `can_buy_resale`, `
 - Eval: single-turn questions would all stop at the question. The `full` condition answers "yes" once as a second turn; the
   `agent` condition stays as today so the comparison is fair. Refuse/clarify questions must not change.
 - Tests: fake model requests an eligibility tool; assert the tool did not run, the profile text, then a "yes" turn runs it.
+
+Built (branch week5-3), offline tests only:
+- `src/ask_hdb/confirm.py`: the gated tool list, `question_text(args)` (code-written profile list, "Is this right?", and a
+  `(profile ref xxxxxxxx)` hash of the normalised arguments), and `confirmed(history, question)`. A ref counts only when it is in
+  an assistant message followed by a plain yes ("yes", "y", "correct", "that's right"; "yes, but..." is not a yes). The model's
+  own `confirmed` argument is ignored.
+- `agent.ask(question, history, confirm=False)`: with `confirm=True` the model step stops before an unconfirmed gated call and the
+  answer is the code text (`needs_confirmation: true`, no tool ran). On the yes turn the user's earlier question counts as the
+  question for grounding echoes, since the turn's own question is only "yes". `ask-hdb chat` uses `confirm=True`.
+- Eval: `--condition agent` is unchanged (no confirmation). `--condition full` asks with confirmation and answers "yes" once;
+  a second request for confirmation stays as the answer and fails. Tokens are summed over both turns.
+- Limits: the eval's "yes" stands in for a user who checked the profile; it does not check the profile against the question.
+  Two different profiles in one question need two confirmations (the full condition gives only one yes).
+
+Clarification gap (held-out q_refuse_005): a no-tool request for missing details mentioned a rule number ("12") and was replaced.
+Now, when no tool ran and the draft asks for details with no verdict, no `$`/`%`, no number of 1,000 or more and no decline phrase,
+the one rewrite asks for "only the missing details, and state no numbers". If a small number survives, the question is kept (and
+the number stays listed as ungrounded, with `kept_clarification: true`). Facts, verdicts, amounts and declines are unchanged.
 
 ## Deferred, with reasons
 - **Supervisor + workers graph.** The single agent already reaches 97-98% number accuracy; the misses are tool inputs and memory

@@ -149,7 +149,38 @@ def check(answer, question, results):
             + [raw for raw, iso in days if iso not in dates]}
 
 
-def rewrite_request(ungrounded):
+ASKS = re.compile(r'\?|\b(?:please (?:provide|share|tell|confirm)|could you|can you (?:tell|share|provide)|'
+                  r'what is your|what are your|i need|let me know)\b', re.IGNORECASE)
+DECLINE = re.compile(r"\b(?:cannot|can't|can not|unable to|not able to|won't|will not) (?:predict|provide|advise|"
+                     r"give|forecast|recommend|help)\b|\b(?:can|could) only (?:help|assist|provide)\b|\boutside my scope\b",
+                     re.IGNORECASE)
+VERDICT = re.compile(r'\b(?:eligible|ineligible|qualify|qualifies|can buy|cannot buy|can\'t buy|can apply|'
+                     r'cannot apply|will get|you get|you receive)\b|^\s*(?:yes|no)\b', re.IGNORECASE)
+
+
+# A rule stated as fact ("at least 35 years old", "the MOP is 5 years") is never just a question.
+RULE_WORDS = re.compile(r'\b(?:at least|at most|minimum|maximum|ceiling|limit|must|required?|requires?|MOP)\b|'
+                        r'\byears? old\b', re.IGNORECASE)
+
+
+def is_clarification(text):
+    """A request for missing details: it asks, gives no verdict, and states no amount.
+
+    Only small numbers may appear (like "12 months" in a question about work history); any
+    "$", "%" or number of 1,000 or more makes it a factual answer, which is checked as usual.
+    """
+    text = str(text)
+    # A decline often ends with "please provide..." for something else; it keeps the normal rewrite.
+    if DECLINE.search(text) or not ASKS.search(text) or VERDICT.search(text) or RULE_WORDS.search(text) or re.search(r'[$%]', text):
+        return False
+    return all(c[1] < 1000 for c in claims(text))
+
+
+def rewrite_request(ungrounded, clarification=False):
+    if clarification:
+        # A no-tool request for details needs no numbers at all.
+        return ("You called no tool, so state no numbers: " + ", ".join(ungrounded) + " came from no tool result. "
+                "Rewrite your reply to ask only for the missing details, and state no numbers.")
     return ("Your answer states these numbers, but none of this question's tool results "
             "contain them: " + ", ".join(ungrounded) + ". Rewrite the answer. Use only "
             "numbers that appear in tool results (call a tool or calculate if you need one), "

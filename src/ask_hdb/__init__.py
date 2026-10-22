@@ -12,7 +12,7 @@ def main() -> None:
     commands.add_parser("routing", help="Run the week two tool-call check")
     evaluation = commands.add_parser("eval", help="Score answers against frozen questions")
     evaluation.add_argument("--tools", choices=("direct", "mcp"))
-    evaluation.add_argument("--condition", choices=("llm-only", "agent"), default="agent")
+    evaluation.add_argument("--condition", choices=("llm-only", "agent", "full"), default="agent")
     evaluation.add_argument("--only", choices=KINDS)
     evaluation.add_argument("--verbose", action="store_true")
     evaluation.add_argument("--heldout", action="store_true")

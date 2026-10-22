@@ -78,7 +78,8 @@ Three phases; each gets approval before building.
 - **Exit:** BTO eligibility and "what is open near X" questions pass; launch-vs-MOP and scenario answers come only from tool results, with the caveats shown.
 
 ## Week 5: trust features (plan: docs/week5-plan.md)
-- [ ] Profile worker + "Is this right?" confirmation before any eligibility tool runs.
+- [x] "Is this right?" confirmation before any eligibility tool runs (5-3, branch week5-3: code gate in `confirm.py`, `full`
+      eval condition; offline tests only, `full` vs `agent` eval pending). No separate profile worker (graph deferred).
 - [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
       dev eval 9B: grounding 100%, number 93.6%, verdict 78.6% -> 57.1% from memory thresholds).
 - [x] 5-2: tools return the rule values and counts answers quote. Dev verdict 78.6% -> 57.1% (5-1) -> 100% (5-2), grounding 100%;

@@ -52,7 +52,9 @@ Each has a frozen expected answer that code can check.
 ## Conditions to compare (same questions, same model)
 1. **LLM only**: no tools, just the question. Shows why tools matter.
 2. **Single agent**: one ReAct agent with all tools (week 2 build).
-3. **Full**: supervisor + workers + grounding check + profile confirmation (week 5 build).
+3. **Full**: grounding check + profile confirmation (week 5 build; the supervisor graph was deferred, see `docs/week5-plan.md`).
+   `--condition full` answers "yes" once to the code-written profile question; `--condition agent` never asks, so earlier agent
+   reports stay comparable.
 
 The README shows one table: these three conditions against the measures above.
 
