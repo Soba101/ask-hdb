@@ -138,3 +138,31 @@ def test_the_page_keeps_the_history_within_the_server_limits():
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'aria-live", "off"' in js
+
+
+def test_points_events_follow_their_tool_result(monkeypatch):
+    def ask_with_points(question, history=None, confirm=False, on_event=None):
+        on_event({"type": "tool_call", "name": "bto_nearby", "args": {"project_id": "bto_tampines-nova"}})
+        on_event({"type": "tool_result", "name": "bto_nearby", "result": {"places": []}})
+        return {"answer": "ok", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
+
+    monkeypatch.setattr(api.agent, "ask", ask_with_points)
+    monkeypatch.setattr(api, "map_points", lambda args, result: [{"id": args["project_id"]}])
+    got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
+    assert [e["type"] for e in got] == ["tool_call", "tool_result", "points", "answer"]
+    assert got[2]["points"] == [{"id": "bto_tampines-nova"}]
+
+
+def test_a_failing_map_lookup_never_breaks_the_answer(monkeypatch):
+    def ask_one(question, history=None, confirm=False, on_event=None):
+        on_event({"type": "tool_call", "name": "t", "args": {}})
+        on_event({"type": "tool_result", "name": "t", "result": {}})
+        return {"answer": "ok", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
+
+    def boom(args, result):
+        raise RuntimeError("bad data")
+
+    monkeypatch.setattr(api.agent, "ask", ask_one)
+    monkeypatch.setattr(api, "map_points", boom)
+    got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
+    assert [e["type"] for e in got] == ["tool_call", "tool_result", "answer"]

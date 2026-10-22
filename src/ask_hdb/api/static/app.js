@@ -1,3 +1,5 @@
+import * as lib from "./vendor/maplibre/maplibre-gl.mjs";
+
 // Plain JS, no build step. The chat history lives only in this page's memory and is sent with each question.
 const log = document.getElementById("log");
 const form = document.getElementById("form");
@@ -81,7 +83,71 @@ function addSource(url, asOf) {
   sources.querySelector("ul").appendChild(li);
 }
 
+// Map: points come from the server (found by code from ids in the tool calls), never from the model's text.
+const maplibregl = lib.default || lib;
+const features = new Map();
+let map = null;
+let mapReady = false;
+const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
+  "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
+
+function startMap() {
+  try {
+    map = new maplibregl.Map({
+      container: "map", center: [103.82, 1.35], zoom: 10.3, attributionControl: { compact: true },
+      style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
+        layers: [{ id: "osm", type: "raster", source: "osm" }] },
+    });
+  } catch (error) {
+    document.getElementById("map").textContent = "The map could not start in this browser.";
+    return;
+  }
+  map.on("load", () => {
+    map.addSource("pts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "pts", type: "circle", source: "pts", paint: {
+      "circle-color": COLORS, "circle-radius": ["case", ["==", ["get", "role"], "origin"], 9, 6],
+      "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+    map.on("click", "pts", (e) => {
+      const p = e.features[0].properties;
+      const box = document.createElement("div");
+      box.textContent = p.label + (p.note ? " (" + p.note + ")" : "");
+      new maplibregl.Popup({ closeButton: false }).setLngLat(e.features[0].geometry.coordinates).setDOMContent(box).addTo(map);
+    });
+    map.on("mouseenter", "pts", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "pts", () => { map.getCanvas().style.cursor = ""; });
+    mapReady = true;
+    drawPoints();
+  });
+}
+
+function drawPoints() {
+  const list = document.getElementById("points");
+  list.replaceChildren();
+  for (const p of features.values()) {
+    const li = document.createElement("li");
+    li.textContent = p.label + (p.note ? " (" + p.note + ")" : "");
+    list.appendChild(li);
+  }
+  if (!mapReady) return;
+  map.getSource("pts").setData({ type: "FeatureCollection", features: [...features.values()].map((p) => ({
+    type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+    properties: { kind: p.kind, role: p.role, label: p.label, note: p.note || "" } })) });
+  if (features.size) {
+    const bounds = new maplibregl.LngLatBounds();
+    features.forEach((p) => bounds.extend([p.lng, p.lat]));
+    map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+  }
+}
+
+function addPoints(points) {
+  points.forEach((p) => { if (!features.has(p.id)) features.set(p.id, p); });
+  drawPoints();
+}
+
 function clearEvidence() {
+  features.clear();
+  drawPoints();
   tools.replaceChildren();
   sources.replaceChildren();
   seen.clear();
@@ -133,6 +199,7 @@ async function ask(question) {
     for await (const event of events(response)) {
       if (event.type === "tool_call") cards.push(addTool(event));
       else if (event.type === "tool_result") addResult(cards[cards.length - 1] || addTool(event), event);
+      else if (event.type === "points") addPoints(event.points);
       else if (event.type === "error") throw new Error(event.message);
       else if (event.type === "answer") { answered = true; show(question, event); }
     }
@@ -177,4 +244,5 @@ form.addEventListener("submit", (e) => {
 box.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
 });
+startMap();
 add("bot", "Hi! Ask me about HDB resale prices, BTO launches, grants or eligibility. I'll show the tool results behind every number.");

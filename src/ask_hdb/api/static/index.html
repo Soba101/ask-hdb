@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask HDB</title>
+<link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,13 +21,20 @@
     </form>
     <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered.</p>
   </section>
-  <aside id="evidence" aria-label="Tool results and sources">
+  <aside id="evidence" aria-label="Map, tool results and sources">
+    <h2>Map</h2>
+    <div id="map" role="region" aria-label="Map of the places in the answer"></div>
+    <p id="legend" class="legend">
+      <span class="dot block"></span>Block <span class="dot mrt"></span>MRT <span class="dot school"></span>School
+      <span class="dot bto"></span>BTO site (approximate) &middot; larger dot: the place asked about
+    </p>
+    <ul id="points" class="points" aria-label="Places on the map"></ul>
     <h2>Evidence</h2>
     <p id="empty" class="muted">Tool calls, results and sources for your question appear here.</p>
     <div id="tools"></div>
     <div id="sources"></div>
   </aside>
 </main>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

@@ -38,3 +38,10 @@ pre { margin: 6px 0 0; padding: 8px; background: var(--bg); border-radius: 6px; 
 #sources ul { padding-left: 18px; margin: 4px 0; font-size: .9rem; overflow-wrap: anywhere; }
 a { color: var(--accent); }
 @media (max-width: 800px) { main { grid-template-columns: 1fr; } #log { max-height: 50vh; } }
+
+#map { height: 300px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 6px; }
+.legend { font-size: .8rem; color: var(--muted); margin: 0 0 6px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 4px 0 8px; vertical-align: middle; }
+.dot.block { background: #1d5fd6; } .dot.mrt { background: #d62d2d; } .dot.school { background: #1f9d55; } .dot.bto { background: #e08a00; }
+.points { margin: 0 0 12px; padding-left: 18px; font-size: .85rem; color: var(--muted); max-height: 110px; overflow: auto; }
+.maplibregl-popup-content { color: #1c2230; }
