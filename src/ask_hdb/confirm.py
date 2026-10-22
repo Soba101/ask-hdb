@@ -24,8 +24,9 @@ MONEY = ("income", "price")
 
 def _clean(value):
     if isinstance(value, str):
-        value = value.strip().lower()
-        return None if value in EMPTY else value
+        # Keep the case: the model copies the shown values into its next tool call ("SC", "Standard").
+        value = value.strip()
+        return None if value.lower() in EMPTY else value
     if isinstance(value, float) and value.is_integer():
         return int(value)  # 4400 and 4400.0 are the same answer
     return value
