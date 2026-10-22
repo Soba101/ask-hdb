@@ -1,0 +1,157 @@
+"""Web API around the agent: stateless, streams tool evidence, stores nothing about visitors."""
+
+import asyncio
+import json
+import os
+import time
+from collections import defaultdict, deque
+from queue import Empty, Queue
+from threading import Event, Lock, Thread
+from typing import Literal
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import BaseModel, Field
+
+from ask_hdb import agent
+
+NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "
+          "check anything you act on with HDB.")
+MAX_HISTORY = 12
+
+
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=2000)
+
+
+class ChatRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    history: list[Turn] = Field(default_factory=list, max_length=MAX_HISTORY)
+
+
+class Limits:
+    """In-memory guards: requests per visitor per minute, one run at a time, tokens per day.
+
+    shortcut: counters live in this process, so they reset on restart and do not span several workers;
+    move them to a shared store if the app ever runs more than one worker.
+    """
+
+    def __init__(self):
+        self.per_minute = int(os.getenv("API_RATE_PER_MINUTE", "6"))
+        self.daily_tokens = int(os.getenv("API_DAILY_TOKEN_CAP", "2000000"))
+        self.hits = defaultdict(deque)
+        self.day, self.used = time.strftime("%Y-%m-%d"), 0
+        self.busy = Lock()  # held by the model thread itself, so a dropped client cannot free it early
+        self.counting = Lock()
+
+    def allow(self, visitor, now=None):
+        now = time.time() if now is None else now
+        recent = self.hits[visitor]
+        while recent and now - recent[0] > 60:
+            recent.popleft()
+        if len(recent) >= self.per_minute:
+            return False
+        recent.append(now)
+        for other, times in list(self.hits.items()):  # forget idle visitors so the table cannot grow forever
+            while times and now - times[0] > 60:
+                times.popleft()
+            if not times:
+                del self.hits[other]
+        return True
+
+    def over_cap(self):
+        with self.counting:
+            today = time.strftime("%Y-%m-%d")
+            if today != self.day:
+                self.day, self.used = today, 0
+            return self.used >= self.daily_tokens
+
+    def add_tokens(self, tokens):
+        with self.counting:
+            self.used += tokens or 0
+
+
+def sse(event):
+    return f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
+
+
+def create_app():
+    app = FastAPI(title="Ask HDB", docs_url=None, redoc_url=None)
+    limits = Limits()
+    app.state.limits = limits
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
+
+    @app.post("/chat")
+    async def chat(body: ChatRequest, request: Request):
+        visitor = request.client.host if request.client else "unknown"
+        if not limits.allow(visitor):
+            raise HTTPException(429, "Too many questions. Please wait a minute.")
+        if limits.over_cap():
+            raise HTTPException(429, "Today's usage limit has been reached. Please come back tomorrow.")
+        if not limits.busy.acquire(blocking=False):
+            raise HTTPException(503, "Busy with another question. Please try again in a moment.")
+        history = [(HumanMessage if turn.role == "user" else AIMessage)(content=turn.content)
+                   for turn in body.history]
+        events, left = Queue(), Event()
+        Thread(target=work, args=(body.question, history, limits, events, left), daemon=True).start()
+        return StreamingResponse(stream(events, left), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-store"})
+
+    return app
+
+
+class ClientLeft(Exception):
+    """Raised inside the model thread once the visitor has disconnected, to stop spending tokens."""
+
+
+def work(question, history, limits, events, left):
+    spent = 0
+
+    def on_event(event):
+        nonlocal spent
+        if left.is_set():
+            raise ClientLeft
+        if event["type"] == "usage":
+            spent = event["tokens"]
+        else:
+            events.put(event)
+
+    try:
+        result = agent.ask(question, history, confirm=True, on_event=on_event)
+        events.put({"type": "answer", "answer": result["answer"],
+                    "needs_confirmation": result["needs_confirmation"],
+                    "stopped_reason": result["stopped_reason"], "notice": NOTICE})
+    except ClientLeft:
+        pass
+    except Exception:  # noqa: BLE001 - never leak provider text, URLs or keys to a visitor
+        events.put({"type": "error", "message": "The model call failed. Please try again."})
+    finally:
+        limits.add_tokens(spent)  # also when the run failed or the visitor left
+        events.put(DONE)
+        limits.busy.release()
+
+
+DONE = object()
+
+
+async def stream(events, left):
+    try:
+        while True:
+            try:
+                event = events.get_nowait()
+            except Empty:
+                await asyncio.sleep(0.05)
+                continue
+            if event is DONE:
+                return
+            yield sse(event)
+    finally:
+        left.set()  # a visitor who leaves stops the run at its next model or tool step
+
+
+app = create_app()

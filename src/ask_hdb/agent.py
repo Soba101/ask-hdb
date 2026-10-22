@@ -75,21 +75,24 @@ def _size(value):
     return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
 
 
-def ask(question, history=None, confirm=False) -> dict:
-    """confirm=True asks "Is this right?" before eligibility and grant tools (chat and the full eval)."""
+def ask(question, history=None, confirm=False, on_event=None) -> dict:
+    """confirm=True asks "Is this right?" before eligibility and grant tools (chat and the full eval).
+
+    on_event(dict) is called with {"type": "tool_call" | "tool_result", ...} while the run is going (for a streaming UI).
+    The answer is not streamed: it is only final after the grounding check."""
     load_dotenv()
     source = os.getenv("TOOL_SOURCE", "direct")
     if source == "direct":
-        return _ask(question, history, TOOLS, confirm)
+        return _ask(question, history, TOOLS, confirm, on_event)
     if source != "mcp":
         raise ValueError("TOOL_SOURCE must be direct or mcp")
     from ask_hdb.mcp.client import load_mcp_tools
 
     with load_mcp_tools() as tools:
-        return _ask(question, history, tools, confirm)
+        return _ask(question, history, tools, confirm, on_event)
 
 
-def _ask(question, history, tools, confirm=False):
+def _ask(question, history, tools, confirm=False, on_event=None):
     calls, pending = [], {}
     tokens, requested, reported = 0, 0, False
     stopped_reason = None
@@ -114,6 +117,7 @@ def _ask(question, history, tools, confirm=False):
         usage = reply.usage_metadata
         reported = reported or bool(usage)
         tokens += (usage["total_tokens"] if usage else input_bound + _size(reply.model_dump()))
+        emit({"type": "usage", "tokens": tokens})  # spend so far, for a cost cap that also counts failed runs
         if tokens >= TOKEN_BUDGET or reply.response_metadata.get("finish_reason") in {
             "length", "max_tokens",
         } or reply.response_metadata.get("stop_reason") == "max_tokens":
@@ -144,6 +148,10 @@ def _ask(question, history, tools, confirm=False):
     echo = "\n".join(asked + [question])  # numbers the user gave may be restated
     messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=question)]
 
+    def emit(event):
+        if on_event:
+            on_event(event)
+
     def run(messages):
         # Stream one graph run; keep every message so a rewrite can continue the same turn.
         answer = ""
@@ -156,6 +164,8 @@ def _ask(question, history, tools, confirm=False):
                     messages = messages + [message]
                     if isinstance(message, AIMessage):
                         pending.update({call["id"]: call for call in message.tool_calls})
+                        for call in message.tool_calls:
+                            emit({"type": "tool_call", "name": call["name"], "args": call["args"]})
                         if not message.tool_calls:
                             answer = message.text
                     elif isinstance(message, ToolMessage):
@@ -165,6 +175,7 @@ def _ask(question, history, tools, confirm=False):
                         except (ValueError, TypeError):
                             result = {"error": "Tool returned unreadable output"}
                         calls.append({"name": call["name"], "args": call["args"], "result": result})
+                        emit({"type": "tool_result", "name": call["name"], "result": result})
         return answer, messages
 
     checked, first, kept, needs_confirmation = None, [], False, False

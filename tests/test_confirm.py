@@ -146,3 +146,15 @@ def test_a_question_that_states_a_rule_is_not_a_clarification(text):
 def test_the_shown_values_keep_their_case_so_the_model_can_reuse_them():
     text = confirm.question_text(PROFILE | {"citizenships": "SC,SC", "category": "Standard"})
     assert "- Citizenships: SC,SC" in text and "- Category: Standard" in text
+
+
+def test_on_event_reports_tool_steps_and_changes_nothing_else(model):
+    seen = []
+    with_events = agent.ask("Can we buy?", on_event=seen.append)
+    without = agent.ask("Can we buy?")
+    kinds = [e["type"] for e in seen]
+    assert kinds.count("tool_call") == 1 and kinds.count("tool_result") == 1 and "usage" in kinds
+    assert with_events["answer"] == without["answer"] and with_events["tool_calls"] == without["tool_calls"]
+    gated = []
+    agent.ask("Can we buy?", confirm=True, on_event=gated.append)
+    assert "tool_call" not in [e["type"] for e in gated]  # a gated call is not announced
