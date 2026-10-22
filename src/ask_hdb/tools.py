@@ -147,7 +147,7 @@ can_buy_resale = _tool("can_buy_resale", "Check RESALE flat purchase eligibility
                        RuleArgs, eligibility.can_buy_resale, rule=True)
 cpf_housing_grant = _tool("cpf_housing_grant", "Compute the sourced CPF Housing Grant for buying a RESALE flat.",
                           RuleArgs, grants.cpf_housing_grant, rule=True)
-ehg_amount = _tool("ehg_amount", "Compute the sourced Enhanced CPF Housing Grant for buying a RESALE flat.",
+ehg_amount = _tool("ehg_amount", "Enhanced CPF Housing Grant (EHG) for buying a RESALE flat. Use this for any EHG question that mentions resale, a resale price or lease left.",
                    RuleArgs, grants.ehg_amount, rule=True)
 phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living with or near parents.",
                    PhgArgs, grants.phg_amount, rule=True)
@@ -179,7 +179,7 @@ def _bto_scenario(**values):
 
 bto_scenario = _tool("bto_scenario", "BTO flat loan figures: maximum loan, monthly instalment, upfront cost, loan balance at MOP and illustrative sale scenarios from past growth (not a forecast). Use this, not max_loan or calculate, for any BTO loan question.",
                      BtoScenarioArgs, _bto_scenario)
-bto_ehg_amount = _tool("bto_ehg_amount", "Enhanced CPF Housing Grant for a new BTO flat ONLY. Never use it when the user says resale.",
+bto_ehg_amount = _tool("bto_ehg_amount", "EHG for a NEW BTO flat ONLY (no resale price or lease). If the user says resale, use ehg_amount instead.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
