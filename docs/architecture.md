@@ -94,21 +94,27 @@ class ToolResult(BaseModel):
 - `.env`: `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`. Local llama-server by default.
 - Tool calling must work with the local model. Week 2 tests this first.
 
-## Folder layout (planned)
+## Folder layout (as built, 2026-10)
 
 ```
-ask_hdb/
-  agent/        LangGraph graph, workers, prompts
-  mcp/          MCP server and tool definitions
-  rules/        rule functions (numbers come from rules/*.yaml)
-  data/         loaders for clean data and the geo index
-  grounding.py  number check
-  llm.py        model client
-  cli.py        `ask-hdb chat`, `ask-hdb eval`
-rules/          dated YAML rule files with sources
-scripts/        data fetch and clean scripts
-eval/           questions.yaml, runner, reports
-app/            FastAPI server and web front end (week 6)
+src/ask_hdb/
+  agent.py        ReAct agent, system prompt, grounding rewrite, profile confirmation gate
+  tools.py        tool wrappers (JSON in, JSON out); tool_inputs.py has their pydantic arguments
+  sales.py, compare.py, calc.py, clean.py   price tools, comparable sales, calculator, cleaning
+  confirm.py      code-written "Is this right?" before eligibility and grant tools
+  grounding.py    number check against this question's tool results
+  rules/          dated rule functions (resale, BTO); numbers come from rules/*.yaml
+  bto/            BTO launch data, history, scenarios, planned rail lines
+  geo/            geocoding, distances, nearest places
+  mcp/            MCP server and client around the same tools
+  evalrun/        eval runner, scoring, conditions (llm-only, agent, full), reports
+  llm.py          chat model from settings
+  __init__.py     main() has the `ask-hdb` subcommands (chat, ask, mcp, routing, eval); cli.py is the chat loop
+  tool_check.py, check_cases.py   the `routing` command: tool-call check and its hand-written prompts
+rules/            dated YAML rule files with sources (resale, bto/, plans/)
+scripts/          data fetch, build and expected-value scripts
+eval/             questions.yaml and reports
 tests/
 docs/
 ```
+Planned, not built: `app/` (FastAPI and web front end, week 6), supervisor and worker graph, RAG over policy pages.
