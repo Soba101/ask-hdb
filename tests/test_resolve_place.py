@@ -65,3 +65,11 @@ def test_nearest_places_from_a_station_or_a_bto_site_never_returns_the_origin_it
     assert near["n_within"] == 2 and "approximate site" in near["note"]
     with pytest.raises(ValueError, match="Unknown id"):
         filters.nearest_places("mrt_nowhere", "mrt")
+
+
+def test_digits_in_a_code_written_label_are_evidence_but_other_prose_is_not():
+    from ask_hdb import grounding
+
+    result = {"candidates": [{"label": "Blk 227 Bishan St 23", "id": "blk_227_bishan-st-23"}], "note": "See 99 places"}
+    values, _ = grounding.evidence([result])
+    assert {227, 23} <= {int(v) for v in values} and 99 not in {int(v) for v in values}

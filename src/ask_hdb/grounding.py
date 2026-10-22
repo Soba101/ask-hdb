@@ -110,6 +110,11 @@ def evidence(results):
             dates.update(re.findall(r'\b\d{4}-\d{2}-\d{2}\b', node))
             if key in NOT_EVIDENCE:
                 return
+            if key == 'label':
+                # A place label written by code from our own tables ("Blk 227 Bishan St 23") is a name, so its
+                # digits are evidence for listing that place; no other prose counts.
+                values.update(Decimal(n) for n in re.findall(r'\d+', node))
+                return
             if re.fullmatch(r'\s*-?\d+(?:\.\d+)?\s*', node):
                 values.add(abs(Decimal(node.strip())))
             elif WINDOW.fullmatch(node.strip()):

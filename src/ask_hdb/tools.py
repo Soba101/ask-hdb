@@ -158,7 +158,7 @@ phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living
 max_loan = _tool("max_loan", "Estimate the HDB loan cap; disclose needs_check and valuation limits.",
                  LoanArgs, loan.max_loan, rule=True)
 
-resolve_place = _tool("resolve_place", "Find the id of a place the user names in words (a block like 'Blk 227 Bishan St 23', an MRT/LRT station, a primary school or a BTO project). Skip it when the Map context line already gives the id. If several candidates come back, ask the user which one; if none, say it was not found. A town is not a point.",
+resolve_place = _tool("resolve_place", "Find the id of ONE specific place the user names in words (a block like 'Blk 227 Bishan St 23', a named station, a named school like 'Catholic High School' or a named BTO project). NEVER use it for a category ('a primary school', 'schools in Bishan') or for sales near schools or stations: those use price_stats or find_sales with near_kind and near_km. Skip it when the Map context line already gives the id. If several candidates come back, ask the user which one; if none, say it was not found. A town is not a point.",
                       ResolveArgs, geo_resolve.resolve_place)
 
 nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance from a block, station, school or BTO site (pass its id as block_id). For 'how many within X km', pass within_km and quote n_within.",

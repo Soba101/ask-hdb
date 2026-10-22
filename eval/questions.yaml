@@ -1446,7 +1446,7 @@
   source: 'map-first: 11 blocks share the number 227, so the answer must ask which one'
 - id: q_refuse_012
   kind: refuse
-  question: How far is the nearest MRT station from Blk 9999 Nowhere Road?
+  question: How far is the nearest MRT station from Blk 999 Nowhere Road?
   expect:
     clarify: true
   source: 'map-first: no such block, so the answer must ask for the block number and street'
