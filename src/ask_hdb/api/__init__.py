@@ -11,13 +11,15 @@ from threading import Event, Lock, Thread
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
 from ask_hdb import agent
-from ask_hdb.api.points import map_points
+from ask_hdb.api import mapdata
+from ask_hdb.api.points import map_actions, map_points
 
 NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "
           "check anything you act on with HDB.")
@@ -29,9 +31,19 @@ class Turn(BaseModel):
     content: str = Field(max_length=2000)
 
 
+class Selected(BaseModel):
+    kind: Literal["block", "mrt", "lrt", "primary_school", "bto"]
+    id: str = Field(max_length=80)
+
+
+class Context(BaseModel):
+    selected: Selected | None = None
+
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     history: list[Turn] = Field(default_factory=list, max_length=MAX_HISTORY)
+    context: Context = Field(default_factory=Context)
 
 
 class Limits:
@@ -85,6 +97,19 @@ def create_app():
     limits = Limits()
     app.state.limits = limits
 
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+    @app.get("/map/features")
+    def map_features():
+        return JSONResponse(mapdata.features(), headers={"Cache-Control": "public, max-age=3600"})
+
+    @app.get("/card/{kind}/{key}")
+    def card(kind: str, key: str):
+        selection = mapdata.resolve({"kind": kind, "id": key})
+        if selection is None:
+            raise HTTPException(404, "Unknown place.")
+        return mapdata.card(selection)
+
     @app.get("/health")
     def health():
         return {"status": "ok"}
@@ -101,7 +126,8 @@ def create_app():
         history = [(HumanMessage if turn.role == "user" else AIMessage)(content=turn.content)
                    for turn in body.history]
         events, left = Queue(), Event()
-        Thread(target=work, args=(body.question, history, limits, events, left), daemon=True).start()
+        line = mapdata.context_line(mapdata.resolve(body.context.selected.model_dump() if body.context.selected else None))
+        Thread(target=work, args=(body.question, history, limits, events, left, line), daemon=True).start()
         return StreamingResponse(stream(events, left), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store"})
 
@@ -124,7 +150,7 @@ class ClientLeft(Exception):
     """Raised inside the model thread once the visitor has disconnected, to stop spending tokens."""
 
 
-def work(question, history, limits, events, left):
+def work(question, history, limits, events, left, context=None):
     spent = 0
 
     def on_event(event):
@@ -141,10 +167,10 @@ def work(question, history, limits, events, left):
                 except Exception:  # noqa: BLE001 - a missing map point must never break an answer
                     points = []
                 if points:
-                    events.put({"type": "points", "points": points})
+                    events.put({"type": "map", "actions": map_actions(points)})
 
     try:
-        result = agent.ask(question, history, confirm=True, on_event=on_event)
+        result = agent.ask(question, history, confirm=True, on_event=on_event, context=context)
         events.put({"type": "answer", "answer": result["answer"],
                     "needs_confirmation": result["needs_confirmation"],
                     "stopped_reason": result["stopped_reason"], "notice": NOTICE})

@@ -8,34 +8,51 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>Ask HDB</h1>
-  <p>Resale and BTO prices, grants and eligibility. Every number comes from a tool, shown on the right.</p>
-</header>
-<main>
-  <section id="chat" aria-label="Chat">
-    <div id="log" role="log" aria-live="polite"></div>
-    <form id="form">
-      <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or eligibility" required></textarea>
-      <button id="send" type="submit">Send</button>
-    </form>
-    <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. When a map is shown, its tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
-  </section>
-  <aside id="evidence" aria-label="Map, tool results and sources">
-    <h2>Map</h2>
-    <p id="mapnote" class="muted">The map appears when an answer has places to show.</p>
-    <div id="map" role="region" aria-label="Map of the places in the answer" hidden></div>
-    <p id="legend" class="legend">
+<div id="app">
+  <div id="mapwrap">
+    <div id="map" role="region" aria-label="Map of HDB blocks, MRT stations, primary schools and BTO sites"></div>
+    <p id="mapnote" class="mapnote" hidden></p>
+    <p class="legend">
       <span class="dot block"></span>Block <span class="dot mrt"></span>MRT/LRT <span class="dot school"></span>School
-      <span class="dot bto"></span>BTO site (approximate) &middot; larger dot: the place asked about
+      <span class="dot bto"></span>BTO site (approximate)
     </p>
-    <ul id="points" class="points" aria-label="Places on the map"></ul>
-    <h2>Evidence</h2>
-    <p id="empty" class="muted">Tool calls, results and sources for your question appear here.</p>
-    <div id="tools"></div>
-    <div id="sources"></div>
+    <div id="card" class="card" hidden aria-live="polite">
+      <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
+      <h2 id="card-title"></h2>
+      <ul id="card-facts"></ul>
+      <div id="card-actions" class="choices"></div>
+      <p id="card-limits" class="small"></p>
+    </div>
+  </div>
+  <aside id="side">
+    <header>
+      <h1>Ask HDB</h1>
+      <p>Click a block, school or station, then ask about it. Every number comes from a tool.</p>
+    </header>
+    <nav class="tabs" aria-label="Panels">
+      <button id="tab-chat" class="tab on" aria-pressed="true">Chat</button>
+      <button id="tab-evidence" class="tab" aria-pressed="false">Evidence <span id="evidence-count"></span></button>
+    </nav>
+    <section id="chat" aria-label="Chat">
+      <div id="log" role="log" aria-live="polite"></div>
+      <div id="selected" class="selected" hidden>
+        <span>Asking about: <b id="selected-label"></b></span>
+        <button id="selected-clear" class="close" aria-label="Stop asking about this place">&times;</button>
+      </div>
+      <form id="form">
+        <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or a place" required></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+      <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. The map tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
+    </section>
+    <section id="evidence" aria-label="Tool results and sources" hidden>
+      <p id="empty" class="muted">Tool calls, results and sources for your question appear here.</p>
+      <div id="tools"></div>
+      <div id="sources"></div>
+      <ul id="points" class="points" aria-label="Places highlighted on the map"></ul>
+    </section>
   </aside>
-</main>
+</div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

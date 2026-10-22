@@ -75,24 +75,26 @@ def _size(value):
     return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
 
 
-def ask(question, history=None, confirm=False, on_event=None) -> dict:
+def ask(question, history=None, confirm=False, on_event=None, context=None) -> dict:
     """confirm=True asks "Is this right?" before eligibility and grant tools (chat and the full eval).
 
     on_event(dict) is called with {"type": "tool_call" | "tool_result", ...} while the run is going (for a streaming UI).
-    The answer is not streamed: it is only final after the grounding check."""
+    The answer is not streamed: it is only final after the grounding check.
+
+    context is one line made by code about what the user selected on the map; it goes in front of the question."""
     load_dotenv()
     source = os.getenv("TOOL_SOURCE", "direct")
     if source == "direct":
-        return _ask(question, history, TOOLS, confirm, on_event)
+        return _ask(question, history, TOOLS, confirm, on_event, context)
     if source != "mcp":
         raise ValueError("TOOL_SOURCE must be direct or mcp")
     from ask_hdb.mcp.client import load_mcp_tools
 
     with load_mcp_tools() as tools:
-        return _ask(question, history, tools, confirm, on_event)
+        return _ask(question, history, tools, confirm, on_event, context)
 
 
-def _ask(question, history, tools, confirm=False, on_event=None):
+def _ask(question, history, tools, confirm=False, on_event=None, context=None):
     calls, pending = [], {}
     tokens, requested, reported = 0, 0, False
     stopped_reason = None
@@ -146,7 +148,8 @@ def _ask(question, history, tools, confirm=False, on_event=None):
                 and not (isinstance(message, AIMessage) and message.tool_calls)]
     said_yes, asked = profile_check.confirmed(messages, question)
     echo = "\n".join(asked + [question])  # numbers the user gave may be restated
-    messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=question)]
+    # The context line is not part of `question`: grounding and the confirmation gate still see only what the user typed.
+    messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=f"{context}\n{question}" if context else question)]
 
     def emit(event):
         if on_event:

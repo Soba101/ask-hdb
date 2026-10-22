@@ -1,0 +1,7 @@
+
+## Re-scope 2026-10-23: map-first (Opus consult)
+The owner wants the map to be the main view with the chat beside it: click or ask about a block, estate or place, and the chat answers and shows it on the map (nearest primary school from a block, travel time to town), built for people buying HDB flats.
+- **A (done, PR week6-4a):** map-first page with every block, MRT/LRT station, primary school and BTO site; click to select; an info card made by code (lease, recent median, nearest school and MRT, blocks within 1 km); the selection goes to the agent as one code-written line ("this block" means it); map highlights and fly-to come from a `map` event built from tool results. No new tools.
+- **B (next, needs no decision):** `resolve_place` (blocks, streets, MRT, schools, BTO from local data, ambiguity as clickable choices), `nearby` covering blocks, estates and BTO projects; about 25 new eval questions; keep the tool count at 17-18 for the 9B.
+- **C (needs the owner):** travel time to town. Plan: one-time batch of OneMap public-transport routes from each block to Raffles Place (weekday 08:30), stored with the date and shown as "about N min, OneMap". Needs: approval for about 9,500 calls with the OneMap login, confirmation that OneMap's terms allow storing route results, and whether "town" is Raffles Place only. Until then only a labelled walk-to-MRT estimate.
+- **Cut for now:** 3D, free destinations, live routing per visitor, vector tiles.

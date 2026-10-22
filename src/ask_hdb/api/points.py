@@ -5,6 +5,7 @@ BTO sites are approximate; the point says so. Blocks without coordinates are lef
 """
 
 import math
+from string import capwords
 
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.loaders import load_blocks, load_places
@@ -45,7 +46,7 @@ def map_points(args, result):
     def block(key, role):
         if key in blocks.index:
             row = blocks.loc[key]
-            add("block", key, f"Blk {row.block} {row.street_name.title()}", row.lat, row.lng, role)
+            add("block", key, f"Blk {row.block} {capwords(row.street_name)}", row.lat, row.lng, role)
 
     def project(key, role):
         if key in projects.index:
@@ -65,6 +66,15 @@ def map_points(args, result):
         if isinstance(key, str) and key in places.index:
             row = places.loc[key]
             kind = {"mrt": "MRT", "lrt": "LRT"}.get(row.kind, row.kind.replace("_", " "))
-            add(row.kind, key, f"{row['name'].title()} ({kind})",
+            add(row.kind, key, f"{capwords(row['name'])} ({kind})",
                 row.lat, row.lng, "result")
     return list(found.values())[:MAX_POINTS]
+
+
+def map_actions(points):
+    """What the map should do for these points: highlight them and fly to them (a bounding box [w, s, e, n])."""
+    if not points:
+        return []
+    lngs, lats = [p["lng"] for p in points], [p["lat"] for p in points]
+    return [{"op": "highlight", "points": points},
+            {"op": "fly_to", "bbox": [min(lngs), min(lats), max(lngs), max(lats)]}]

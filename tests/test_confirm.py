@@ -159,3 +159,16 @@ def test_on_event_reports_tool_steps_and_changes_nothing_else(model):
     gated = []
     agent.ask("Can we buy?", confirm=True, on_event=gated.append)
     assert "tool_call" not in [e["type"] for e in gated]  # a gated call is not announced
+
+
+def test_map_context_goes_in_front_of_the_question_only(model):
+    seen = []
+    original = model._generate
+
+    def spy(messages, *args, **kwargs):
+        seen.append(messages[-1].content)
+        return original(messages, *args, **kwargs)
+
+    model._generate = spy
+    agent.ask("Can we buy?", context="[Map context: Blk 1]")
+    assert seen[0] == "[Map context: Blk 1]\nCan we buy?"
