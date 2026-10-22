@@ -143,7 +143,8 @@ def test_the_page_keeps_the_history_within_the_server_limits():
 def test_points_events_follow_their_tool_result(monkeypatch):
     def ask_with_points(question, history=None, confirm=False, on_event=None):
         on_event({"type": "tool_call", "name": "bto_nearby", "args": {"project_id": "bto_tampines-nova"}})
-        on_event({"type": "tool_result", "name": "bto_nearby", "result": {"places": []}})
+        on_event({"type": "tool_result", "name": "bto_nearby", "args": {"project_id": "bto_tampines-nova"},
+                  "result": {"places": []}})
         return {"answer": "ok", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
 
     monkeypatch.setattr(api.agent, "ask", ask_with_points)
@@ -156,7 +157,7 @@ def test_points_events_follow_their_tool_result(monkeypatch):
 def test_a_failing_map_lookup_never_breaks_the_answer(monkeypatch):
     def ask_one(question, history=None, confirm=False, on_event=None):
         on_event({"type": "tool_call", "name": "t", "args": {}})
-        on_event({"type": "tool_result", "name": "t", "result": {}})
+        on_event({"type": "tool_result", "name": "t", "args": {}, "result": {}})
         return {"answer": "ok", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
 
     def boom(args, result):
@@ -166,3 +167,26 @@ def test_a_failing_map_lookup_never_breaks_the_answer(monkeypatch):
     monkeypatch.setattr(api, "map_points", boom)
     got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
     assert [e["type"] for e in got] == ["tool_call", "tool_result", "answer"]
+
+
+def test_each_result_is_mapped_with_its_own_arguments(monkeypatch):
+    def ask_two(question, history=None, confirm=False, on_event=None):
+        for name in ("a", "b"):
+            on_event({"type": "tool_call", "name": "t", "args": {"id": name}})
+        for name in ("b", "a"):  # results in the other order: pairing must not depend on order
+            on_event({"type": "tool_result", "name": "t", "args": {"id": name}, "result": {}})
+        return {"answer": "ok", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
+
+    monkeypatch.setattr(api.agent, "ask", ask_two)
+    monkeypatch.setattr(api, "map_points", lambda args, result: [{"id": args["id"]}])
+    got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
+    assert [e["points"][0]["id"] for e in got if e["type"] == "points"] == ["b", "a"]
+    assert all("args" not in e for e in got if e["type"] == "tool_result")
+
+
+def test_csp_allows_only_the_tile_server_and_the_page_loads_the_map_lazily(client):
+    csp = client.get("/").headers["content-security-policy"]
+    assert "connect-src 'self' https://tile.openstreetmap.org" in csp and "worker-src" not in csp
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert 'await import("./vendor/maplibre/maplibre-gl.mjs")' in js and not js.startswith("import")

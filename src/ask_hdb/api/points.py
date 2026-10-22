@@ -64,6 +64,7 @@ def map_points(args, result):
         key = item.get("place_id")
         if isinstance(key, str) and key in places.index:
             row = places.loc[key]
-            add(row.kind, key, f"{row['name'].title()} ({'MRT' if row.kind == 'mrt' else row.kind.replace('_', ' ')})",
+            kind = {"mrt": "MRT", "lrt": "LRT"}.get(row.kind, row.kind.replace("_", " "))
+            add(row.kind, key, f"{row['name'].title()} ({kind})",
                 row.lat, row.lng, "result")
     return list(found.values())[:MAX_POINTS]

@@ -1,5 +1,3 @@
-import * as lib from "./vendor/maplibre/maplibre-gl.mjs";
-
 // Plain JS, no build step. The chat history lives only in this page's memory and is sent with each question.
 const log = document.getElementById("log");
 const form = document.getElementById("form");
@@ -84,12 +82,30 @@ function addSource(url, asOf) {
 }
 
 // Map: points come from the server (found by code from ids in the tool calls), never from the model's text.
-const maplibregl = lib.default || lib;
+let maplibregl = null;
 const features = new Map();
 let map = null;
 let mapReady = false;
 const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
   "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
+
+// The map starts on the first answer that has places to show, so a visitor who never needs it sends nothing to the tile
+// server, and a failure to load the library never stops the chat.
+let mapFailed = false;
+async function ensureMap() {
+  if (map || mapFailed) return;
+  const box = document.getElementById("map");
+  try {
+    const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
+    maplibregl = lib.default || lib;
+    box.hidden = false;
+    document.getElementById("mapnote").hidden = true;
+    startMap();
+  } catch (error) {
+    mapFailed = true;
+    document.getElementById("mapnote").textContent = "The map could not load in this browser. The places are listed below.";
+  }
+}
 
 function startMap() {
   try {
@@ -100,7 +116,11 @@ function startMap() {
         layers: [{ id: "osm", type: "raster", source: "osm" }] },
     });
   } catch (error) {
-    document.getElementById("map").textContent = "The map could not start in this browser.";
+    mapFailed = true;
+    map = null;
+    document.getElementById("map").hidden = true;
+    document.getElementById("mapnote").hidden = false;
+    document.getElementById("mapnote").textContent = "The map could not start in this browser. The places are listed below.";
     return;
   }
   map.on("load", () => {
@@ -126,7 +146,7 @@ function drawPoints() {
   list.replaceChildren();
   for (const p of features.values()) {
     const li = document.createElement("li");
-    li.textContent = p.label + (p.note ? " (" + p.note + ")" : "");
+    li.textContent = (p.role === "origin" ? "Asked about: " : "") + p.label + (p.note ? " (" + p.note + ")" : "");
     list.appendChild(li);
   }
   if (!mapReady) return;
@@ -140,9 +160,10 @@ function drawPoints() {
   }
 }
 
-function addPoints(points) {
+async function addPoints(points) {
   points.forEach((p) => { if (!features.has(p.id)) features.set(p.id, p); });
   drawPoints();
+  await ensureMap(); // drawPoints runs again from the map's load event once the map exists
 }
 
 function clearEvidence() {
@@ -199,7 +220,7 @@ async function ask(question) {
     for await (const event of events(response)) {
       if (event.type === "tool_call") cards.push(addTool(event));
       else if (event.type === "tool_result") addResult(cards[cards.length - 1] || addTool(event), event);
-      else if (event.type === "points") addPoints(event.points);
+      else if (event.type === "points") await addPoints(event.points);
       else if (event.type === "error") throw new Error(event.message);
       else if (event.type === "answer") { answered = true; show(question, event); }
     }
@@ -244,5 +265,4 @@ form.addEventListener("submit", (e) => {
 box.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
 });
-startMap();
 add("bot", "Hi! Ask me about HDB resale prices, BTO launches, grants or eligibility. I'll show the tool results behind every number.");

@@ -175,7 +175,7 @@ def _ask(question, history, tools, confirm=False, on_event=None):
                         except (ValueError, TypeError):
                             result = {"error": "Tool returned unreadable output"}
                         calls.append({"name": call["name"], "args": call["args"], "result": result})
-                        emit({"type": "tool_result", "name": call["name"], "result": result})
+                        emit({"type": "tool_result", "name": call["name"], "args": call["args"], "result": result})
         return answer, messages
 
     checked, first, kept, needs_confirmation = None, [], False, False

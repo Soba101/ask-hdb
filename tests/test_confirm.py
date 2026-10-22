@@ -154,6 +154,7 @@ def test_on_event_reports_tool_steps_and_changes_nothing_else(model):
     without = agent.ask("Can we buy?")
     kinds = [e["type"] for e in seen]
     assert kinds.count("tool_call") == 1 and kinds.count("tool_result") == 1 and "usage" in kinds
+    assert next(e for e in seen if e["type"] == "tool_result")["args"] == PROFILE
     assert with_events["answer"] == without["answer"] and with_events["tool_calls"] == without["tool_calls"]
     gated = []
     agent.ask("Can we buy?", confirm=True, on_event=gated.append)

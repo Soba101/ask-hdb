@@ -19,13 +19,14 @@
       <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or eligibility" required></textarea>
       <button id="send" type="submit">Send</button>
     </form>
-    <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered.</p>
+    <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. When a map is shown, its tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
   </section>
   <aside id="evidence" aria-label="Map, tool results and sources">
     <h2>Map</h2>
-    <div id="map" role="region" aria-label="Map of the places in the answer"></div>
+    <p id="mapnote" class="muted">The map appears when an answer has places to show.</p>
+    <div id="map" role="region" aria-label="Map of the places in the answer" hidden></div>
     <p id="legend" class="legend">
-      <span class="dot block"></span>Block <span class="dot mrt"></span>MRT <span class="dot school"></span>School
+      <span class="dot block"></span>Block <span class="dot mrt"></span>MRT/LRT <span class="dot school"></span>School
       <span class="dot bto"></span>BTO site (approximate) &middot; larger dot: the place asked about
     </p>
     <ul id="points" class="points" aria-label="Places on the map"></ul>

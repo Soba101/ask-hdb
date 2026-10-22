@@ -111,9 +111,8 @@ def create_app():
         response.headers.setdefault("Cache-Control", "no-cache")  # a redeploy must not run an old app.js
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; "
-            "connect-src 'self' https://tile.openstreetmap.org; "
-            "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            "default-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://tile.openstreetmap.org; "
+            "frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         return response
 
     # Mounted last so the API routes win; the page and its script are plain files.
@@ -127,7 +126,6 @@ class ClientLeft(Exception):
 
 def work(question, history, limits, events, left):
     spent = 0
-    calls = []  # arguments of tool calls whose result has not arrived yet
 
     def on_event(event):
         nonlocal spent
@@ -136,16 +134,14 @@ def work(question, history, limits, events, left):
         if event["type"] == "usage":
             spent = event["tokens"]
         else:
-            events.put(event)
+            events.put({k: v for k, v in event.items() if k != "args"} if event["type"] == "tool_result" else event)
             if event["type"] == "tool_result":
                 try:
-                    points = map_points(calls.pop(0), event["result"])
+                    points = map_points(event["args"], event["result"])
                 except Exception:  # noqa: BLE001 - a missing map point must never break an answer
                     points = []
                 if points:
                     events.put({"type": "points", "points": points})
-            elif event["type"] == "tool_call":
-                calls.append(event["args"])
 
     try:
         result = agent.ask(question, history, confirm=True, on_event=on_event)
