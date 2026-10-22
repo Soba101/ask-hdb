@@ -192,3 +192,10 @@ def test_csp_allows_only_the_tile_server_and_the_page_isolates_the_map_library(c
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     assert 'await import("./vendor/maplibre/maplibre-gl.mjs")' in js and "import * as" not in js
+
+
+def test_the_page_guards_against_stale_cards_and_a_failed_map():
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert "cardRequest" in js and "mine !== cardRequest" in js  # a late card response cannot fill a newer selection
+    assert "The map data could not be loaded" in js and "todo.highlight" in js  # map failures show a note; early events are kept

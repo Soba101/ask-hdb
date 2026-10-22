@@ -16,6 +16,7 @@ from ask_hdb.geo.loaders import load_blocks, load_places
 from ask_hdb.tools import load_sales
 
 KINDS = ("block", "mrt", "lrt", "primary_school", "bto")
+MIN_FOR_MEDIAN = 5
 
 
 def _ok(value):
@@ -116,10 +117,17 @@ def _block_facts(selection):
         start = int(mine.sort_values("sale_month").lease_commence_year.iloc[-1])
         facts.append(f"Lease started: {start}")
         if len(recent):
-            facts.append(f"Last 12 months to {latest:%Y-%m}: {len(recent)} sales, median ${int(recent.resale_price.median()):,}")
+            facts.append(f"Sales in the 12 months to {latest:%Y-%m}: {len(recent)}")
+            for flat_type, group in recent.groupby("flat_type"):
+                # A median of a handful of sales says little; say how many instead.
+                if len(group) >= MIN_FOR_MEDIAN:
+                    facts.append(f"{flat_type.title()}: {len(group)} sales, median ${int(group.resale_price.median()):,}")
+                else:
+                    facts.append(f"{flat_type.title()}: {len(group)} sale{'s' if len(group) != 1 else ''} (too few for a median)")
         else:
             facts.append(f"No sales in the 12 months to {latest:%Y-%m}")
-        limits.append("Resale data from data.gov.sg (HDB), Jan 2017 to " + f"{sales.sale_month.max():%Y-%m}" + ". Not a valuation.")
+        limits.append("Resale data from data.gov.sg (HDB), Jan 2017 to " + f"{sales.sale_month.max():%Y-%m}"
+                      + "; the newest month may be incomplete. Not a valuation.")
     else:
         facts.append("No resale sales recorded for this block since 2017.")
     school = _nearest(selection["lat"], selection["lng"], "primary_school")
@@ -141,10 +149,10 @@ def _blocks_within(lat, lng, km):
 def _place_facts(selection):
     kind, lat, lng = selection["kind"], selection["lat"], selection["lng"]
     facts = [{"mrt": "MRT station", "lrt": "LRT station", "primary_school": "Primary school"}[kind]]
-    facts.append(f"HDB blocks within 1 km (straight-line): {_blocks_within(lat, lng, 1):,}")
+    facts.append(f"Blocks with resales since 2017 within 1 km (straight-line): {_blocks_within(lat, lng, 1):,}")
     limits = ["Straight-line distances, counted from our block and place coordinates."]
     if kind == "primary_school":
         limits.append("School registration distance (1 km / 2 km) is measured by MOE with OneMap, not by us; check it there.")
     else:
-        facts.append(f"HDB blocks within 500 m (straight-line): {_blocks_within(lat, lng, 0.5):,}")
+        facts.append(f"Blocks with resales since 2017 within 500 m (straight-line): {_blocks_within(lat, lng, 0.5):,}")
     return {"facts": facts, "limits": limits}

@@ -214,7 +214,9 @@ function setSelected(point) {
 $("selected-clear").onclick = () => setSelected(null);
 $("card-close").onclick = () => { $("card").hidden = true; };
 
+let cardRequest = 0; // only the latest selection may fill the card
 async function showCard(point) {
+  const mine = ++cardRequest;
   const card = $("card");
   $("card-title").textContent = point.label;
   $("card-facts").replaceChildren();
@@ -225,7 +227,7 @@ async function showCard(point) {
     const response = await fetch("/card/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
     if (!response.ok) throw new Error("no card");
     const data = await response.json();
-    if (!selected || selected.id !== point.id) return; // the visitor clicked something else meanwhile
+    if (mine !== cardRequest) return; // the visitor clicked something else meanwhile
     for (const fact of data.facts) {
       const li = document.createElement("li");
       li.textContent = fact;
@@ -233,8 +235,9 @@ async function showCard(point) {
     }
     $("card-limits").textContent = data.limits.join(" ");
   } catch (error) {
-    $("card-limits").textContent = "No details could be loaded for this place.";
+    if (mine === cardRequest) $("card-limits").textContent = "No details could be loaded for this place.";
   }
+  if (mine !== cardRequest) return;
   for (const question of QUESTIONS[point.kind] || []) {
     const button = document.createElement("button");
     button.className = "secondary";
@@ -245,7 +248,13 @@ async function showCard(point) {
 }
 
 // ---------- map ----------
-const mapLayer = { highlight() {}, select() {}, fly() {} };
+// Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
+const todo = { highlight: [], select: null, fly: null };
+const mapLayer = {
+  highlight(points) { todo.highlight = points; },
+  select(point) { todo.select = point; },
+  fly(bbox) { todo.fly = bbox; },
+};
 let maplibregl = null;
 const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
   "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
@@ -285,7 +294,16 @@ async function startMap() {
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.on("load", async () => {
-      const data = await (await fetch("/map/features")).json();
+      let data;
+      try {
+        const response = await fetch("/map/features");
+        if (!response.ok) throw new Error("no features");
+        data = await response.json();
+      } catch (error) {
+        note.hidden = false;
+        note.textContent = "The map data could not be loaded. You can still use the chat.";
+        return;
+      }
       const blocks = { type: "FeatureCollection", features: data.features.filter((f) => f.properties.kind === "block") };
       const places = { type: "FeatureCollection", features: data.features.filter((f) => f.properties.kind !== "block") };
       map.addSource("blocks", { type: "geojson", data: blocks });
@@ -320,6 +338,9 @@ async function startMap() {
         if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
         else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, maxZoom: 16, duration: 600 });
       };
+      mapLayer.highlight(todo.highlight);
+      if (todo.select) mapLayer.select(todo.select);
+      if (todo.fly) mapLayer.fly(todo.fly);
     });
   } catch (error) {
     note.hidden = false;

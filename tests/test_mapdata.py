@@ -23,9 +23,14 @@ def tables(monkeypatch):
                              {"project_id": "bto_nosite", "name": "No Site", "lat": float("nan"), "lng": float("nan"),
                               "category": "Standard", "units": 1, "wait_months": 1, "town": float("nan")}])
     sales = pd.DataFrame([
-        {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-09-01"), "lease_commence_year": 1980, "resale_price": 400000},
-        {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2025-01-01"), "lease_commence_year": 1980, "resale_price": 300000},
-        {"block_id": "other", "sale_month": pd.Timestamp("2026-10-01"), "lease_commence_year": 1990, "resale_price": 500000}])
+        *[{"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-09-01"), "flat_type": "4 ROOM",
+          "lease_commence_year": 1980, "resale_price": 400000 + i * 1000} for i in range(5)],
+        {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-08-01"), "flat_type": "3 ROOM",
+         "lease_commence_year": 1980, "resale_price": 300000},
+        {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2025-01-01"), "flat_type": "4 ROOM",
+         "lease_commence_year": 1980, "resale_price": 250000},
+        {"block_id": "other", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM",
+         "lease_commence_year": 1990, "resale_price": 500000}])
     for module, name, value in ((mapdata, "load_blocks", blocks), (mapdata, "load_places", places),
                                 (mapdata, "load_projects", projects), (mapdata, "load_sales", sales)):
         monkeypatch.setattr(module, name, lambda value=value: value)
@@ -56,7 +61,9 @@ def test_context_line_is_a_label_without_coordinates():
 def test_block_card_uses_the_datas_latest_month_and_states_its_limits():
     card = mapdata.card(mapdata.resolve({"kind": "block", "id": "blk_1_a-st"}))
     facts = " | ".join(card["facts"])
-    assert "Lease started: 1980" in facts and "Last 12 months to 2026-10: 1 sales, median $400,000" in facts
+    assert "Lease started: 1980" in facts and "Sales in the 12 months to 2026-10: 6" in facts
+    assert "4 Room: 5 sales, median $402,000" in facts  # a median only where there are enough sales, per flat type
+    assert "3 Room: 1 sale (too few for a median)" in facts
     assert "St. Anthony's Primary School" in facts and "Nearest MRT: X" in facts
     assert any("Straight-line" in text for text in card["limits"]) and any("MOE" in text for text in card["limits"])
 
@@ -86,6 +93,6 @@ def test_routes_and_the_selection_reaches_the_agent(monkeypatch):
 
 def test_place_cards_count_blocks_by_straight_line_and_keep_the_school_caveat():
     school = mapdata.card(mapdata.resolve({"kind": "primary_school", "id": "sch_y"}))
-    assert "HDB blocks within 1 km (straight-line): 1" in school["facts"] and any("MOE" in t for t in school["limits"])
+    assert "Blocks with resales since 2017 within 1 km (straight-line): 1" in school["facts"] and any("MOE" in t for t in school["limits"])
     station = mapdata.card(mapdata.resolve({"kind": "mrt", "id": "mrt_x"}))
     assert any("within 500 m" in f for f in station["facts"]) and not any("MOE" in t for t in station["limits"])
