@@ -9,6 +9,7 @@ from string import capwords
 
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.loaders import load_blocks, load_places
+from ask_hdb.geo.names import pretty_name
 
 MAX_POINTS = 40
 
@@ -70,7 +71,7 @@ def map_points(args, result):
         if isinstance(key, str) and key in places.index:
             row = places.loc[key]
             kind = {"mrt": "MRT", "lrt": "LRT"}.get(row.kind, row.kind.replace("_", " "))
-            add(row.kind, key, f"{capwords(row['name'])} ({kind})",
+            add(row.kind, key, f"{pretty_name(row['name'])} ({kind})",
                 row.lat, row.lng, "result")
     return list(found.values())[:MAX_POINTS]
 

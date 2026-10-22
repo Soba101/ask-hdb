@@ -117,3 +117,31 @@ def test_radius_route_accepts_only_the_offered_radii(monkeypatch):
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     assert "radiusRequest" in js and 'mapLayer.ring(null, false)' in js
+
+
+def test_schools_within_two_km_are_banded_and_the_moe_caveat_is_attached():
+    mine = mapdata.resolve({"kind": "block", "id": "blk_1_a-st"})
+    got = mapdata.schools_nearby(mine)
+    assert [(s["id"], s["band"]) for s in got["schools"]] == [("sch_y", "within 1 km")]
+    assert any("boundary" in text and "does not guarantee" in text for text in got["limits"])
+    assert got["schools"][0]["km"] < 0.2 and got["schools"][0]["label"] == "St. Anthony's Primary School"
+
+
+def test_borderline_schools_and_the_route(monkeypatch):
+    places = pd.DataFrame([
+        {"place_id": "near", "kind": "primary_school", "name": "NEAR PRIMARY", "lat": 1.30, "lng": 103.8},
+        {"place_id": "mid", "kind": "primary_school", "name": "MID PRIMARY", "lat": 1.315, "lng": 103.8},    # ~1.7 km
+        {"place_id": "edge", "kind": "primary_school", "name": "EDGE PRIMARY", "lat": 1.3205, "lng": 103.8},  # ~2.3 km
+        {"place_id": "far", "kind": "primary_school", "name": "FAR PRIMARY", "lat": 1.40, "lng": 103.8},
+        {"place_id": "mrt_q", "kind": "mrt", "name": "Q", "lat": 1.30, "lng": 103.8}])
+    monkeypatch.setattr(mapdata, "load_places", lambda: places)
+    got = mapdata.schools_nearby({"id": "blk_1_a-st", "lat": 1.30, "lng": 103.8})
+    assert [(s["id"], s["band"]) for s in got["schools"]] == [("near", "within 1 km"), ("mid", "1 to 2 km"), ("edge", "borderline")]
+    client = TestClient(api.create_app())
+    assert client.get("/schools/block/blk_1_a-st").json()["km"] == 2.0 and client.get("/schools/block/nope").status_code == 404
+
+
+def test_place_names_keep_acronyms_and_small_words():
+    from ask_hdb.geo.names import pretty_name
+    assert pretty_name("CHIJ OUR LADY OF GOOD COUNSEL") == "CHIJ Our Lady of Good Counsel"
+    assert pretty_name("ST. ANTHONY'S PRIMARY SCHOOL") == "St. Anthony's Primary School"

@@ -283,6 +283,44 @@ function setSelected(point) {
 $("selected-clear").onclick = () => setSelected(null);
 $("card-close").onclick = () => { $("card").hidden = true; };
 
+let schoolList = [];
+
+async function showSchools(point, mine) {
+  const box = $("schools");
+  box.hidden = true;
+  schoolList = [];
+  try {
+    const response = await fetch("/schools/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
+    if (!response.ok) return;
+    const data = await response.json();
+    if (mine !== cardRequest) return;
+    schoolList = data.schools;
+    const list = $("schools-list");
+    list.replaceChildren();
+    for (const school of data.schools) {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.textContent = school.label;
+      button.onclick = () => mapLayer.fly([school.lng, school.lat, school.lng, school.lat]);
+      li.append(button, " \u2013 " + school.km.toFixed(2) + " km (" + school.band + ")");
+      list.appendChild(li);
+    }
+    const inside = data.schools.filter((s) => s.band !== "borderline").length;
+    $("schools-summary").textContent = "Primary schools within 2 km: " + inside +
+      (data.schools.length > inside ? " (+" + (data.schools.length - inside) + " borderline)" : "");
+    $("schools-limits").textContent = data.limits.join(" ");
+    box.hidden = false;
+    box.open = true; // the point is to let the buyer compare, so show the list without a click
+  } catch (error) { /* the list is an extra; the card still works without it */ }
+}
+$("schools-show").onclick = () => {
+  if (!schoolList.length || !selected) return;
+  const points = [{ ...selected, role: "origin" }, ...schoolList.map((s) => ({ ...s, role: "result" }))];
+  mapLayer.highlight(points);
+  const lngs = points.map((p) => p.lng), lats = points.map((p) => p.lat);
+  mapLayer.fly([Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]);
+};
+
 let cardRequest = 0; // only the latest selection may fill the card
 async function showCard(point) {
   const mine = ++cardRequest;
@@ -292,6 +330,7 @@ async function showCard(point) {
   $("card-actions").replaceChildren();
   $("card-limits").textContent = "";
   card.hidden = false;
+  showSchools(point, mine);
   try {
     const response = await fetch("/card/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
     if (!response.ok) throw new Error("no card");

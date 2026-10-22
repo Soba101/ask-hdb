@@ -110,6 +110,13 @@ def create_app():
             raise HTTPException(404, "Unknown place or radius.")
         return mapdata.around(selection, km)
 
+    @app.get("/schools/{kind}/{key}")
+    def schools(kind: str, key: str):
+        selection = mapdata.resolve({"kind": kind, "id": key})
+        if selection is None:
+            raise HTTPException(404, "Unknown place.")
+        return mapdata.schools_nearby(selection)
+
     @app.get("/card/{kind}/{key}")
     def card(kind: str, key: str):
         selection = mapdata.resolve({"kind": kind, "id": key})

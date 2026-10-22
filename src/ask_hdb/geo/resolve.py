@@ -11,6 +11,7 @@ import pandas as pd
 
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.loaders import load_blocks, load_places
+from ask_hdb.geo.names import pretty_name
 from ask_hdb.geo.streets import normalize_street
 
 MAX_CANDIDATES = 5
@@ -63,7 +64,7 @@ def _named_candidates(tokens):
         name = _core(normalize_street(r.name).split())
         if name == core or (len(core) >= 1 and set(core) <= set(name)):
             label = {"mrt": "MRT", "lrt": "LRT"}.get(r.kind, "primary school")
-            item = _candidate(r.kind, r.place_id, f"{capwords(r.name)} ({label})", r.lat, r.lng)
+            item = _candidate(r.kind, r.place_id, f"{pretty_name(r.name)} ({label})", r.lat, r.lng)
             (exact if name == core else found).append(item)
     if not kinds or "BTO" in tokens or "PROJECT" in tokens:
         projects = load_projects()

@@ -71,3 +71,8 @@ a { color: var(--accent); }
 
 .radius { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; flex-wrap: wrap; font-size: .85rem; }
 button.secondary.on { background: var(--accent); color: var(--accent-text); }
+
+.schools { margin: 8px 0; font-size: .9rem; }
+.schools summary { cursor: pointer; color: var(--accent); }
+.schools ul { margin: 4px 0; padding-left: 18px; max-height: 160px; overflow-y: auto; }
+.schools li button { background: none; border: 0; color: var(--accent); padding: 0; text-align: left; font: inherit; cursor: pointer; }

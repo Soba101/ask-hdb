@@ -13,6 +13,7 @@ import pandas as pd
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.distance import haversine_km, nearest_to_point
 from ask_hdb.geo.loaders import load_blocks, load_places
+from ask_hdb.geo.names import pretty_name
 from ask_hdb.tools import load_sales
 
 KINDS = ("block", "mrt", "lrt", "primary_school", "bto")
@@ -36,7 +37,7 @@ def features():
         out.append(_feature("block", row.block_id, block_label(row), row.lat, row.lng, town=row.town))
     for row in load_places().itertuples():
         kind = {"mrt": "MRT", "lrt": "LRT"}.get(row.kind, "primary school")
-        label = f"{capwords(row.name)} ({kind})"
+        label = f"{pretty_name(row.name)} ({kind})"
         out.append(_feature(row.kind, row.place_id, label, row.lat, row.lng))
     for row in load_projects().itertuples():
         if not (_ok(row.lat) and _ok(row.lng)):
@@ -63,7 +64,7 @@ def resolve(selected):
     elif kind == "bto":
         table, label = load_projects().set_index("project_id"), lambda r: r["name"]
     else:
-        table, label = load_places().set_index("place_id"), lambda r: capwords(r["name"])
+        table, label = load_places().set_index("place_id"), lambda r: pretty_name(r["name"])
         if table.loc[key, "kind"] != kind if key in table.index else False:
             return None
     if key not in table.index:
@@ -88,7 +89,7 @@ def context_line(selection):
 
 def _nearest(lat, lng, kind):
     got = nearest_to_point(lat, lng, load_places(), kind, 1)
-    return {"name": capwords(got[0]["name"]), "km": round(got[0]["km"], 2)} if got else None
+    return {"name": pretty_name(got[0]["name"]), "km": round(got[0]["km"], 2)} if got else None
 
 
 def card(selection):
@@ -181,3 +182,32 @@ def around(selection, km):
     if km in (1.0, 2.0):
         limits.append("MOE's 1 km / 2 km school priority distances are measured by MOE with OneMap, not by this circle.")
     return {"km": km, "counts": counts, "limits": limits}
+
+
+BORDERLINE_KM = 0.3  # our own allowance: MOE measures to the school boundary, our school points are single points
+
+
+def schools_nearby(selection, km=2.0):
+    """Every primary school within km of the selection, nearest first, tagged with its distance band.
+
+    Bands follow MOE's balloting tiers (within 1 km, 1-2 km). Schools just beyond 2 km by our point are listed as
+    borderline because MOE measures from the school boundary. All distances here are straight-line.
+    """
+    lat, lng = selection["lat"], selection["lng"]
+    places = load_places()
+    schools = places[(places.kind == "primary_school") & places.lat.notna() & places.lng.notna()
+                     & (places.place_id != selection["id"])].copy()
+    schools["km"] = haversine_km(lat, lng, schools.lat.to_numpy(), schools.lng.to_numpy())
+    schools = schools[schools.km <= km + BORDERLINE_KM].sort_values(["km", "place_id"])
+    out = []
+    for row in schools.itertuples():
+        band = "within 1 km" if row.km <= 1 else "1 to 2 km" if row.km <= km else "borderline"
+        out.append({"kind": "primary_school", "id": row.place_id, "label": pretty_name(row.name), "km": round(float(row.km), 2),
+                    "band": band, "lat": round(float(row.lat), 5), "lng": round(float(row.lng), 5)})
+    return {"km": km, "schools": out, "limits": [
+        "Straight-line distances from our coordinates, not MOE's measurement.",
+        ("MOE ranks applicants by distance (within 1 km, then 1 to 2 km, then beyond 2 km) only when a school has more "
+         "applicants than places in the later registration phases, and measures from the school boundary to the home address. "
+         "A child can apply to any school; being nearby does not guarantee a place. Check MOE's P1 registration page and "
+         "OneMap before relying on this."),
+        "Borderline: just over 2 km by our point, which may fall within 2 km of the school boundary."]}
