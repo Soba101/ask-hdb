@@ -1,11 +1,13 @@
-"""Both conditions use the existing model factory and its configuration."""
+"""All conditions use the existing model factory and its configuration."""
 
 
 def make_condition(condition):
     if condition == 'agent':
         from ask_hdb.agent import ask
 
-        return ask
+        return ask  # no profile confirmation, so earlier agent reports stay comparable
+    if condition == 'full':
+        return _full()
     if condition != 'llm-only':
         raise ValueError('Unknown condition')
     from langchain_core.messages import HumanMessage, SystemMessage
@@ -25,3 +27,21 @@ def make_condition(condition):
                 'stopped_reason': 'tokens' if truncated else None}
 
     return baseline
+
+
+def _full():
+    """The agent with profile confirmation. The eval user answers "yes" once, as a user who
+    checked the profile would; a second confirmation request is left as the answer (and fails)."""
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    from ask_hdb.agent import ask
+
+    def full(question):
+        first = ask(question, confirm=True)
+        if not first.get('needs_confirmation'):
+            return first
+        second = ask('yes', [HumanMessage(content=question), AIMessage(content=first['answer'])], confirm=True)
+        tokens = [r['tokens'] for r in (first, second) if r['tokens'] is not None]
+        return {**second, 'tokens': sum(tokens) if tokens else None, 'confirmation': first['answer']}
+
+    return full

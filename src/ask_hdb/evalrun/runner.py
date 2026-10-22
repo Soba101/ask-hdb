@@ -31,7 +31,7 @@ def model_settings():
 def run(condition='agent', *, only=None, verbose=False, heldout=False, limit=None,
         questions_path=QUESTION_PATH, reports_dir=ROOT / 'eval/reports',
         invoke=None, settings=None, day=None, emit=print, tools=None):
-    if condition not in {'agent', 'llm-only'}:
+    if condition not in {'agent', 'full', 'llm-only'}:
         raise ValueError('Unknown condition')
     if tools is not None:
         if tools not in {'direct', 'mcp'}:

@@ -100,3 +100,40 @@ def test_limit_during_rewrite_keeps_grounding_keys(model, monkeypatch):
     assert result["stopped_reason"] == "tool_calls"
     assert result["grounding"]["rewritten"] is True and result["grounding"]["replaced"] is False
     assert result["grounding"]["first_ungrounded"] == ["$999,999"]
+
+
+# q_refuse_005 (held-out, week 5): a no-tool request for details mentioned a rule number ("12").
+ASKS = "Please provide your age and citizenship. Have you worked for the past 12 months?"
+
+
+def test_clarification_rewrite_asks_for_details_without_numbers(model):
+    model.script = [ASKS, "Please provide your age, citizenship and work history."]
+    result = agent.ask("Can I buy a resale flat? Ask me for the missing details.")
+    assert result["answer"] == "Please provide your age, citizenship and work history."
+    assert "state no numbers" in model.seen[-1]  # the rewrite request is the clarification one
+
+
+def test_clarification_is_kept_not_replaced(model):
+    model.script = [ASKS, ASKS]
+    result = agent.ask("Can I buy a resale flat? Ask me for the missing details.")
+    assert result["answer"] == ASKS
+    assert result["grounding"]["ungrounded"] == ["12"]  # still reported, never hidden
+    assert result["grounding"]["kept_clarification"] is True and result["grounding"]["replaced"] is False
+
+
+@pytest.mark.parametrize("draft", [
+    "You need 12 months of work.",                       # a fact, not a question
+    "You are not eligible below 35. What is your age?",  # a verdict
+    "Is your income above $4,000?",                      # a money amount
+    "Is the ceiling 14000 for you? Please provide your age.",  # a large number
+    # A decline that ends with an offer must not be rewritten into a request for details (q_refuse_008: "95").
+    "I cannot advise on loans; 95 of 100 buyers differ. Please provide a block ID for past sales.",
+])
+def test_facts_verdicts_and_amounts_are_still_replaced(model, draft):
+    model.script = [draft, draft]
+    assert agent.ask("Can I buy?")["answer"] == grounding.CANNOT_ANSWER
+
+
+def test_clarification_after_a_tool_call_is_still_replaced(model):
+    model.script = [CALL, ASKS, ASKS]
+    assert agent.ask("How many Tampines sales?")["answer"] == grounding.CANNOT_ANSWER

@@ -10,6 +10,7 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
 
+from ask_hdb import confirm as profile_check
 from ask_hdb import grounding
 from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
@@ -51,6 +52,10 @@ class LimitReached(Exception):
     """Leave the graph before it can do more work."""
 
 
+class NeedsConfirmation(Exception):
+    """Leave the graph before a profile tool runs on a profile the user has not confirmed."""
+
+
 def _strip_titles(node):
     if isinstance(node, dict):
         return {k: _strip_titles(v) for k, v in node.items() if k != "title"}
@@ -69,20 +74,21 @@ def _size(value):
     return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
 
 
-def ask(question, history=None) -> dict:
+def ask(question, history=None, confirm=False) -> dict:
+    """confirm=True asks "Is this right?" before eligibility and grant tools (chat and the full eval)."""
     load_dotenv()
     source = os.getenv("TOOL_SOURCE", "direct")
     if source == "direct":
-        return _ask(question, history, TOOLS)
+        return _ask(question, history, TOOLS, confirm)
     if source != "mcp":
         raise ValueError("TOOL_SOURCE must be direct or mcp")
     from ask_hdb.mcp.client import load_mcp_tools
 
     with load_mcp_tools() as tools:
-        return _ask(question, history, tools)
+        return _ask(question, history, tools, confirm)
 
 
-def _ask(question, history, tools):
+def _ask(question, history, tools, confirm=False):
     calls, pending = [], {}
     tokens, requested, reported = 0, 0, False
     stopped_reason = None
@@ -118,6 +124,9 @@ def _ask(question, history, tools):
             reply = reply.model_copy(update={"tool_calls": reply.tool_calls[
                 :MAX_TOOL_CALLS - requested
             ]})
+        for call in reply.tool_calls if confirm else []:
+            if call["name"] in profile_check.GATED and profile_check.ref(call["args"]) not in said_yes:
+                raise NeedsConfirmation(call["args"])
         requested += len(reply.tool_calls)
         return reply
 
@@ -130,6 +139,8 @@ def _ask(question, history, tools):
     messages = [message for message in convert_to_messages(history or [])
                 if isinstance(message, (HumanMessage, AIMessage))
                 and not (isinstance(message, AIMessage) and message.tool_calls)]
+    said_yes, asked = profile_check.confirmed(messages, question)
+    echo = "\n".join(asked + [question])  # numbers the user gave may be restated
     messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=question)]
 
     def run(messages):
@@ -155,17 +166,24 @@ def _ask(question, history, tools):
                         calls.append({"name": call["name"], "args": call["args"], "result": result})
         return answer, messages
 
-    checked, first = None, []
+    checked, first, kept, needs_confirmation = None, [], False, False
     try:
         answer, messages = run(messages)
-        checked = grounding.check(answer, question, [c["result"] for c in calls])
+        checked = grounding.check(answer, echo, [c["result"] for c in calls])
         first = checked["ungrounded"]
         if first:
             # One rewrite, inside the same budgets and tool cap, then an honest fallback.
-            answer, _ = run(messages + [HumanMessage(content=grounding.rewrite_request(first))])
-            checked = grounding.check(answer, question, [c["result"] for c in calls])
-            if checked["ungrounded"] or not answer.strip():
+            asking = not calls and grounding.is_clarification(answer)
+            answer, _ = run(messages + [HumanMessage(content=grounding.rewrite_request(first, asking))])
+            checked = grounding.check(answer, echo, [c["result"] for c in calls])
+            # A no-tool request for missing details states no fact, so a small number left in it
+            # is reported but does not replace the question with the fallback.
+            kept = bool(checked["ungrounded"]) and asking and not calls and grounding.is_clarification(answer)
+            if (checked["ungrounded"] and not kept) or not answer.strip():
                 answer = grounding.CANNOT_ANSWER
+    except NeedsConfirmation as exc:
+        # Code writes the question from the tool arguments; the tool has not run.
+        answer, needs_confirmation, checked = profile_check.question_text(exc.args[0]), True, None
     except LimitReached as exc:
         stopped_reason = str(exc)
     except GraphRecursionError:
@@ -175,6 +193,6 @@ def _ask(question, history, tools):
     if checked is not None:
         # Same keys even when the rewrite was stopped by a limit.
         checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
-                   "replaced": answer == grounding.CANNOT_ANSWER}
-    return {"answer": answer, "tool_calls": calls, "tokens": tokens,
-            "stopped_reason": stopped_reason, "grounding": checked}
+                   "replaced": answer == grounding.CANNOT_ANSWER, "kept_clarification": kept}
+    return {"answer": answer, "tool_calls": calls, "tokens": tokens, "stopped_reason": stopped_reason,
+            "grounding": checked, "needs_confirmation": needs_confirmation}
