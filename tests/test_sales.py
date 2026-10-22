@@ -107,3 +107,15 @@ def test_invalid_date_bounds_raise(sales, function, bound, value, empty):
     source = sales.iloc[:0] if empty else sales
     with pytest.raises(ValueError, match=f"Invalid {bound} date"):
         function(source, **{bound: value})
+
+
+def test_a_bare_year_covers_the_whole_year():
+    import pandas as pd
+
+    from ask_hdb.sales import _filtered
+    frame = pd.DataFrame({"sale_month": pd.to_datetime(["2023-12-01", "2024-01-01", "2024-12-01", "2025-01-01"]),
+                          "town": "X", "flat_type": "4 ROOM", "block_id": "b", "storey_mid": 5.0,
+                          "lease_left_months": 900, "resale_price": 500000})
+    for since, until in ((2024, 2024), ("2024", "2024")):
+        got = _filtered(frame, since=since, until=until)
+        assert list(got.sale_month.dt.year) == [2024, 2024]

@@ -20,6 +20,9 @@ def _filtered(
     for name, value in (("since", since), ("until", until)):
         if value is not None:
             try:
+                # A bare year is a whole year: 2024 would parse as 1970 and "2024" as January only.
+                if isinstance(value, (int, str)) and str(value).strip().isdigit() and len(str(value).strip()) == 4:
+                    value = f"{str(value).strip()}-{'01' if name == 'since' else '12'}"
                 date = pd.to_datetime(value, errors="coerce")
                 if pd.isna(date):
                     raise ValueError("Missing date")
