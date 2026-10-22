@@ -1,5 +1,6 @@
 import json
 
+import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
@@ -119,3 +120,10 @@ def test_a_bare_year_covers_the_whole_year():
     for since, until in ((2024, 2024), ("2024", "2024")):
         got = _filtered(frame, since=since, until=until)
         assert list(got.sale_month.dt.year) == [2024, 2024]
+
+
+@pytest.mark.parametrize("bad", [12345, -2024, 202401])
+def test_other_integers_are_not_dates(bad):
+    from ask_hdb.sales import _filtered
+    with pytest.raises(ValueError, match="Invalid since date"):
+        _filtered(pd.DataFrame(), since=bad)

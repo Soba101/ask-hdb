@@ -108,7 +108,9 @@ src/ask_hdb/
   geo/            geocoding, distances, nearest places
   mcp/            MCP server and client around the same tools
   evalrun/        eval runner, scoring, conditions (llm-only, agent, full), reports
-  llm.py          chat model from settings; cli.py has `ask-hdb chat`, `eval`, `routing`
+  llm.py          chat model from settings
+  __init__.py     main() has the `ask-hdb` subcommands (chat, ask, mcp, routing, eval); cli.py is the chat loop
+  tool_check.py, check_cases.py   the `routing` command: tool-call check and its hand-written prompts
 rules/            dated YAML rule files with sources (resale, bto/, plans/)
 scripts/          data fetch, build and expected-value scripts
 eval/             questions.yaml and reports
