@@ -104,7 +104,7 @@ def test_full_condition_answers_yes_once(model):
 def test_full_condition_does_not_answer_yes_twice(model, monkeypatch):
     calls = []
 
-    def ask(question, history=None, confirm=False):
+    def ask(question, history=None, confirm=False, context=None):
         calls.append(question)
         return {"answer": "Is this right?", "tool_calls": [], "tokens": 1, "needs_confirmation": True}
 
@@ -172,3 +172,22 @@ def test_map_context_goes_in_front_of_the_question_only(model):
     model._generate = spy
     agent.ask("Can we buy?", context="[Map context: Blk 1]")
     assert seen[0] == "[Map context: Blk 1]\nCan we buy?"
+
+
+def test_eval_questions_with_a_map_selection_pass_the_context_line(monkeypatch):
+    from ask_hdb.evalrun import runner
+
+    q = {"id": "q_x", "kind": "map", "question": "How far?", "expect": {"number": 1, "tolerance": 0}, "source": "s",
+         "context": {"kind": "block", "id": "blk_227_bishan-st-23"}}
+    assert "block_id=blk_227_bishan-st-23" in runner.map_context(q)
+    assert runner.map_context({"question": "no selection"}) is None
+    assert runner.map_context({"context": {"kind": "block", "id": "made-up"}}) is None  # an unknown id is dropped
+    seen = []
+
+    def fake_ask(question, history=None, confirm=False, on_event=None, context=None):
+        seen.append(context)
+        return {"answer": "yes", "tool_calls": [], "tokens": 1, "needs_confirmation": False}
+
+    monkeypatch.setattr(agent, "ask", fake_ask)
+    make_condition("full")("How far?", context="[ctx]")
+    assert seen == ["[ctx]"]

@@ -13,6 +13,7 @@ DECLINES = (
     'outside my scope', 'only help with resale', 'do not answer BTO', 'not able to predict',
     'can only help with', 'can only assist with', 'cannot provide investment',
     'cannot provide information on how to apply',
+    'cannot provide travel', "can't provide travel", 'no travel times', 'travel times are not available',
 )
 CLARIFIES = ('please provide', 'what is your', 'what are your', 'need your', 'tell me',
              'could you share', 'could you provide', 'please share')

@@ -199,3 +199,22 @@ def test_the_page_guards_against_stale_cards_and_a_failed_map():
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     assert "cardRequest" in js and "mine !== cardRequest" in js  # a late card response cannot fill a newer selection
     assert "The map data could not be loaded" in js and "todo.highlight" in js  # map failures show a note; early events are kept
+
+
+def test_an_ambiguous_place_sends_choices_for_the_page(monkeypatch):
+    candidates = [{"kind": "block", "id": "a", "label": "Blk 1 A St", "lat": 1.3, "lng": 103.8}]
+
+    def ask_ambiguous(question, history=None, confirm=False, on_event=None, context=None):
+        on_event({"type": "tool_call", "name": "resolve_place", "args": {"text": "blk 1"}})
+        on_event({"type": "tool_result", "name": "resolve_place", "args": {"text": "blk 1"},
+                  "result": {"status": "ambiguous", "candidates": candidates}})
+        return {"answer": "Which one?", "tokens": 1, "stopped_reason": None, "needs_confirmation": False}
+
+    monkeypatch.setattr(api.agent, "ask", ask_ambiguous)
+    monkeypatch.setattr(api, "map_points", lambda args, result: [])
+    got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
+    assert [e["type"] for e in got] == ["tool_call", "tool_result", "choices", "answer"]
+    assert got[2]["candidates"] == candidates
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert "pendingChoices" in js and "ask(question); // ask the same question again" in js

@@ -96,3 +96,24 @@ def test_place_cards_count_blocks_by_straight_line_and_keep_the_school_caveat():
     assert "Blocks with resales since 2017 within 1 km (straight-line): 1" in school["facts"] and any("MOE" in t for t in school["limits"])
     station = mapdata.card(mapdata.resolve({"kind": "mrt", "id": "mrt_x"}))
     assert any("within 500 m" in f for f in station["facts"]) and not any("MOE" in t for t in station["limits"])
+
+
+def test_radius_counts_are_inclusive_straight_line_and_leave_out_the_place_itself():
+    mine = mapdata.resolve({"kind": "block", "id": "blk_1_a-st"})
+    got = mapdata.around(mine, 0.5)
+    assert got["counts"] == {"blocks": 0, "mrt_lrt": 0, "primary_schools": 1, "bto_sites": 0}  # the school is ~140 m away
+    far = mapdata.around(mine, 2.0)
+    assert far["counts"]["mrt_lrt"] == 1 and far["counts"]["bto_sites"] == 0
+    assert any("MOE" in text for text in far["limits"]) and not any("MOE" in t for t in got["limits"])
+    with pytest.raises(ValueError):
+        mapdata.around(mine, 3.0)
+
+
+def test_radius_route_accepts_only_the_offered_radii(monkeypatch):
+    client = TestClient(api.create_app())
+    assert client.get("/around/block/blk_1_a-st?km=1").json()["km"] == 1.0
+    assert client.get("/around/block/blk_1_a-st?km=3").status_code == 404
+    assert client.get("/around/block/nope?km=1").status_code == 404
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert "radiusRequest" in js and 'mapLayer.ring(null, false)' in js

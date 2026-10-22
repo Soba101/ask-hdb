@@ -20,6 +20,14 @@
       <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
       <h2 id="card-title"></h2>
       <ul id="card-facts"></ul>
+      <div class="radius" role="group" aria-label="Show a radius around this place">
+        <span>Radius:</span>
+        <button class="secondary on" data-km="0" aria-pressed="true">Off</button>
+        <button class="secondary" data-km="0.5" aria-pressed="false">500 m</button>
+        <button class="secondary" data-km="1" aria-pressed="false">1 km</button>
+        <button class="secondary" data-km="2" aria-pressed="false">2 km</button>
+      </div>
+      <p id="radius-counts" class="small"></p>
       <div id="card-actions" class="choices"></div>
       <p id="card-limits" class="small"></p>
     </div>

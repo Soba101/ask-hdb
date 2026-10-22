@@ -68,3 +68,6 @@ a { color: var(--accent); }
   #app { grid-template-columns: 1fr; grid-template-rows: 42dvh minmax(0, 1fr); height: 100dvh; }
   #side { border-left: 0; border-top: 1px solid var(--line); }
 }
+
+.radius { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; flex-wrap: wrap; font-size: .85rem; }
+button.secondary.on { background: var(--accent); color: var(--accent-text); }

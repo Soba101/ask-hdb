@@ -62,6 +62,10 @@ def map_points(args, result):
             block(item["block_id"], "result")
         if isinstance(item.get("project_id"), str):
             project(item["project_id"], "result")
+        for found_item in item.get("candidates", []) if isinstance(item.get("candidates"), list) else []:
+            if isinstance(found_item, dict) and {"kind", "id", "label", "lat", "lng"} <= found_item.keys():
+                add(found_item["kind"], found_item["id"], found_item["label"], found_item["lat"], found_item["lng"],
+                    "result", "approximate site" if found_item["kind"] == "bto" else None)
         key = item.get("place_id")
         if isinstance(key, str) and key in places.index:
             row = places.loc[key]

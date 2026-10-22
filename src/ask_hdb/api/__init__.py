@@ -103,6 +103,13 @@ def create_app():
     def map_features():
         return JSONResponse(mapdata.features(), headers={"Cache-Control": "public, max-age=3600"})
 
+    @app.get("/around/{kind}/{key}")
+    def around(kind: str, key: str, km: float):
+        selection = mapdata.resolve({"kind": kind, "id": key})
+        if selection is None or km not in mapdata.RADII_KM:
+            raise HTTPException(404, "Unknown place or radius.")
+        return mapdata.around(selection, km)
+
     @app.get("/card/{kind}/{key}")
     def card(kind: str, key: str):
         selection = mapdata.resolve({"kind": kind, "id": key})
@@ -168,6 +175,9 @@ def work(question, history, limits, events, left, context=None):
                     points = []
                 if points:
                     events.put({"type": "map", "actions": map_actions(points)})
+                result = event["result"]
+                if event["name"] == "resolve_place" and isinstance(result, dict) and result.get("status") == "ambiguous":
+                    events.put({"type": "choices", "candidates": result["candidates"]})
 
     try:
         result = agent.ask(question, history, confirm=True, on_event=on_event, context=context)

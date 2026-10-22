@@ -156,3 +156,28 @@ def _place_facts(selection):
     else:
         facts.append(f"Blocks with resales since 2017 within 500 m (straight-line): {_blocks_within(lat, lng, 0.5):,}")
     return {"facts": facts, "limits": limits}
+
+
+RADII_KM = (0.5, 1.0, 2.0)
+
+
+def around(selection, km):
+    """Counts of blocks, stations, schools and BTO sites within km (inclusive, straight-line) of the selection."""
+    if km not in RADII_KM:
+        raise ValueError("Unsupported radius")
+    lat, lng = selection["lat"], selection["lng"]
+
+    def count(frame):
+        frame = frame[frame.lat.notna() & frame.lng.notna()]
+        return int((haversine_km(lat, lng, frame.lat.to_numpy(), frame.lng.to_numpy()) <= km).sum())
+
+    places = load_places()
+    own = selection["id"]
+    counts = {"blocks": count(load_blocks()[lambda d: d.block_id != own]),
+              "mrt_lrt": count(places[places.kind.isin(["mrt", "lrt"]) & (places.place_id != own)]),
+              "primary_schools": count(places[(places.kind == "primary_school") & (places.place_id != own)]),
+              "bto_sites": count(load_projects()[lambda d: d.project_id != own])}
+    limits = ["Straight-line circle around the selected place; blocks are those with a resale since 2017."]
+    if km in (1.0, 2.0):
+        limits.append("MOE's 1 km / 2 km school priority distances are measured by MOE with OneMap, not by this circle.")
+    return {"km": km, "counts": counts, "limits": limits}

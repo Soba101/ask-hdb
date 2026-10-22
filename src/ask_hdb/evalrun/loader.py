@@ -7,7 +7,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 QUESTION_PATH = ROOT / 'eval/questions.yaml'
-KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step', 'bto', 'scenario')
+KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step', 'bto', 'scenario', 'map')
 
 
 def load_questions(path=QUESTION_PATH):
@@ -25,6 +25,10 @@ def load_questions(path=QUESTION_PATH):
             not isinstance(q[key], str) or not q[key].strip() for key in ('question', 'source')
         ):
             raise ValueError(f"Invalid question {q['id']}")
+        context = q.get('context')
+        if context is not None and not (isinstance(context, dict) and set(context) == {'kind', 'id'}
+                                        and all(isinstance(v, str) and v for v in context.values())):
+            raise ValueError(f"Invalid map context for {q['id']}")
         for flag in ('heldout', 'retired'):
             if flag in q and not isinstance(q[flag], bool):
                 raise ValueError(f'{flag} must be boolean')
@@ -40,7 +44,7 @@ def load_questions(path=QUESTION_PATH):
                         or not math.isfinite(value)):
                     raise ValueError('Expected number and tolerance must be finite')
             if expect['tolerance'] < 0 or q['kind'] not in {
-                'price', 'grants', 'price_check', 'distance', 'multi_step', 'bto', 'scenario'
+                'price', 'grants', 'price_check', 'distance', 'multi_step', 'bto', 'scenario', 'map'
             }:
                 raise ValueError('Invalid numeric expectation')
         elif 'verdict' in expect:
