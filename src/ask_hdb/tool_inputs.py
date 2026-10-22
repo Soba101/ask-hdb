@@ -164,6 +164,11 @@ class BtoHistoryArgs(Arguments):
     financial_year: int | None = Field(None, description="Launch financial year such as 2013; leave out for all years", ge=2008, le=2018)
 
 
+class RailPlansArgs(Arguments):
+    empty_means_none: ClassVar[bool] = True
+    area: str | None = Field(None, description="Area or line name such as Punggol or Cross Island; leave out to list every planned line")
+
+
 class BtoNearbyArgs(Arguments):
     project_id: str = Field(description="BTO project id such as bto_tampines-nova")
     kind: PlaceKind

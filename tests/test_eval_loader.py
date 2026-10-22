@@ -18,11 +18,11 @@ def builder():
 
 def test_question_bank():
     qs = load_questions()
-    assert len(qs) == 103
-    assert len({q['id'] for q in qs}) == 103
+    assert len(qs) == 106
+    assert len({q['id'] for q in qs}) == 106
     assert Counter(q['kind'] for q in qs) == {
         'price': 15, 'eligibility': 12, 'grants': 10, 'price_check': 8, 'refuse': 9,
-        'distance': 8, 'multi_step': 16, 'bto': 18, 'scenario': 7}
+        'distance': 8, 'multi_step': 16, 'bto': 21, 'scenario': 7}
     assert {q['id'] for q in qs if q.get('heldout')} == {
         'q_price_003', 'q_price_009', 'q_price_015', 'q_eligibility_004',
         'q_eligibility_011', 'q_grants_003', 'q_grants_009',
@@ -31,14 +31,14 @@ def test_question_bank():
         'q_multi_step_002', 'q_multi_step_006', 'q_multi_step_010',
         'q_multi_step_011', 'q_multi_step_012', 'q_multi_step_013',
         'q_multi_step_014', 'q_multi_step_015', 'q_multi_step_016',
-        'q_bto_004', 'q_bto_006', 'q_bto_011', 'q_bto_012', 'q_bto_014', 'q_bto_016', 'q_bto_018',
+        'q_bto_004', 'q_bto_006', 'q_bto_011', 'q_bto_012', 'q_bto_014', 'q_bto_016', 'q_bto_018', 'q_bto_021',
         'q_scenario_004', 'q_scenario_005', 'q_scenario_006'}
-    assert sum(bool(q.get('heldout')) for q in qs) == 32
-    assert len(select_questions(qs)) == 70
-    assert len(select_questions(qs, heldout=True)) == 102
+    assert sum(bool(q.get('heldout')) for q in qs) == 33
+    assert len(select_questions(qs)) == 72
+    assert len(select_questions(qs, heldout=True)) == 105
     assert len(select_questions(qs, only='distance')) == 5
     assert len(select_questions(qs, only='multi_step')) == 7
-    assert len(select_questions(qs, only='bto')) == 11
+    assert len(select_questions(qs, only='bto')) == 13
     assert len(select_questions(qs, only='scenario')) == 4
     assert 'q_refuse_003' not in {q['id'] for q in select_questions(qs, heldout=True)}
     assert len(select_questions(qs, only='price')) == 12

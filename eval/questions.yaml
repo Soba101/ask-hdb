@@ -1299,3 +1299,25 @@
   expect:
     decline: true
   source: 'AGENTS.md Prices: no exact future prices, no investment timing'
+- id: q_bto_019
+  kind: bto
+  question: According to the LTA rail factsheet, in which year is Cross Island Line Phase 1 targeted to open? Answer with one year.
+  expect:
+    number: 2030
+    tolerance: 0
+  source: rules/plans/2026-10.yaml (LTA factsheet, 2026-03-04)
+- id: q_bto_020
+  kind: bto
+  question: Which year is the Cross Island Line Punggol Extension targeted to open, according to LTA? Answer with one year.
+  expect:
+    number: 2032
+    tolerance: 0
+  source: rules/plans/2026-10.yaml (LTA factsheet, 2026-03-04)
+- id: q_bto_021
+  kind: bto
+  question: How many stations will the whole Jurong Region Line have, according to the LTA factsheet? Answer with one number.
+  expect:
+    number: 25
+    tolerance: 0
+  source: rules/plans/2026-10.yaml (LTA factsheet, 2026-03-04)
+  heldout: true

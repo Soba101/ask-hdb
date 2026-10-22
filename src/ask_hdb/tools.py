@@ -11,8 +11,8 @@ import pandas as pd
 from langchain_core.tools import StructuredTool
 
 from ask_hdb import calc, compare, sales
+from ask_hdb.bto import plans, scenario
 from ask_hdb.bto import queries as bto
-from ask_hdb.bto import scenario
 from ask_hdb.geo import filters as geo_filters
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 from ask_hdb.rules import bto as bto_rules
@@ -29,12 +29,13 @@ from ask_hdb.tool_inputs import (
     NearestArgs,
     PhgArgs,
     ProfileArgs,
+    RailPlansArgs,
     RuleArgs,
     SalesArgs,
 )
 
 # Tools that read their own tables instead of the resale sales frame.
-NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history"}
+NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history", "rail_plans"}
 
 
 @lru_cache(maxsize=1)
@@ -167,6 +168,9 @@ bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a B
 bto_history = _tool("bto_history", "PAST BTO launch price ranges next to resale prices of comparable flats 5-7 years after lease start, by town and flat type (FY2008-2018, 9 towns). Descriptive history only, never a forecast; quote the limits.",
                     BtoHistoryArgs, bto.bto_history)
 
+rail_plans = _tool("rail_plans", "PLANNED MRT lines and their LTA target years, from a dated factsheet. Facts only; never say a line will raise or lower flat prices.",
+                   RailPlansArgs, plans.rail_plans)
+
 can_apply_bto = _tool("can_apply_bto", "Check NEW BTO flat eligibility only (never resale): income ceilings (previous vs revised 24 Aug 2026), singles limits, MOP.",
                       BtoRuleArgs, bto_rules.can_apply_bto, bto_rule=True)
 def _bto_scenario(**values):
@@ -180,4 +184,4 @@ bto_ehg_amount = _tool("bto_ehg_amount", "Enhanced CPF Housing Grant for a new B
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
          cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount,
-         bto_scenario, bto_history]
+         bto_scenario, bto_history, rail_plans]

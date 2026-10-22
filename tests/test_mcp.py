@@ -67,6 +67,7 @@ def test_protocol_schemas_and_every_tool(local_data):
                     "bto_ehg_amount": BTO_PROFILE,
                     "bto_scenario": {"price": 400000, "grants": 0, "loan_kind": "hdb", "interest_rate_pct": 2.6,
                                      "loan_years": 25, "category": "Standard", "town": None, "flat_type": None},
+                    "rail_plans": {"area": "Punggol"},
                     "bto_history": {"town": "PUNGGOL", "flat_type": "4-room", "financial_year": 2008},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)
