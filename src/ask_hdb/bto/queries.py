@@ -71,8 +71,12 @@ HISTORY_LIMITS = [
     "Resale prices include the 2021-2023 price rise; ratios and gaps between cohorts are not stable.",
     "Launch ranges are before grants; resale prices are what buyers paid. Neither includes loan interest, CPF accrued interest, fees or renovation.",
     "Town and flat type only (no project, floor or lease detail). Only 9 non-mature towns have enough sales.",
+    "Recent launches are incomplete: where window_complete is false, the resale window is not finished, so the sales are the earliest sellers only.",
     "Comparable resale = same town and flat type, lease start 3 to 5 years after the launch financial year, sold 5 to 7 years after lease start (approximate).",
 ]
+
+
+COVERAGE = "launch financial years 2008-2018; towns: BUKIT BATOK, BUKIT PANJANG, CHOA CHU KANG, JURONG WEST, PUNGGOL, SEMBAWANG, SENGKANG, WOODLANDS, YISHUN"
 
 
 @lru_cache(maxsize=1)
@@ -88,5 +92,12 @@ def bto_history(town, flat_type, financial_year=None):
         rows = rows[rows.financial_year.eq(financial_year)]
     cols = ["financial_year", "launch_low", "launch_high", "n_resales", "resale_median", "resale_p25", "resale_p75"]
     out = rows.sort_values("financial_year")[cols].to_dict("records")
+    for row in out:
+        # shortcut: resale data ends in 2026, update this year when the data is refreshed. The window ends 12 years after the launch FY.
+        row["window_complete"] = row["financial_year"] + 12 <= 2026
+    if not out:
+        return {"town": town.upper(), "flat_type": flat_type, "n_rows": 0, "rows": [], "limits": HISTORY_LIMITS,
+                "note": "No comparable rows: the town is outside the coverage or has too few sales. Do not fill the gap.",
+                "coverage": COVERAGE}
     return {"town": town.upper(), "flat_type": flat_type, "n_rows": len(out), "rows": out, "limits": HISTORY_LIMITS,
-            "coverage": "launch financial years 2008-2018; towns: " + ", ".join(sorted(load_history().town.unique()))}
+            "coverage": COVERAGE}

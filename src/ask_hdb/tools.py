@@ -165,7 +165,7 @@ list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HD
 bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a BTO project's approximate site.",
                    BtoNearbyArgs, bto.bto_nearby)
 
-bto_history = _tool("bto_history", "PAST BTO launch price ranges next to resale prices of comparable flats a few years after the minimum occupation period, by town and flat type (9 towns, older launches). Descriptive history only, never a forecast; quote the limits.",
+bto_history = _tool("bto_history", "PAST BTO launch price ranges next to resale prices of comparable flats sold a little after the minimum occupation period, by town and flat type. Descriptive history only, never a forecast; quote the limits.",
                     BtoHistoryArgs, bto.bto_history)
 
 rail_plans = _tool("rail_plans", "PLANNED MRT lines and their LTA target years, from a dated factsheet. Facts only; never say a line will raise or lower flat prices.",
