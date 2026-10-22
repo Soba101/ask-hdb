@@ -295,3 +295,17 @@ Two new tools: `bto_history` (past launch price ranges next to later resale pric
 Full dev run (72, `eval/reports/2026-10-22-agent-hist2.json`): number 96.1%, verdict 92.9%, refusal 57.1%, grounding 100%, 0 errors. The new numeric questions all pass with the right tool.
 The refusal drop came from our own tool description: it said "5-7 years", the 9B repeated it while declining q_refuse_007 and q_refuse_009, the grounding check could not trace it and replaced the decline with the fallback. Fix: no numbers in tool descriptions. Re-run of refusal questions: 5 of 6 (q_refuse_008 still fails); BTO questions 13 of 13. No full dev re-run after that one-line change, and the held-out questions were not run.
 Not built: URA Master Plan land use (large, being superseded by the Draft Master Plan 2025); surrounding-area growth uses the existing town-level resale history, no new download.
+
+### Week 5-4: full vs single agent, repeated runs (9B on the MacBook, direct tools, 2026-10-22/23)
+Same code (main after PR #48), same 72 dev questions, two runs of each condition (`full` = agent plus the code-written "Is this right?" step, the eval user says yes once). Reports `eval/reports/2026-10-22-{agent,full}-rep{A,B}.json` (`full` repeat A is `repA2`; the first `full` repA run was invalid, see below).
+
+| Run | Number | Verdict | Refusal | Grounding | Failed questions |
+|---|---:|---:|---:|---:|---|
+| agent A | 94.1% | 100% | 85.7% | 100% | q_grants_010, q_multi_step_005, q_scenario_002, q_refuse_008 |
+| agent B | 96.1% | 92.9% | 85.7% | 100% | q_eligibility_005, q_multi_step_005, q_scenario_002, q_refuse_008 |
+| full A | 94.1% | 100% | 85.7% | 100% | q_grants_010, q_multi_step_005, q_scenario_002, q_refuse_008 |
+| full B | 94.1% | 92.9% | 100% | 100% | q_eligibility_001, q_grants_010, q_multi_step_005, q_scenario_002 |
+
+Reading: `full` and `agent` are inside the same run-to-run spread (number 94.1-96.1%, verdict 92.9-100%, refusal 85.7-100%); grounding is 100% in all four. `full` is not better or worse on these numbers, so the week 5 exit line "full beats single agent" is not met; what `full` adds is the confirmation of the profile the tools will use (a safety feature, not an accuracy gain). Cost: median tokens 17.2-17.3k against 16.8k (about 3% more); median seconds are not comparable (the Mac was swapping during the later runs).
+Four questions fail in at least three of four runs or in both `agent` runs: q_multi_step_005, q_scenario_002 (every run), q_refuse_008 (3 of 4), q_grants_010 (3 of 4, the draft states an "80" no tool returns, so the grounding check replaces a correct answer). The eligibility misses (q_eligibility_001, q_eligibility_005) differ between runs, so they are variance, not a pattern.
+The first `full` repeat run (72.5% number, 0% verdict) was a bug of ours: a review fix lowercased the shown values ("sc,sc", "standard"), the model copied them into the next tool call and the tool rejected them. Fixed in PR #48 (the shown text keeps the case); issue #49 tracks the remaining reformatting (underscores in enum values). Lesson: a change to the confirmation text needs a `full` eval run before merge.
