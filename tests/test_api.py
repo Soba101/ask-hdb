@@ -218,3 +218,21 @@ def test_an_ambiguous_place_sends_choices_for_the_page(monkeypatch):
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     assert "pendingChoices" in js and "ask(question); // ask the same question again" in js
+
+
+def test_the_page_script_has_valid_syntax():
+    """A syntax error blanks the whole page (chat and map), so check it whenever node is available."""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is not installed")
+    source = (Path(api.__file__).parent / "static/app.js").read_text()
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "app.mjs"
+        path.write_text(source)
+        done = subprocess.run([node, "--check", str(path)], check=False, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr

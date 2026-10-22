@@ -244,17 +244,21 @@ function circle(lat, lng, km) {
   return ring;
 }
 
+let schoolRings = false; // the "primary schools" view: 1 km solid ring and 2 km dashed ring
+
 function drawRadius(fit) {
   const counts = $("radius-counts");
   counts.textContent = "";
   document.querySelectorAll(".radius button").forEach((b) => {
-    const on = Number(b.dataset.km) === radiusKm;
+    const on = !schoolRings && Number(b.dataset.km) === radiusKm;
     b.classList.toggle("on", on);
     b.setAttribute("aria-pressed", String(on));
   });
-  if (!selected || !radiusKm) { mapLayer.ring(null, false); return; }
-  const ring = circle(selected.lat, selected.lng, radiusKm);
-  mapLayer.ring(ring, fit);
+  const rings = [];
+  if (selected && schoolRings) rings.push({ km: 2, dash: true }, { km: 1, dash: false });
+  else if (selected && radiusKm) rings.push({ km: radiusKm, dash: true });
+  mapLayer.ring(selected ? rings.map((r) => ({ ...r, ring: circle(selected.lat, selected.lng, r.km) })) : [], fit);
+  if (!selected || !radiusKm || schoolRings) return;
   const mine = ++radiusRequest;
   fetch("/around/" + encodeURIComponent(selected.kind) + "/" + encodeURIComponent(selected.id) + "?km=" + radiusKm)
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no counts"))))
@@ -269,11 +273,12 @@ function drawRadius(fit) {
 }
 
 document.querySelectorAll(".radius button").forEach((b) => {
-  b.onclick = () => { radiusKm = Number(b.dataset.km); drawRadius(true); };
+  b.onclick = () => { schoolRings = false; radiusKm = Number(b.dataset.km); drawRadius(true); };
 });
 
 function setSelected(point) {
   selected = point;
+  schoolRings = false;
   $("selected").hidden = !point;
   if (point) $("selected-label").textContent = point.label;
   mapLayer.select(point);
@@ -315,10 +320,10 @@ async function showSchools(point, mine) {
 }
 $("schools-show").onclick = () => {
   if (!schoolList.length || !selected) return;
-  const points = [{ ...selected, role: "origin" }, ...schoolList.map((s) => ({ ...s, role: "result" }))];
-  mapLayer.highlight(points);
-  const lngs = points.map((p) => p.lng), lats = points.map((p) => p.lat);
-  mapLayer.fly([Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]);
+  schoolRings = true; // 1 km solid ring, 2 km dashed ring, schools ringed by band (green: within 1 km, amber: 1 to 2 km, grey: borderline)
+  radiusKm = 0;
+  mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolList.map((s) => ({ ...s, role: "result" }))]);
+  drawRadius(true);
 };
 
 let cardRequest = 0; // only the latest selection may fill the card
@@ -359,7 +364,7 @@ async function showCard(point) {
 // Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
 const todo = { highlight: [], select: null, fly: null, ring: null };
 const mapLayer = {
-  ring(ring, fit) { todo.ring = ring ? { ring, fit } : null; },
+  ring(rings, fit) { todo.ring = rings.length ? { rings, fit } : null; },
   highlight(points) { todo.highlight = points; },
   select(point) { todo.select = point; },
   fly(bbox) { todo.fly = bbox; },
@@ -387,7 +392,7 @@ function runMapActions(actions) {
 function asFeatures(points) {
   return { type: "FeatureCollection", features: points.map((p) => ({
     type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-    properties: { kind: p.kind, id: p.id, role: p.role, label: p.label, note: p.note || "" } })) };
+    properties: { kind: p.kind, id: p.id, role: p.role, label: p.label, note: p.note || "", band: p.band || "" } })) };
 }
 
 async function startMap() {
@@ -421,14 +426,18 @@ async function startMap() {
       map.addSource("selected", { type: "geojson", data: EMPTY });
       map.addSource("radius", { type: "geojson", data: EMPTY });
       map.addLayer({ id: "radius-fill", type: "fill", source: "radius", paint: { "fill-color": "#1d5fd6", "fill-opacity": 0.1 } });
-      map.addLayer({ id: "radius-line", type: "line", source: "radius", paint: { "line-color": "#1d5fd6", "line-width": 2, "line-dasharray": [2, 2] } });
+      map.addLayer({ id: "radius-line", type: "line", source: "radius", filter: ["==", ["get", "dash"], true],
+        paint: { "line-color": "#1d5fd6", "line-width": 2, "line-dasharray": [2, 2] } });
+      map.addLayer({ id: "radius-line-solid", type: "line", source: "radius", filter: ["==", ["get", "dash"], false],
+        paint: { "line-color": "#1d5fd6", "line-width": 2.5 } });
       map.addLayer({ id: "blocks", type: "circle", source: "blocks", paint: { "circle-color": COLORS, "circle-opacity": 0.6,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.5, 14, 4, 17, 8] } });
       map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": COLORS,
         "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 6, 17, 9] } });
       map.addLayer({ id: "highlight", type: "circle", source: "highlight", paint: { "circle-color": COLORS,
-        "circle-stroke-color": "#ffb000", "circle-stroke-width": 3,
+        "circle-stroke-color": ["match", ["get", "band"], "within 1 km", "#00a152", "1 to 2 km", "#ffb000", "borderline", "#9aa3b5", "#ffb000"],
+        "circle-stroke-width": 3,
         "circle-radius": ["case", ["==", ["get", "role"], "origin"], 11, 8] } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
@@ -444,11 +453,12 @@ async function startMap() {
         const [lng, lat] = f.geometry.coordinates;
         setSelected({ kind: f.properties.kind, id: f.properties.id, label: f.properties.label, lat, lng });
       });
-      mapLayer.ring = (ring, fit) => {
-        map.getSource("radius").setData(ring ? { type: "Feature", geometry: { type: "Polygon", coordinates: [ring] }, properties: {} } : EMPTY);
-        if (ring && fit) {
+      mapLayer.ring = (rings, fit) => {
+        map.getSource("radius").setData({ type: "FeatureCollection", features: rings.map((r) => ({
+          type: "Feature", geometry: { type: "Polygon", coordinates: [r.ring] }, properties: { km: r.km, dash: r.dash } })) });
+        if (rings.length && fit) {
           const bounds = new maplibregl.LngLatBounds();
-          ring.forEach((c) => bounds.extend(c));
+          rings.forEach((r) => r.ring.forEach((c) => bounds.extend(c)));
           map.fitBounds(bounds, { padding: 60, duration: 500 });
         }
       };
@@ -458,7 +468,7 @@ async function startMap() {
         if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
         else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, maxZoom: 16, duration: 600 });
       };
-      if (todo.ring) mapLayer.ring(todo.ring.ring, todo.ring.fit);
+      if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);
       mapLayer.highlight(todo.highlight);
       if (todo.select) mapLayer.select(todo.select);
       if (todo.fly) mapLayer.fly(todo.fly);

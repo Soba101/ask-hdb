@@ -116,7 +116,8 @@ def test_radius_route_accepts_only_the_offered_radii(monkeypatch):
     assert client.get("/around/block/nope?km=1").status_code == 404
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
-    assert "radiusRequest" in js and 'mapLayer.ring(null, false)' in js
+    assert "radiusRequest" in js and "mapLayer.ring(selected ?" in js
+    assert "schoolRings" in js and "{ km: 2, dash: true }, { km: 1, dash: false }" in js
 
 
 def test_schools_within_two_km_are_banded_and_the_moe_caveat_is_attached():
