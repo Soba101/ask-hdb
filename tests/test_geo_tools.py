@@ -88,3 +88,12 @@ def test_lazy_geo_loaders(monkeypatch, tmp_path):
     finally:
         loaders.load_blocks.cache_clear()
         loaders.load_places.cache_clear()
+
+
+def test_server_directories_never_reach_the_model(local_geo, monkeypatch, tmp_path):
+    monkeypatch.setattr(loaders, "ROOT", tmp_path / "secret-dir")
+    monkeypatch.setattr(filters, "load_blocks", loaders.load_blocks)
+    loaders.load_blocks.cache_clear()
+    loaders.load_places.cache_clear()
+    result = tools.nearest_places.invoke({"block_id": local_geo, "kind": "mrt"})
+    assert "blocks.parquet" in result["error"] and "secret-dir" not in result["error"]

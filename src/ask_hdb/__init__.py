@@ -10,6 +10,8 @@ def main() -> None:
     web = commands.add_parser("serve", help="Run the web app")
     web.add_argument("--host", default="127.0.0.1")
     web.add_argument("--port", type=int, default=8000)
+    web.add_argument("--forwarded-allow-ips", default=None,
+                     help="Proxy IPs whose X-Forwarded-For is trusted (needed behind a proxy so visitors get their own rate limit)")
     one_shot = commands.add_parser("ask", help="Ask a housing question")
     one_shot.add_argument("question")
     commands.add_parser("routing", help="Run the week two tool-call check")
@@ -32,7 +34,7 @@ def main() -> None:
     if args.command == "serve":
         import uvicorn
 
-        uvicorn.run("ask_hdb.api:app", host=args.host, port=args.port)
+        uvicorn.run("ask_hdb.api:app", host=args.host, port=args.port, forwarded_allow_ips=args.forwarded_allow_ips)
         return
     if args.command == "eval":
         from ask_hdb.evalrun import run

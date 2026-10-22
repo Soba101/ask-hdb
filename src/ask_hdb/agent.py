@@ -117,6 +117,7 @@ def _ask(question, history, tools, confirm=False, on_event=None):
         usage = reply.usage_metadata
         reported = reported or bool(usage)
         tokens += (usage["total_tokens"] if usage else input_bound + _size(reply.model_dump()))
+        emit({"type": "usage", "tokens": tokens})  # spend so far, for a cost cap that also counts failed runs
         if tokens >= TOKEN_BUDGET or reply.response_metadata.get("finish_reason") in {
             "length", "max_tokens",
         } or reply.response_metadata.get("stop_reason") == "max_tokens":

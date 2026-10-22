@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import sys
 from dataclasses import asdict
 from functools import lru_cache
@@ -128,7 +129,8 @@ def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
             # Keep a trace so a real bug is not mistaken for a bad model argument.
             print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
             if name in NO_FRAME or "near_kind" in kwargs or "near_km" in kwargs:
-                return {"error": f"{name}: {exc}"}
+                # Keep the message the model needs ("blocks.parquet is missing") but never a server directory.
+                return {"error": f"{name}: " + re.sub(r"(?:/[^/\s'\"]+)+/([^/\s'\"]+)", r"\1", str(exc))}
             return {"error": f"Invalid arguments or unavailable data for {name}"}
 
     return StructuredTool.from_function(

@@ -58,4 +58,63 @@ def test_model_errors_do_not_leak_provider_text(monkeypatch):
 
     monkeypatch.setattr(api.agent, "ask", broken)
     got = events(TestClient(api.create_app()).post("/chat", json={"question": "q"}))
-    assert got == [{"type": "error", "message": "The model call failed. Please try again.", "kind": "RuntimeError"}]
+    assert got == [{"type": "error", "message": "The model call failed. Please try again."}]
+
+
+def test_busy_returns_503_and_the_lock_is_freed_after_a_run(client):
+    limits = client.app.state.limits
+    assert limits.busy.acquire(blocking=False)
+    assert client.post("/chat", json={"question": "q"}).status_code == 503
+    limits.busy.release()
+    assert client.post("/chat", json={"question": "q"}).status_code == 200
+    assert not limits.busy.locked()
+
+
+def test_tokens_are_counted_when_the_run_fails(monkeypatch):
+    def spends_then_fails(question, history=None, confirm=False, on_event=None):
+        on_event({"type": "usage", "tokens": 4000})
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr(api.agent, "ask", spends_then_fails)
+    test_client = TestClient(api.create_app())
+    got = events(test_client.post("/chat", json={"question": "q"}))
+    assert [e["type"] for e in got] == ["error"]  # usage events are not sent to the visitor
+    assert test_client.app.state.limits.used == 4000
+
+
+def test_a_departed_client_stops_the_run_and_frees_the_lock():
+    from queue import Queue
+    from threading import Event
+
+    limits = api.Limits()
+    limits.busy.acquire()
+    left = Event()
+    left.set()
+    seen = []
+
+    def long_run(question, history=None, confirm=False, on_event=None):
+        on_event({"type": "usage", "tokens": 10})  # raises: the visitor already left
+        seen.append("kept going")
+
+    api.agent.ask, original = long_run, api.agent.ask
+    try:
+        api.work("q", [], limits, Queue(), left)
+    finally:
+        api.agent.ask = original
+    assert seen == [] and not limits.busy.locked()
+
+
+def test_daily_cap_resets_on_a_new_day():
+    limits = api.Limits()
+    limits.daily_tokens = 100
+    limits.add_tokens(500)
+    assert limits.over_cap()
+    limits.day = "2000-01-01"
+    assert not limits.over_cap() and limits.used == 0
+
+
+def test_idle_visitors_are_forgotten():
+    limits = api.Limits()
+    limits.allow("a", now=0)
+    limits.allow("b", now=100)
+    assert "a" not in limits.hits

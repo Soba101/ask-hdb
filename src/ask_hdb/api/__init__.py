@@ -6,7 +6,7 @@ import os
 import time
 from collections import defaultdict, deque
 from queue import Empty, Queue
-from threading import Thread
+from threading import Event, Lock, Thread
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
@@ -43,7 +43,8 @@ class Limits:
         self.daily_tokens = int(os.getenv("API_DAILY_TOKEN_CAP", "2000000"))
         self.hits = defaultdict(deque)
         self.day, self.used = time.strftime("%Y-%m-%d"), 0
-        self.busy = asyncio.Lock()
+        self.busy = Lock()  # held by the model thread itself, so a dropped client cannot free it early
+        self.counting = Lock()
 
     def allow(self, visitor, now=None):
         now = time.time() if now is None else now
@@ -53,16 +54,23 @@ class Limits:
         if len(recent) >= self.per_minute:
             return False
         recent.append(now)
+        for other, times in list(self.hits.items()):  # forget idle visitors so the table cannot grow forever
+            while times and now - times[0] > 60:
+                times.popleft()
+            if not times:
+                del self.hits[other]
         return True
 
     def over_cap(self):
-        today = time.strftime("%Y-%m-%d")
-        if today != self.day:
-            self.day, self.used = today, 0
-        return self.used >= self.daily_tokens
+        with self.counting:
+            today = time.strftime("%Y-%m-%d")
+            if today != self.day:
+                self.day, self.used = today, 0
+            return self.used >= self.daily_tokens
 
     def add_tokens(self, tokens):
-        self.used += tokens or 0
+        with self.counting:
+            self.used += tokens or 0
 
 
 def sse(event):
@@ -85,44 +93,65 @@ def create_app():
             raise HTTPException(429, "Too many questions. Please wait a minute.")
         if limits.over_cap():
             raise HTTPException(429, "Today's usage limit has been reached. Please come back tomorrow.")
-        if limits.busy.locked():
+        if not limits.busy.acquire(blocking=False):
             raise HTTPException(503, "Busy with another question. Please try again in a moment.")
         history = [(HumanMessage if turn.role == "user" else AIMessage)(content=turn.content)
                    for turn in body.history]
-        return StreamingResponse(stream(body.question, history, limits), media_type="text/event-stream",
+        events, left = Queue(), Event()
+        Thread(target=work, args=(body.question, history, limits, events, left), daemon=True).start()
+        return StreamingResponse(stream(events, left), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store"})
 
     return app
 
 
-async def stream(question, history, limits):
-    async with limits.busy:
-        events = Queue()
-        done = object()
+class ClientLeft(Exception):
+    """Raised inside the model thread once the visitor has disconnected, to stop spending tokens."""
 
-        def work():
-            try:
-                result = agent.ask(question, history, confirm=True, on_event=events.put)
-                events.put({"type": "answer", "answer": result["answer"],
-                            "needs_confirmation": result["needs_confirmation"],
-                            "stopped_reason": result["stopped_reason"], "notice": NOTICE})
-                limits.add_tokens(result.get("tokens"))
-            except Exception as exc:  # noqa: BLE001 - never leak provider text, URLs or keys to a visitor
-                events.put({"type": "error", "message": "The model call failed. Please try again.",
-                            "kind": type(exc).__name__})
-            finally:
-                events.put(done)
 
-        Thread(target=work, daemon=True).start()
+def work(question, history, limits, events, left):
+    spent = 0
+
+    def on_event(event):
+        nonlocal spent
+        if left.is_set():
+            raise ClientLeft
+        if event["type"] == "usage":
+            spent = event["tokens"]
+        else:
+            events.put(event)
+
+    try:
+        result = agent.ask(question, history, confirm=True, on_event=on_event)
+        events.put({"type": "answer", "answer": result["answer"],
+                    "needs_confirmation": result["needs_confirmation"],
+                    "stopped_reason": result["stopped_reason"], "notice": NOTICE})
+    except ClientLeft:
+        pass
+    except Exception:  # noqa: BLE001 - never leak provider text, URLs or keys to a visitor
+        events.put({"type": "error", "message": "The model call failed. Please try again."})
+    finally:
+        limits.add_tokens(spent)  # also when the run failed or the visitor left
+        events.put(DONE)
+        limits.busy.release()
+
+
+DONE = object()
+
+
+async def stream(events, left):
+    try:
         while True:
             try:
                 event = events.get_nowait()
             except Empty:
                 await asyncio.sleep(0.05)
                 continue
-            if event is done:
+            if event is DONE:
                 return
             yield sse(event)
+    finally:
+        left.set()  # a visitor who leaves stops the run at its next model or tool step
 
 
 app = create_app()
