@@ -77,7 +77,7 @@ Three phases; each gets approval before building.
 - [ ] BTO sites on the 3D map (with the week 6 UI).
 - **Exit:** BTO eligibility and "what is open near X" questions pass; launch-vs-MOP and scenario answers come only from tool results, with the caveats shown.
 
-## Week 5: trust features (plan: docs/week5-plan.md)
+## Week 5: trust features (done 2026-10-23, deferred items below; plan: docs/week5-plan.md)
 - [x] "Is this right?" confirmation before any eligibility tool runs (5-3, PR #46: code gate in `confirm.py`, `full` eval
       condition). Dev, 9B: agent 91.5% number, full 85.1% (mostly run-to-run variance); both verdict 100%, refusal 100%. No separate profile worker (graph deferred).
 - [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
@@ -87,8 +87,8 @@ Three phases; each gets approval before building.
 - [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
 - [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
 - [ ] Refusal handling for out-of-scope questions (dev refusal 100%; q_refuse_008 balanced-answer and q_refuse_005 held-out gaps noted).
-- [ ] 5-4: `full` vs single agent on the same questions, repeated runs to measure the spread.
-- **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: `full` is 6 points lower on dev, single runs).
+- [x] 5-4 (done 2026-10-23): `full` vs `agent`, two runs each on 72 dev questions: both 94-96% number, 93-100% verdict, grounding 100%; inside the same run-to-run spread (`docs/eval-results.md`).
+- **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).
 
 ## Week 6: ship
 - [ ] Langfuse tracing on every run.
