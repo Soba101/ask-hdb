@@ -5,12 +5,14 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
@@ -102,6 +104,17 @@ def create_app():
         return StreamingResponse(stream(events, left), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store"})
 
+    @app.middleware("http")
+    async def headers(request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("Cache-Control", "no-cache")  # a redeploy must not run an old app.js
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        return response
+
+    # Mounted last so the API routes win; the page and its script are plain files.
+    app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="static")
     return app
 
 

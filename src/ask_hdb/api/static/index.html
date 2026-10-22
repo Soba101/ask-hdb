@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask HDB</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Ask HDB</h1>
+  <p>Resale and BTO prices, grants and eligibility. Every number comes from a tool, shown on the right.</p>
+</header>
+<main>
+  <section id="chat" aria-label="Chat">
+    <div id="log" role="log" aria-live="polite"></div>
+    <form id="form">
+      <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or eligibility" required></textarea>
+      <button id="send" type="submit">Send</button>
+    </form>
+    <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered.</p>
+  </section>
+  <aside id="evidence" aria-label="Tool results and sources">
+    <h2>Evidence</h2>
+    <p id="empty" class="muted">Tool calls, results and sources for your question appear here.</p>
+    <div id="tools"></div>
+    <div id="sources"></div>
+  </aside>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
