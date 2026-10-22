@@ -104,6 +104,15 @@ def create_app():
         return StreamingResponse(stream(events, left), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store"})
 
+    @app.middleware("http")
+    async def headers(request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("Cache-Control", "no-cache")  # a redeploy must not run an old app.js
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        return response
+
     # Mounted last so the API routes win; the page and its script are plain files.
     app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="static")
     return app

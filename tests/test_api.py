@@ -125,3 +125,16 @@ def test_the_page_is_served_and_the_api_still_wins(client):
     assert page.status_code == 200 and "Ask HDB" in page.text and "app.js" in page.text
     assert client.get("/app.js").status_code == 200 and client.get("/health").json() == {"status": "ok"}
     assert "innerHTML" not in client.get("/app.js").text  # model and tool text is never inserted as HTML
+
+
+def test_security_and_cache_headers(client):
+    page = client.get("/")
+    assert "frame-ancestors 'none'" in page.headers["content-security-policy"]
+    assert page.headers["x-content-type-options"] == "nosniff" and page.headers["cache-control"] == "no-cache"
+    assert client.post("/chat", json={"question": "q"}).headers["cache-control"] == "no-store"
+
+
+def test_the_page_keeps_the_history_within_the_server_limits():
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'aria-live", "off"' in js

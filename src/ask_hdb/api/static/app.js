@@ -106,10 +106,17 @@ async function* events(response) {
 }
 
 async function ask(question) {
+  if (send.disabled) return; // one question at a time
+  document.querySelectorAll(".choices").forEach((c) => c.remove()); // an old "Yes" must not answer a newer turn
   add("user", question);
   clearEvidence();
   send.disabled = true;
-  const status = add("status", "Working on it… 0s");
+  const status = document.createElement("div"); // outside the live region: a ticking timer must not be read out every second
+  status.className = "msg status";
+  status.textContent = "Working on it… 0s";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "off");
+  log.after(status);
   const started = Date.now();
   const timer = setInterval(() => { status.textContent = "Working on it… " + Math.round((Date.now() - started) / 1000) + "s"; }, 1000);
   const cards = [];
@@ -142,7 +149,8 @@ async function ask(question) {
 
 function show(question, event) {
   const div = add("bot", event.answer);
-  history.push({ role: "user", content: question }, { role: "assistant", content: event.answer });
+  // The server accepts at most 2000 characters per earlier turn; cut here so a long answer cannot block later questions.
+  history.push({ role: "user", content: question.slice(0, 1000) }, { role: "assistant", content: event.answer.slice(0, 2000) });
   if (event.needs_confirmation) {
     const choices = document.createElement("div");
     choices.className = "choices";
