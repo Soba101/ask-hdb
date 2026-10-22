@@ -271,3 +271,14 @@ The Mac model was the only model used; the 5090 was not touched.
 
 After the review fixes (stricter grounding: years next to money words are checked, digits inside ids, dates and prose no longer count as evidence, question numbers cannot stand in as rule thresholds; scenario growth figures returned as numbers), dev re-run (`eval/reports/2026-10-22-agent-week5-3.json`): number 93.6%, verdict 100%, refusal 83.3%, grounding 100%, 4 answers rewritten, 1 replaced.
 The replaced answer is q_grants_006: the model again used the BTO grant tool on a resale question and then wrote "$0", which no tool result supports, so the check replaced a wrong answer (correct behaviour, still a failed question). Remaining failures: q_grants_006, q_multi_step_005, q_scenario_002, q_refuse_008. Held-out is still due.
+
+### Week 5 held-out run (9B on the MacBook, direct tools, 2026-10-22, run once)
+All 30 held-out questions, with the merged week 5 code (`eval/reports/2026-10-22-agent-week5-3.json`, git-ignored). 24 of 30 pass; whole bank (97 questions): number 90.3%, verdict 100%, refusal 71.4%, grounding 100%, 1 error (token stop).
+Several held-out questions were already spent during earlier tuning (the original 10 and the BTO/scenario ones), so this is not a clean validation; the week 5 check itself had not seen any of them.
+
+Failures (6):
+- q_grants_003: the model reported the CPF Housing Grant as "Enhanced CPF Housing Grant $40,000" (wrong tool for the question); a model error, the number was grounded.
+- q_refuse_005 (clarify question): the answer asked for missing details and mentioned "12" with no tool call, so the grounding check replaced it with "I can't answer reliably", which does not count as a clarification. A product gap: a clarifying question with a rule number should not be replaced. Not changed here (held-out question, so fixing it and re-running would be tuning); to be decided.
+- q_bto_014: token limit stop (distance + several BTO lookups).
+- q_scenario_004, 005: the 9B again left out the project category (scenario_004 answered with the loan amount 375,000; scenario_005 was replaced by the fallback after two calculate calls). The week 4b-3 category fix did not help these, so the earlier "fixed afterwards" claim stays unproven for held-out.
+- q_scenario_005's replacement and q_refuse_005's are the only two replaced answers on the held-out set; the check replaced no correct, grounded answer apart from the clarify case.
