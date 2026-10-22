@@ -20,7 +20,7 @@ def test_text_is_written_from_the_arguments():
 
 
 def test_ref_ignores_formatting_and_the_models_confirmed_flag():
-    same = PROFILE | {"monthly_household_income": 4400.0, "scheme": " Family ", "confirmed": True}
+    same = PROFILE | {"monthly_household_income": 4400.0, "scheme": " family ", "confirmed": True}
     assert confirm.ref(same) == confirm.ref(PROFILE)
     assert confirm.ref(PROFILE | {"monthly_household_income": 4500}) != confirm.ref(PROFILE)
 
@@ -141,3 +141,8 @@ def test_earlier_confirmed_questions_are_echo_only_on_the_yes_turn():
 def test_a_question_that_states_a_rule_is_not_a_clarification(text):
     from ask_hdb import grounding
     assert not grounding.is_clarification(text)
+
+
+def test_the_shown_values_keep_their_case_so_the_model_can_reuse_them():
+    text = confirm.question_text(PROFILE | {"citizenships": "SC,SC", "category": "Standard"})
+    assert "- Citizenships: SC,SC" in text and "- Category: Standard" in text
