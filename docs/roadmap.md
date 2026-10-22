@@ -70,24 +70,25 @@ eval runs were made for these fixes. Distance and multi-step questions remain in
 
 ## Week 4b: BTO (added 2026-10-20, scope extended 2026-10-21; plan: docs/week4b-plan.md)
 Three phases; each gets approval before building.
-- [x] **4b-1** (done 2026-10-21; eval 3/5 held-out, launch-filter input fix pending) BTO rules from hdb.gov.sg only (new dated YAML), launch data (HDB annexes, approval per download), BTO sites geocoded (approximate), `list_bto_projects`,
+- [x] **4b-1** (done 2026-10-21, PR #39; launch-filter input fix in #43) BTO rules from hdb.gov.sg only (new dated YAML), launch data (HDB annexes, approval per download), BTO sites geocoded (approximate), `list_bto_projects`,
       `bto_nearby`, BTO rule tools, about 14 eval questions (5 held out); retire `q_refuse_003` and add a replacement decline question.
-- [ ] **4b-2** History: launch price vs resale after MOP for past BTOs, surrounding-area growth, government plans shown as dated facts (URA Master Plan, planned MRT). Feasibility check first.
-- [ ] **4b-3** Illustrative scenario calculator with grants, HDB/bank loan and net proceeds (labelled "illustrative, from past growth, not a forecast"); update the prediction rule in AGENTS.md.
+- [~] **4b-2** History: data and town-level comparison built (2021-2024 launches, FY2008-2024 price ranges, launch vs resale 5-7 years after lease start, PRs #40, #41; `docs/bto-history.md`). Still open: a `bto_history` tool with caveats and its eval questions; surrounding-area growth; government plans as dated facts. The early-resale puzzle (2021/2022 lease starts resold before MOP) is unexplained.
+- [x] **4b-3** (done 2026-10-22, PRs #42, #43; held-out 1/3 at first, still 004/005 failing at the week 5 run) Illustrative scenario calculator with grants, HDB/bank loan and net proceeds (labelled "illustrative, from past growth, not a forecast"); update the prediction rule in AGENTS.md.
 - [ ] BTO sites on the 3D map (with the week 6 UI).
 - **Exit:** BTO eligibility and "what is open near X" questions pass; launch-vs-MOP and scenario answers come only from tool results, with the caveats shown.
 
 ## Week 5: trust features (plan: docs/week5-plan.md)
-- [x] "Is this right?" confirmation before any eligibility tool runs (5-3, branch week5-3: code gate in `confirm.py`, `full`
-      eval condition; offline tests only, `full` vs `agent` eval pending). No separate profile worker (graph deferred).
+- [x] "Is this right?" confirmation before any eligibility tool runs (5-3, PR #46: code gate in `confirm.py`, `full` eval
+      condition). Dev, 9B: agent 91.5% number, full 85.1% (mostly run-to-run variance); both verdict 100%, refusal 100%. No separate profile worker (graph deferred).
 - [x] `grounding.py` number check, with one rewrite then an honest "I can't answer reliably" (5-1, branch week5-1;
       dev eval 9B: grounding 100%, number 93.6%, verdict 78.6% -> 57.1% from memory thresholds).
 - [x] 5-2: tools return the rule values and counts answers quote. Dev verdict 78.6% -> 57.1% (5-1) -> 100% (5-2), grounding 100%;
-      5-2 was designed from the dev failures, so held-out is still due. The review made the check stricter; dev re-run pending.
+      Merged in PR #45. Held-out run (30, once): 24/30; the six misses are listed in `docs/eval-results.md` (not re-tuned on).
 - [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
 - [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
-- [ ] Refusal handling for out-of-scope questions.
-- **Exit:** grounding 100% on the eval; full condition beats single agent.
+- [ ] Refusal handling for out-of-scope questions (dev refusal 100%; q_refuse_008 balanced-answer and q_refuse_005 held-out gaps noted).
+- [ ] 5-4: `full` vs single agent on the same questions, repeated runs to measure the spread.
+- **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: `full` is 6 points lower on dev, single runs).
 
 ## Week 6: ship
 - [ ] Langfuse tracing on every run.
