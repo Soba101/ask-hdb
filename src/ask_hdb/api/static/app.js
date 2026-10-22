@@ -81,7 +81,94 @@ function addSource(url, asOf) {
   sources.querySelector("ul").appendChild(li);
 }
 
+// Map: points come from the server (found by code from ids in the tool calls), never from the model's text.
+let maplibregl = null;
+const features = new Map();
+let map = null;
+let mapReady = false;
+const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
+  "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
+
+// The map starts on the first answer that has places to show, so a visitor who never needs it sends nothing to the tile
+// server, and a failure to load the library never stops the chat.
+let mapFailed = false;
+async function ensureMap() {
+  if (map || mapFailed) return;
+  const box = document.getElementById("map");
+  try {
+    const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
+    maplibregl = lib.default || lib;
+    box.hidden = false;
+    document.getElementById("mapnote").hidden = true;
+    startMap();
+  } catch (error) {
+    mapFailed = true;
+    document.getElementById("mapnote").textContent = "The map could not load in this browser. The places are listed below.";
+  }
+}
+
+function startMap() {
+  try {
+    map = new maplibregl.Map({
+      container: "map", center: [103.82, 1.35], zoom: 10.3, attributionControl: { compact: true },
+      style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
+        layers: [{ id: "osm", type: "raster", source: "osm" }] },
+    });
+  } catch (error) {
+    mapFailed = true;
+    map = null;
+    document.getElementById("map").hidden = true;
+    document.getElementById("mapnote").hidden = false;
+    document.getElementById("mapnote").textContent = "The map could not start in this browser. The places are listed below.";
+    return;
+  }
+  map.on("load", () => {
+    map.addSource("pts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "pts", type: "circle", source: "pts", paint: {
+      "circle-color": COLORS, "circle-radius": ["case", ["==", ["get", "role"], "origin"], 9, 6],
+      "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+    map.on("click", "pts", (e) => {
+      const p = e.features[0].properties;
+      const box = document.createElement("div");
+      box.textContent = p.label + (p.note ? " (" + p.note + ")" : "");
+      new maplibregl.Popup({ closeButton: false }).setLngLat(e.features[0].geometry.coordinates).setDOMContent(box).addTo(map);
+    });
+    map.on("mouseenter", "pts", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "pts", () => { map.getCanvas().style.cursor = ""; });
+    mapReady = true;
+    drawPoints();
+  });
+}
+
+function drawPoints() {
+  const list = document.getElementById("points");
+  list.replaceChildren();
+  for (const p of features.values()) {
+    const li = document.createElement("li");
+    li.textContent = (p.role === "origin" ? "Asked about: " : "") + p.label + (p.note ? " (" + p.note + ")" : "");
+    list.appendChild(li);
+  }
+  if (!mapReady) return;
+  map.getSource("pts").setData({ type: "FeatureCollection", features: [...features.values()].map((p) => ({
+    type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+    properties: { kind: p.kind, role: p.role, label: p.label, note: p.note || "" } })) });
+  if (features.size) {
+    const bounds = new maplibregl.LngLatBounds();
+    features.forEach((p) => bounds.extend([p.lng, p.lat]));
+    map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+  }
+}
+
+async function addPoints(points) {
+  points.forEach((p) => { if (!features.has(p.id)) features.set(p.id, p); });
+  drawPoints();
+  await ensureMap(); // drawPoints runs again from the map's load event once the map exists
+}
+
 function clearEvidence() {
+  features.clear();
+  drawPoints();
   tools.replaceChildren();
   sources.replaceChildren();
   seen.clear();
@@ -133,6 +220,7 @@ async function ask(question) {
     for await (const event of events(response)) {
       if (event.type === "tool_call") cards.push(addTool(event));
       else if (event.type === "tool_result") addResult(cards[cards.length - 1] || addTool(event), event);
+      else if (event.type === "points") await addPoints(event.points);
       else if (event.type === "error") throw new Error(event.message);
       else if (event.type === "answer") { answered = true; show(question, event); }
     }

@@ -17,6 +17,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
 from ask_hdb import agent
+from ask_hdb.api.points import map_points
 
 NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "
           "check anything you act on with HDB.")
@@ -110,7 +111,8 @@ def create_app():
         response.headers.setdefault("Cache-Control", "no-cache")  # a redeploy must not run an old app.js
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            "default-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://tile.openstreetmap.org; "
+            "frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         return response
 
     # Mounted last so the API routes win; the page and its script are plain files.
@@ -132,7 +134,14 @@ def work(question, history, limits, events, left):
         if event["type"] == "usage":
             spent = event["tokens"]
         else:
-            events.put(event)
+            events.put({k: v for k, v in event.items() if k != "args"} if event["type"] == "tool_result" else event)
+            if event["type"] == "tool_result":
+                try:
+                    points = map_points(event["args"], event["result"])
+                except Exception:  # noqa: BLE001 - a missing map point must never break an answer
+                    points = []
+                if points:
+                    events.put({"type": "points", "points": points})
 
     try:
         result = agent.ask(question, history, confirm=True, on_event=on_event)
