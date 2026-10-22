@@ -64,3 +64,29 @@ def bto_nearby(project_id, kind, n=3):
         raise ValueError(f"No site coordinates for {project_id} (OneMap does not list it yet)")
     return {"project": site["name"], "places": nearest_to_point(site.lat, site.lng, load_places(), kind, n),
             "note": "Straight-line distance from an approximate site (a BTO site has no block number)."}
+
+
+HISTORY_LIMITS = [
+    "Descriptive only, not a forecast: past launches compared with later resale, never an expected gain.",
+    "Resale prices include the 2021-2023 price rise; ratios and gaps between cohorts are not stable.",
+    "Launch ranges are before grants; resale prices are what buyers paid. Neither includes loan interest, CPF accrued interest, fees or renovation.",
+    "Town and flat type only (no project, floor or lease detail). Only 9 non-mature towns have enough sales.",
+    "Comparable resale = same town and flat type, lease start 3 to 5 years after the launch financial year, sold 5 to 7 years after lease start (approximate).",
+]
+
+
+@lru_cache(maxsize=1)
+def load_history():
+    return pd.read_parquet(CLEAN / "bto_launch_vs_resale_town.parquet")
+
+
+def bto_history(town, flat_type, financial_year=None):
+    """Past BTO launch price ranges next to resale prices of comparable flats 5-7 years after lease start."""
+    rows = load_history()
+    rows = rows[rows.town.str.upper().eq(town.upper()) & rows.flat_type.eq(flat_type.upper().replace("-", " "))]
+    if financial_year is not None:
+        rows = rows[rows.financial_year.eq(financial_year)]
+    cols = ["financial_year", "launch_low", "launch_high", "n_resales", "resale_median", "resale_p25", "resale_p75"]
+    out = rows.sort_values("financial_year")[cols].to_dict("records")
+    return {"town": town.upper(), "flat_type": flat_type, "n_rows": len(out), "rows": out, "limits": HISTORY_LIMITS,
+            "coverage": "launch financial years 2008-2018; towns: " + ", ".join(sorted(load_history().town.unique()))}
