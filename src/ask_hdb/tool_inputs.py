@@ -158,6 +158,17 @@ class BtoListArgs(Arguments):
     limit: Annotated[int, Field(ge=1, le=20)] = 10
 
 
+class BtoHistoryArgs(Arguments):
+    town: str = Field(description="Town name such as PUNGGOL")
+    flat_type: Literal["2-room", "3-room", "4-room", "5-room"] = Field(description="Flat type")
+    financial_year: int | None = Field(None, description="Launch financial year such as 2013; leave out for all years", ge=2008, le=2018)
+
+
+class RailPlansArgs(Arguments):
+    empty_means_none: ClassVar[bool] = True
+    area: str | None = Field(None, description="Area or line name such as Punggol or Cross Island; leave out to list every planned line")
+
+
 class BtoNearbyArgs(Arguments):
     project_id: str = Field(description="BTO project id such as bto_tampines-nova")
     kind: PlaceKind

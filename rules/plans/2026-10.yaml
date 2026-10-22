@@ -1,0 +1,16 @@
+# Planned rail lines as dated facts. Every entry is copied from the LTA factsheet in `source` (published 2026-03-04, read 2026-10-22).
+# Timings are LTA targets as written there and can change. Areas are only what the factsheet states; no price effect is implied.
+source: https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/3/news-releases/next-phase-of-rail-development.html
+as_of: 2026-03-04
+lines:
+  - {name: Circle Line 6 (CCL6, CCL), scope: Three new stations between HarbourFront and Marina Bay, timing: middle of 2026, areas: HarbourFront to Marina Bay}
+  - {name: Downtown Line (DTL) 3 extension (DTL3e) and Thomson-East Coast Line (TEL) Stage 5 (TEL5), scope: New stations opening with both extensions (count not separated in the factsheet text we read), timing: second half of 2026, areas: not stated}
+  - {name: Jurong Region Line (JRL) Stage 1, scope: Part of a line with 25 stations in total, timing: around mid-2028 (previously end-2027), areas: not stated, stations_total: 25}
+  - {name: Jurong Region Line (JRL) station JS2A, scope: New station between JS2 and JS3, timing: mid-2030s, areas: Tengah}
+  - {name: Cross Island Line (CRL) Phase 1, scope: CR2 Aviation Park to CR13 Bright Hill, timing: 2030, areas: Aviation Park to Bright Hill, year: 2030}
+  - {name: Cross Island Line (CRL) Phase 2, scope: Extends Phase 1 westwards, timing: 2032, areas: Jurong Lake District, year: 2032}
+  - {name: Cross Island Line (CRL) Punggol Extension (CPE), scope: Stations under design and construction, timing: 2032, areas: Punggol, year: 2032}
+  - {name: Cross Island Line (CRL) Phase 3, scope: Extends Phase 2 westwards, timing: construction starts 2027, completion late 2030s, areas: Jurong Industrial Estate and Taman Jurong}
+  - {name: Seletar Line, scope: Engineering studies begin 2026, timing: no opening date, areas: Sengkang West and Serangoon North}
+  - {name: Tengah Line, scope: Engineering studies begin 2026, timing: no opening date, areas: Tengah}
+  - {name: Jurong Region Line (JRL) West Coast Extension, scope: First phase JE7 to CR18 West Coast (working name), studies begin 2026, timing: no opening date, areas: West Coast}
