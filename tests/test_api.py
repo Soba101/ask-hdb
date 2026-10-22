@@ -118,3 +118,10 @@ def test_idle_visitors_are_forgotten():
     limits.allow("a", now=0)
     limits.allow("b", now=100)
     assert "a" not in limits.hits
+
+
+def test_the_page_is_served_and_the_api_still_wins(client):
+    page = client.get("/")
+    assert page.status_code == 200 and "Ask HDB" in page.text and "app.js" in page.text
+    assert client.get("/app.js").status_code == 200 and client.get("/health").json() == {"status": "ok"}
+    assert "innerHTML" not in client.get("/app.js").text  # model and tool text is never inserted as HTML

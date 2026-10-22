@@ -5,12 +5,14 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
@@ -102,6 +104,8 @@ def create_app():
         return StreamingResponse(stream(events, left), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store"})
 
+    # Mounted last so the API routes win; the page and its script are plain files.
+    app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="static")
     return app
 
 
