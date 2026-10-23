@@ -27,6 +27,7 @@ class MapStub {
   addSource(k, v) { this.sources[k] = v; }
   addLayer(v) { this.layers[v.id] = v; }
   setPaintProperty(k, prop, v) { this.layers[k].paint[prop] = v; }
+  setFilter(k, f) { (this.layers[k] ||= { layout: {} }).filter = f; }
   setLayoutProperty(k, prop, v) { (this.layers[k] ||= { layout: {} }).layout[prop] = v; }
   setFeatureState({ id }, v) { this.states[id] = { ...this.states[id], ...v }; }
   setLight(v) { this.light = { ...this.light, ...v }; }
@@ -53,7 +54,7 @@ const map = new MapStub(), controller = initBuildings(map);
 controller.setMetrics("price", { blk_a: [400000, 5, 80] }, ["get", "price"]);
 await get("toggle-3d").onclick();
 assert.equal(map.pitch, 60);
-assert.equal(map.layers.blocks.layout.visibility, "none");
+assert.ok(map.layers.blocks.filter, "blocks with an outline are hidden, others stay as points");
 assert.equal(map.layers.buildings.layout.visibility, "visible");
 assert.equal(map.layers.buildings.paint["fill-extrusion-height"][1], "height_m");
 assert.equal(map.states.blk_a.price, 400000);
@@ -65,7 +66,7 @@ const az = sun.azimuth * Math.PI / 180, alt = sun.altitude * Math.PI / 180;
 const expected = [1.15 * Math.cos(alt) * Math.sin(az), -1.15 * Math.cos(alt) * Math.cos(az), 1.15 * Math.sin(alt)];
 vector.forEach((v, i) => assert.ok(Math.abs(v - expected[i]) < 1e-10));
 assert.equal(get("sun-date").value, fixture.sun.date);
-assert.ok(map.states.blk_a.exposure > 0);
+assert.ok(!map.states.blk_a.exposure, "exposure is only computed in Type mode");
 assert.deepEqual(map.layers.buildings.paint["fill-extrusion-color"], ["coalesce", ["feature-state", "price"], 0]);
 controller.setMetrics("lease", { blk_a: [400000, 5, 80] }, ["get", "lease"]);
 assert.equal(map.states.blk_a.lease, 80);
@@ -80,7 +81,7 @@ assert.equal(map.pitch, 0);
 assert.equal(map.light.anchor, "viewport");
 assert.equal(map.light.intensity, .4);
 assert.deepEqual(map.light.position, [1.15, 210, 30]);
-assert.equal(map.layers.blocks.layout.visibility, "visible");
+assert.equal(map.layers.blocks.filter, null);
 assert.equal(map.layers.buildings.layout.visibility, "none");
 assert.equal(get("sun-panel").hidden, true);
 

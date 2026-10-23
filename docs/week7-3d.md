@@ -47,7 +47,9 @@ so size, type and condition can explain differences. Wider recorded bands are om
 rather than assigned to invented floors. These are historical summaries, not unit-level
 valuations or forecasts.
 
-`/map/buildings` is cached and gzip-compressed like `/map/features`. A missing file returns
+**Coverage.** 9,202 of the 9,496 blocks (97%) have a building, and 9,202 of the 13,436 outlines (68%) are used; the rest are probably not residential blocks (not checked). The outline file is from around 2013, so newer blocks may lack one. Blocks without an outline stay as points in 3D, with no height or facing.
+
+`/map/buildings` is compressed once and kept in memory (compressing per request blocked the server for seconds). A missing file returns
 a clear error; ordinary block cards still work without building metadata. The CSP is unchanged,
 and page additions render data with text nodes. Agent, tool, prompt, grounding and eval
 behaviour are unchanged; no model eval is required for this map addition.

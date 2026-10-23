@@ -85,7 +85,10 @@ def main():
         pd.read_csv(ROOT / "data/raw/property/hdb_property_information.csv", dtype={"blk_no": str}),
         pd.read_parquet(clean / "resale.parquet"))
     path = clean / "buildings.geojson"
-    path.write_text(json.dumps(result, separators=(",", ":"), allow_nan=False))
+    # Write then rename, so an interrupted run never leaves a half-written file.
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(result, separators=(",", ":"), allow_nan=False))
+    tmp.replace(path)
     print(json.dumps({**report, "output_bytes": path.stat().st_size}, indent=2))
 
 

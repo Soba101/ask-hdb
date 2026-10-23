@@ -3,7 +3,9 @@
 The image is the same one you would deploy; locally it stands in for the host.
 
 ```bash
-docker compose up --build        # http://localhost:8000
+docker compose up --build        # http://localhost:8000 (this machine only)
+# To share on your home network only, put BIND_ADDR=<this machine's LAN address> in .env.
+# The app has no login: anyone on that network can use it (and spend its model quota).
 ```
 
 - **Model:** reached over the network, never inside the container. By default the Ollama on your machine

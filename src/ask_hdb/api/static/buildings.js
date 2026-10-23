@@ -13,7 +13,7 @@ export function wallExposure(az, alt, bearing) {
 export function initBuildings(map) {
   const toggle = $("toggle-3d"), panel = $("sun-panel"), date = $("sun-date"), slider = $("sun-time");
   let enabled = false, outlines = null, samples = [], dayRequest = 0;
-  let mode = "type", rows = {}, color = SUN_COLOR, oldLight = null, oldPitch = 0;
+  let mode = "type", written = null, rows = {}, color = SUN_COLOR, oldLight = null, oldPitch = 0;
   let frame = null;
 
   function paint() {
@@ -33,7 +33,7 @@ export function initBuildings(map) {
     // MapLibre's spherical conversion adds 90 degrees, with tile Y pointing south.
     // Offset the compass bearing by 180; polar angle is measured down from the zenith.
     map.setLight({ anchor: "map", position: [1.15, (sun.azimuth + 180) % 360, 90 - sun.altitude], intensity: sun.altitude > 0 ? 0.5 : 0 });
-    if (outlines) for (const f of outlines.features) {
+    if (outlines && mode === "type") for (const f of outlines.features) {
       const exposure = Math.max(...f.properties.facing.map((b) => wallExposure(sun.azimuth, sun.altitude, b)));
       map.setFeatureState({ source: "buildings", id: f.id }, { exposure });
     }
@@ -70,10 +70,12 @@ export function initBuildings(map) {
         ? ["coalesce", ["feature-state", node[1]], node[1] === "price" ? 0 : -1]
         : node.map(stateExpression) : node;
     color = stateExpression(expression);
-    if (outlines) for (const f of outlines.features) {
+    if (outlines && rows !== written) for (const f of outlines.features) {
       const row = rows[f.id];
       map.setFeatureState({ source: "buildings", id: f.id }, { price: row && row[0] ? row[0] : 0, lease: row ? row[2] : -1 });
     }
+    if (outlines) written = rows;
+    if (nextMode === "type" && enabled) updateTime();
     paint();
   }
 
@@ -100,7 +102,8 @@ export function initBuildings(map) {
       toggle.classList.toggle("on", enabled);
       toggle.setAttribute("aria-pressed", String(enabled));
       map.setLayoutProperty("buildings", "visibility", enabled ? "visible" : "none");
-      map.setLayoutProperty("blocks", "visibility", enabled ? "none" : "visible");
+      // Blocks without an outline stay as points, so nothing disappears from the budget view.
+      map.setFilter("blocks", enabled ? ["!", ["in", ["get", "id"], ["literal", outlines.features.map((f) => f.id)]]] : null);
       if (enabled) {
         // getLight can omit defaults; setLight({}) would leave our sun light in place.
         oldLight = { anchor: "viewport", position: [1.15, 210, 30], color: "#ffffff", intensity: 0.5, ...map.getLight() };

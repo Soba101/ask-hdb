@@ -1,5 +1,6 @@
 """Offline building data, historical storey medians and illustrative solar geometry."""
 
+import gzip
 import json
 import re
 from datetime import date as Date
@@ -8,8 +9,8 @@ from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import Response
 
 from ask_hdb import sun
 from ask_hdb.geo.loaders import ROOT
@@ -25,6 +26,17 @@ def features():
 
 
 @lru_cache(maxsize=1)
+def raw():
+    return PATH.read_bytes()
+
+
+@lru_cache(maxsize=1)
+def zipped():
+    # Compressed once: doing it per request would stall the event loop for seconds.
+    return gzip.compress(raw(), 6)
+
+
+@lru_cache(maxsize=1)
 def index():
     return {f["properties"]["block_id"]: f["properties"] for f in features()["features"]}
 
@@ -32,7 +44,7 @@ def index():
 def metadata(key):
     try:
         return index().get(key, {})
-    except FileNotFoundError:
+    except (FileNotFoundError, ValueError):  # missing or half-written file
         return {}  # old deployments still have usable block cards
 
 
@@ -75,9 +87,12 @@ def parse_date(value):
 
 
 @router.get("/map/buildings")
-def map_buildings():
+def map_buildings(request: Request):
+    headers = {"Cache-Control": "public, max-age=3600", "Vary": "Accept-Encoding"}
     try:
-        return JSONResponse(features(), headers={"Cache-Control": "public, max-age=3600"})
+        if "gzip" in request.headers.get("accept-encoding", ""):
+            return Response(zipped(), media_type="application/json", headers={**headers, "Content-Encoding": "gzip"})
+        return Response(raw(), media_type="application/json", headers=headers)
     except FileNotFoundError:
         raise HTTPException(404, "Building outlines are unavailable; run scripts/build_buildings.py.") from None
 
