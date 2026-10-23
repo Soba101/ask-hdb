@@ -17,7 +17,12 @@ const schoolData = { schools: [{ id: "school_a", label: "A <script>School</scrip
   limits: ["Approximate bands; not MOE's measurement. Being nearby does not guarantee a place."] };
 const sun = { date: "2026-03-20", facades: [{ label: "East", hours: 6, peak_time: "09:00" }], limits: "No shade from blocks or clouds." };
 let metric = { flat: "4 ROOM", data: { blocks: { blk_a: [405000, 8, 53] }, window_months: 24,
-  limits: ["Recorded resales; size and condition differ.", "Remaining lease rounded down."], as_of: "2026-10" } };
+  limits: ["Recorded resales; size and condition differ.", "Remaining lease rounded down."],
+  source: "https://example.test/metrics", as_of: "2026-10" } };
+let blockScans = 0;
+metric.data.blocks = new Proxy(metric.data.blocks, {
+  ownKeys(target) { blockScans++; return Reflect.ownKeys(target); },
+});
 let pendingSchool, pendingCard, pendingSun;
 const calls = [];
 globalThis.fetch = async (url) => {
@@ -45,6 +50,22 @@ assert.ok(!get("card").getAttribute("aria-live"));
 assert.equal(get("card-summary").getAttribute("aria-live"), "polite");
 assert.equal(all(get("card")).filter((e) => e.getAttribute("aria-live")).length, 1);
 assert.equal(all(get("card")).filter((e) => ["img", "script"].includes(e.tagName)).length, 0);
+assert.equal(blockScans, 0, "metadata reads top-level provenance without scanning metrics rows");
+assert.ok(get("metrics-limits").textContent.includes(metric.data.source));
+assert.ok(get("metrics-limits").textContent.includes(metric.data.as_of));
+const stableMetrics = () => {
+  const ids = ["card-facts", "metric-prices", "metric-lease", "metrics-limits"];
+  const original = ids.map((id) => get(id).replaceChildren);
+  let writes = 0;
+  ids.forEach((id, i) => {
+    get(id).replaceChildren = function (...nodes) { writes++; return original[i].apply(this, nodes); };
+  });
+  // applyLayer refreshes before and after using cached data on each budget tick.
+  for (let tick = 0; tick < 5; tick++) { card.refreshMetrics(); card.refreshMetrics(); }
+  ids.forEach((id, i) => { get(id).replaceChildren = original[i]; });
+  assert.equal(writes, 0, "unchanged metrics must not mutate the summary or disclosures");
+};
+stableMetrics();
 await chip("Prices").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, false);
 await chip("Lease").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, true);
 await chip("Lease").onclick(); assert.equal(openCount(), 0);
@@ -73,6 +94,15 @@ metric.data = { blocks: { blk_a: [null, 2, 0] }, window_months: 24, limits: [] }
 assert.match(get("card-facts").textContent, /about 0 years/);
 assert.ok(!get("card-facts").textContent.includes("median"));
 assert.match(get("metric-prices").textContent, /too few for a median/);
+stableMetrics();
+const sameData = metric.data;
+metric = { flat: "3 ROOM", data: sameData }; card.refreshMetrics();
+assert.match(get("metric-prices").textContent, /3 ROOM: 2 sale/);
+stableMetrics();
+metric.data = { ...sameData, blocks: { blk_a: [410000, 9, 54] } }; card.refreshMetrics();
+assert.match(get("card-facts").textContent, /410,000/);
+assert.match(get("card-facts").textContent, /54 years/);
+stableMetrics();
 // First-open school requests for non-block cards stay lazy and discard late results.
 pendingSchool = deferred();
 await card.select({ ...point, kind: "mrt", id: "mrt_a" });
@@ -101,5 +131,6 @@ for (const kind of ["bto", "mrt", "lrt", "primary_school"]) {
   assert.equal(headlines.length, 2);
   facts.slice(0, 2).forEach((fact, i) => assert.ok(headlines[i].textContent.startsWith(fact)));
   for (const fact of facts) assert.ok(text().includes(fact));
+  stableMetrics();
 }
 console.log("Card disclosures, lazy loads, stale responses, literal text, figures and limits passed.");

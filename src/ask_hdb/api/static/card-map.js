@@ -14,7 +14,12 @@ function circle(lat, lng, km) {
 export function initCardMap(mapLayer) {
   let selected = null, radiusKm = 0, radiusChosen = false, schoolRings = false;
   let revision = 0, radiusRequest = 0, counts = null;
+  let schoolSelection = 0, schoolRevision = 0, schoolData = null;
   const buttons = document.querySelectorAll(".radius button");
+  function showSchools() {
+    schoolRings = true; // 1 km solid ring, 2 km dashed ring; schools are ringed by band.
+    mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolData.map((s) => ({ ...s, role: "result" }))]);
+  }
   function drawRadius(fit) {
     buttons.forEach((b) => {
       const on = !schoolRings && Number(b.dataset.km) === radiusKm;
@@ -55,7 +60,9 @@ export function initCardMap(mapLayer) {
     b.onclick = () => {
       revision++; clearCounts();
       if (schoolRings) mapLayer.highlight([]);
-      schoolRings = false; radiusChosen = true; radiusKm = Number(b.dataset.km);
+      schoolRings = false; radiusKm = Number(b.dataset.km); radiusChosen = radiusKm !== 0;
+      schoolRevision = revision; // Off also allows a pending school response to restore the defaults.
+      if (!radiusChosen && selected?.kind === "block" && schoolData) showSchools();
       drawRadius(true);
       return nearby();
     };
@@ -67,18 +74,23 @@ export function initCardMap(mapLayer) {
       revision++; clearCounts();
       if (schoolRings) mapLayer.highlight([]); // the school highlights belong to the old place
       selected = point; schoolRings = false;
+      schoolSelection = schoolRevision = revision; schoolData = null;
       drawRadius(false);
       return revision;
     },
     schools(point, schools, stamp) {
-      if (stamp !== revision || selected !== point || radiusChosen) return;
-      schoolRings = true; // 1 km solid ring, 2 km dashed ring; schools are ringed by band.
-      mapLayer.highlight([{ ...point, role: "origin" }, ...schools.map((s) => ({ ...s, role: "result" }))]);
+      if (stamp !== schoolSelection || selected !== point) return;
+      schoolData = schools; // Keep this selection's response so Off can restore it without a fetch.
+      if (schoolRevision !== revision || radiusChosen) return;
+      showSchools();
       drawRadius(false); // Selection never changes the viewport.
     },
     chatHighlight() {
-      revision++; clearCounts(); schoolRings = false;
-      mapLayer.ring([], false); // A late school response cannot overwrite a chat answer.
+      revision++; // A late school response cannot overwrite a chat answer.
+      if (schoolRings) {
+        schoolRings = false;
+        drawRadius(false); // Keep the chip state in step with the removed default rings.
+      }
     },
   };
 }

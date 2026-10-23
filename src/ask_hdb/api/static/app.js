@@ -252,7 +252,7 @@ async function applyLayer() {
   $("price-controls").hidden = layerMode !== "price";
   $("lease-controls").hidden = layerMode !== "lease";
   $("layer-note").textContent = "";
-  if (layerMode === "type") { mapLayer.layer("type", null, 0); card.refreshMetrics(); return; }
+  if (layerMode === "type") { mapLayer.layer("type", null, 0); return; }
   const flat = layerMode === "price" ? $("flat-type").value : "4 ROOM"; // lease does not depend on the flat type
   try {
     if (!metricsCache[flat]) {

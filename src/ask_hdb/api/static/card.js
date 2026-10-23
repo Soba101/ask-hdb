@@ -19,11 +19,10 @@ function headline(text, source) {
   note.textContent = source; li.appendChild(note);
 }
 function metadata(id, data) {
-  // Keep provenance supplied by an endpoint, including any future nested sources.
+  // Endpoint provenance lives at the top level; do not scan every block's metrics row.
   if (!data || typeof data !== "object") return;
   if (typeof data.source === "string") line(id, "Source: " + data.source);
   if (data.as_of) line(id, "As of " + data.as_of);
-  Object.values(data).forEach((value) => { if (typeof value === "object") metadata(id, value); });
 }
 async function get(path) {
   const response = await fetch(path);
@@ -34,9 +33,13 @@ async function get(path) {
 export function initCard({ mapLayer, metrics, ask }) {
   const map = initCardMap(mapLayer);
   let cardRequest = 0, current = null, facts = null;
-  let sectionRequest = 0;
+  let sectionRequest = 0, renderedMetrics = null;
   function refreshMetrics() {
     if (!current || !facts) return;
+    const { flat, data } = metrics();
+    if (renderedMetrics?.flat === flat && renderedMetrics.data === data) return;
+    // Budget and map-layer changes reuse these facts. Leave the live summary untouched.
+    renderedMetrics = { flat, data };
     $("card-facts").replaceChildren();
     $("metrics-limits").replaceChildren();
     $("metric-prices").replaceChildren(); $("metric-lease").replaceChildren();
@@ -45,7 +48,7 @@ export function initCard({ mapLayer, metrics, ask }) {
       facts.facts.slice(0, 2).forEach((fact) => headline(fact, source));
       return;
     }
-    const { flat, data } = metrics(), row = data?.blocks[current.id];
+    const row = data?.blocks[current.id];
     if (row) {
       if (row[0] != null) {
         const price = flat + " median, last " + data.window_months + " months: $" + Math.round(row[0]).toLocaleString("en-SG") + " from " + row[1] + " sales";
@@ -95,6 +98,7 @@ export function initCard({ mapLayer, metrics, ask }) {
   }
   function reset() {
     cardRequest++; sectionRequest++; clearBuildingCard(); current = null; facts = null;
+    renderedMetrics = null; // A new selection needs its own summary even with cached metrics.
     for (const id of ["card-facts", "card-actions", "card-limits", "card-sections", "price-facts", "lease-facts",
       "nearby-facts", "metric-prices", "metric-lease", "metrics-limits", "schools-list", "schools-limits"]) $(id).replaceChildren();
     SECTIONS.forEach(([, id]) => { $(id).hidden = true; });
