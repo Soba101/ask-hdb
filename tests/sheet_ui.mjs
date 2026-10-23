@@ -98,8 +98,10 @@ globalThis.fetch = async (url) => {
 };
 const card = initCard({ mapLayer: map, metrics: () => ({ flat: "4 ROOM", data: null }), ask() {},
   onSelect: sheet.select, onSection: sheet.section });
+content.scrollTop = 530; // the chat log left the sheet scrolled down
 await card.select(point);
 assert.equal(state(), "peek"); assert.equal(get("peek-hint").hidden, true);
+assert.equal(content.scrollTop, 0, "a selected place opens at its summary");
 assert.equal(get("card-summary").hidden, false);
 assert.equal(document.activeElement, get("question"));
 assert.ok(map.fits.every((fit) => !fit)); assert.equal(map.flies.length, 0);
