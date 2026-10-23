@@ -3,8 +3,24 @@
 An agent that helps you find HDB resale flats you are **eligible for**, can **afford**,
 and that are **near what matters to you** (MRT, schools, parents).
 
-> Status: Data tools, rules, agent and offline evaluation are built. The eval baseline
-> is run (agent clearly beats LLM-only; grounding is the open gap). See [docs/roadmap.md](docs/roadmap.md).
+> Status (2026-10-23): data tools, rules, the grounded agent, an eval bank (124 questions) and a map-first web app are built and run locally
+> on a 9B model. Not deployed. See [docs/roadmap.md](docs/roadmap.md) and [docs/week6-plan.md](docs/week6-plan.md).
+
+## The app
+
+A map of every HDB block, MRT/LRT station, primary school and BTO site, with a chat beside it. Click a place and the chat knows what
+"this block" means; ask, and the answer shows its tool results, sources and the places on the map.
+
+| Answers shown on the map | Primary schools within 2 km (1 km and 2 km rings) |
+|---|---|
+| ![A question about nearest MRT stations to a BTO project, with the stations on the map](docs/img/answer-on-map.jpg) | ![Schools ringed by distance band around a station](docs/img/school-rings.jpg) |
+
+| Price layer (median for a flat type, budget slider) | Lease layer (years left) |
+|---|---|
+| ![Blocks coloured by median resale price](docs/img/price-layer.jpg) | ![Blocks coloured by remaining lease](docs/img/lease-layer.jpg) |
+
+Run it: `LLM_TIMEOUT=420 uv run ask-hdb serve` then open http://localhost:8000, or `docker compose up --build` ([docs/docker.md](docs/docker.md)).
+Prices and lease colours are descriptive only (not a valuation or a forecast). School distances are straight-line; MOE measures its own.
 
 ## The problem
 
@@ -26,7 +42,7 @@ eligibility verdict is correct and traceable**, while still feeling like a helpf
 - The LLM only asks follow-up questions, picks which tools to call, and explains results.
 - Every number in an answer must come from a tool result. A checker enforces this.
 
-## What it will do (v1)
+## What it does
 
 ```
 You:   We're a married couple, both citizens, earning $8,500 a month together.
@@ -69,31 +85,39 @@ Use `--only price --verbose --limit 2` for a small run. Held-out questions run o
 `--heldout`. Reports resume explicitly; existing completed results and errors are retained.
 See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results.md).
 
-| Condition | Number accuracy | Verdict accuracy | Refusal accuracy | Grounding |
-|---|---|---|---|---|
-| LLM-only | 0.0% | 10.0% | 0.0% | 0.0% |
-| Single agent | 100.0% | 90.0% | 100.0% | 76.5% |
+The first four rows are the 72-question dev set (2026-10-22/23, two runs each so the spread is visible); the bank has since grown to 85 dev questions. One 9B local model (qwen3.5-9b-16k on a MacBook):
 
-Dev set (40 questions per condition, tuned on), one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-20. After four fix rounds the agent passes 39 of 40; 9 of 10 held-out questions pass. Every round, including a regression, is in the results doc.
+| Condition | Number | Verdict | Refusal | Grounding |
+|---|---|---|---|---|
+| LLM-only (week 3, 40 questions) | 0.0% | 10.0% | 0.0% | 0.0% |
+| Single agent, run A | 94.1% | 100% | 85.7% | 100% |
+| Single agent, run B | 96.1% | 92.9% | 85.7% | 100% |
+| Agent plus "Is this right?" profile confirmation, run A | 94.1% | 100% | 85.7% | 100% |
+| Agent plus "Is this right?" profile confirmation, run B | 94.1% | 92.9% | 100% | 100% |
+
+After the map questions were added, the map (9/9), distance (5/5) and refusal (11/11 after a scorer wording fix) kinds were re-run, not the whole set. The confirmation step is a safety feature, not an accuracy gain. Every round, regression and fix is in
+[docs/eval-results.md](docs/eval-results.md). The 30 held-out questions that existed in week 5 were run once (24 of 30) and not tuned on; 38 are held out now.
 
 ## Stack (each picked to match current AI engineer job descriptions)
 
 | Part | Choice |
 |---|---|
 | Language | Python, `uv`, `pytest`, `ruff` |
-| Agent | LangGraph (supervisor + tool-using workers) |
+| Agent | LangGraph ReAct agent with 18 code tools (a supervisor graph is deferred) |
 | Tools | Our own MCP server (resale search, price stats, eligibility, distances) |
 | Model | Local model via llama-server (OpenAI-compatible). Swappable for a cloud model |
-| RAG | pgvector over HDB policy pages, used only to *explain* rules |
+| RAG | not built (deferred) |
 | Data | data.gov.sg resale prices, OneMap (geocoding, MRT, schools) |
-| Tracing | Langfuse |
-| UI | FastAPI + web front end (MapLibre 3D map) |
-| Deploy | Docker Compose on one small cloud VM |
+| Tracing | Optional Langfuse (`uv sync --extra tracing`), off unless keys are set, text redacted by default |
+| UI | FastAPI + plain-JS page, MapLibre 2D map (3D not built) |
+| Deploy | Docker image and compose file, run locally as simulated hosting; no public host yet |
 
 ## Docs
 
 - [docs/proposal.md](docs/proposal.md): the plan, decisions, scope and risks.
 - [docs/architecture.md](docs/architecture.md): how the parts fit together.
+- [docs/week6-plan.md](docs/week6-plan.md): the web app plan, re-scope and status.
+- [docs/docker.md](docs/docker.md): running the image.
 - [docs/eval.md](docs/eval.md): how we measure "correct".
 - [docs/roadmap.md](docs/roadmap.md): weeks, tasks and exit checks.
 - [docs/research.md](docs/research.md): what we found before starting, with sources.

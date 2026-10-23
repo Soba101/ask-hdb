@@ -11,7 +11,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
 
 from ask_hdb import confirm as profile_check
-from ask_hdb import grounding
+from ask_hdb import grounding, tracing
 from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
 
@@ -168,7 +168,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
         answer = ""
         # A ReAct round has a model node and a tool node. Calls are capped above.
         for update in graph.stream({"messages": messages},
-                                   {"recursion_limit": MAX_TOOL_CALLS * 2 + 2},
+                                   {"recursion_limit": MAX_TOOL_CALLS * 2 + 2, "callbacks": tracing.callbacks()},
                                    stream_mode="updates"):
             for value in update.values():
                 for message in value.get("messages", []):
