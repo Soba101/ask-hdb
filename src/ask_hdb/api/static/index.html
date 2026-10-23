@@ -32,11 +32,12 @@
         <label>Budget up to <b id="budget-label"></b>
           <input id="budget" type="range" step="10000">
         </label>
-        <div class="ramp"><span>cheaper</span><i></i><span>dearer</span></div>
+        <div class="ramp"><span id="ramp-low">cheaper</span><i></i><span id="ramp-high">dearer</span></div>
+        <p class="small">Colours compare blocks by their median for this flat type (10th to 90th percentile); grey: no median or above your budget.</p>
       </div>
       <div id="lease-controls" hidden>
         <div class="steps"><span class="l1"></span>under 60 yrs <span class="l2"></span>60-75 <span class="l3"></span>75-90 <span class="l4"></span>90+ left</div>
-        <p class="small">Shorter leases can limit CPF use and loans: check HDB's rules for the block you like.</p>
+        <p class="small">Whether a short lease limits CPF use, HDB loans or grants depends on your age and the years left (for example, the lease should cover the youngest buyer to age 95). Check HDB's rules.</p>
       </div>
       <details class="small"><summary>About this layer</summary><p id="layer-note" class="small"></p></details>
     </div>

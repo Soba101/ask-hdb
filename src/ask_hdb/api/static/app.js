@@ -290,6 +290,17 @@ function setSelected(point) {
 $("selected-clear").onclick = () => setSelected(null);
 $("card-close").onclick = () => { $("card").hidden = true; };
 
+function addLayerFacts(point) {
+  const flat = layerMode === "lease" ? "4 ROOM" : $("flat-type").value;
+  const data = layerMode !== "type" ? metricsCache[flat] : null;
+  const row = data && data.blocks[point.id];
+  if (!row) return;
+  const add = (text) => { const li = document.createElement("li"); li.textContent = text; $("card-facts").appendChild(li); };
+  if (layerMode === "price") add(row[0] ? flat + " median, last " + data.window_months + " months: " + fmtMoney(row[0]) + " from " + row[1] + " sales"
+    : flat + ": " + row[1] + " sale(s) in " + data.window_months + " months, too few for a median");
+  add("Remaining lease: about " + row[2] + " years");
+}
+
 let schoolList = [];
 
 async function showSchools(point, mine) {
@@ -348,6 +359,7 @@ async function showCard(point) {
       li.textContent = fact;
       $("card-facts").appendChild(li);
     }
+    if (point.kind === "block") addLayerFacts(point); // the same figures the colours show, so colour is not the only cue
     $("card-limits").textContent = data.limits.join(" ");
   } catch (error) {
     if (mine === cardRequest) $("card-limits").textContent = "No details could be loaded for this place.";
@@ -389,6 +401,7 @@ async function applyLayer() {
     $("layer-note").textContent = "Price and lease data could not be loaded.";
     return;
   }
+  if (layerMode !== "lease" && flat !== $("flat-type").value) return; // the visitor switched flat type while this one loaded
   const data = metricsCache[flat];
   const prices = Object.values(data.blocks).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
   const slider = $("budget");
@@ -400,6 +413,10 @@ async function applyLayer() {
       slider.dataset.flat = flat;
     }
     $("budget-label").textContent = fmtMoney(Number(slider.value));
+    slider.setAttribute("aria-valuetext", fmtMoney(Number(slider.value)));
+    const at = (q) => prices[Math.min(prices.length - 1, Math.floor(prices.length * q))];
+    $("ramp-low").textContent = fmtMoney(at(0.1));
+    $("ramp-high").textContent = fmtMoney(at(0.9));
   }
   mapLayer.layer(layerMode, data, Number(slider.value || 0));
   $("layer-note").textContent = layerMode === "price"
@@ -408,7 +425,7 @@ async function applyLayer() {
 }
 document.querySelectorAll("#layers [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
 $("flat-type").onchange = applyLayer;
-$("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); if (metricsCache[$("flat-type").value]) applyLayer(); };
+$("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); $("budget").setAttribute("aria-valuetext", fmtMoney(Number($("budget").value))); if (metricsCache[$("flat-type").value]) applyLayer(); };
 
 // ---------- map ----------
 // Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
@@ -514,24 +531,28 @@ async function startMap() {
           map.fitBounds(bounds, { padding: 60, duration: 500 });
         }
       };
+      let lastMetrics = null, lastMode = null;
       mapLayer.layer = (mode, metricsData, budget) => {
         // Price and lease colouring of the blocks: values come from /map/metrics (computed by code from the sales data).
         const rows = metricsData ? metricsData.blocks : {};
         for (const f of blockFeatures) {
           const row = rows[f.properties.id];
           f.properties.price = row && row[0] ? row[0] : 0;
-          f.properties.lease = row ? row[2] : 0;
+          f.properties.lease = row ? row[2] : -1; // -1: no lease known, drawn grey
         }
-        map.getSource("blocks").setData({ type: "FeatureCollection", features: blockFeatures });
+        if (lastMetrics !== metricsData || lastMode !== mode) { // a slider move only changes the colour expression
+          map.getSource("blocks").setData({ type: "FeatureCollection", features: blockFeatures });
+          lastMetrics = metricsData; lastMode = mode;
+        }
         let color = COLORS, opacity = 0.6;
         if (mode === "price" && metricsData) {
           const prices = Object.values(rows).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
           const at = (q) => prices[Math.min(prices.length - 1, Math.floor(prices.length * q))] || 1;
           color = ["case", ["==", ["get", "price"], 0], "#b8bdc9", [">", ["get", "price"], budget], "#b8bdc9",
-            ["interpolate", ["linear"], ["get", "price"], at(0.1), "#1a9850", at(0.5), "#fee08b", at(0.9), "#d73027"]];
+            ["interpolate", ["linear"], ["get", "price"], at(0.1), "#fde725", at(0.5), "#21908d", at(0.9), "#440154"]];
           opacity = 0.9;
         } else if (mode === "lease" && metricsData) {
-          color = ["step", ["get", "lease"], "#d73027", 60, "#fc8d59", 75, "#fee08b", 90, "#1a9850"];
+          color = ["case", ["<", ["get", "lease"], 0], "#b8bdc9", ["step", ["get", "lease"], "#440154", 60, "#3b528b", 75, "#21908d", 90, "#fde725"]];
           opacity = 0.9;
         }
         map.setPaintProperty("blocks", "circle-color", color);

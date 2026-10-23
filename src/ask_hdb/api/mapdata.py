@@ -223,7 +223,7 @@ LEASE_YEARS = 99
 def metrics(flat_type):
     """Per block: median resale price of one flat type over the last 24 months (when at least 3 sales) and remaining lease.
 
-    Remaining lease is 99 years from the lease start year to the data's latest year (a whole-year estimate).
+    Remaining lease is the lease left at the block's newest sale, less the months since then, in whole years (rounded down).
     Blocks with fewer sales have no price and are drawn grey. Descriptive only: not a valuation or a forecast.
     """
     if flat_type not in METRIC_FLAT_TYPES:
@@ -232,10 +232,12 @@ def metrics(flat_type):
     latest = sales.sale_month.max()
     recent = sales[(sales.flat_type == flat_type) & (sales.sale_month > latest - pd.DateOffset(months=METRIC_MONTHS))]
     grouped = recent.groupby("block_id").resale_price.agg(["median", "count"])
-    lease_start = sales.sort_values("sale_month").groupby("block_id").lease_commence_year.last()
+    newest = sales.sort_values("sale_month").groupby("block_id").last()
     blocks = {}
-    for block_id, start in lease_start.items():
-        row = [None, 0, int(start) + LEASE_YEARS - int(latest.year)]
+    for block_id, sale in newest.iterrows():
+        # Months left at the data's latest month: the lease left at that block's newest sale, less the months since it.
+        since = (latest.year - sale.sale_month.year) * 12 + latest.month - sale.sale_month.month
+        row = [None, 0, max(0, int(sale.lease_left_months - since) // 12)]
         if block_id in grouped.index:
             row[1] = int(grouped.loc[block_id, "count"])
             if row[1] >= METRIC_MIN_SALES:
@@ -246,4 +248,4 @@ def metrics(flat_type):
             "limits": [(f"Median of the last {METRIC_MONTHS} months of recorded resales (data.gov.sg, to {latest:%Y-%m}) for one flat type, "
                         f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
                        "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
-                       "Remaining lease is a whole-year estimate (99 years from the lease start year)."]}
+                       "Remaining lease is in whole years (rounded down), from the lease left at each block's newest recorded sale."]}
