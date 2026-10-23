@@ -75,7 +75,7 @@ def answer_passes(question, result):
     answer = re.sub(r'[*_`]', '', result['answer'])
     calls = result.get('tool_calls', [])
     if 'number' in expect:
-        text = question['question']
+        text = question['question'] + ' ' + _map_context(question)  # the selection line is part of what the user sent
         given = numbers(_without_question_ids(text, text))
         values = [n for n in numbers(_without_question_ids(result['answer'], text))
                   if not any(_near(n, g) for g in given)]
@@ -109,7 +109,10 @@ def answer_passes(question, result):
                             answer, re.IGNORECASE)
         tool_verdict = any(isinstance(c.get('result'), dict)
                            and isinstance(c['result'].get('eligible'), bool) for c in calls)
-        return (any(_keyword(answer, phrase) for phrase in CLARIFIES)
+        # Picking a place and measuring from it is an answer, not a question.
+        measured = any(c.get('name') in {'nearest_places', 'bto_nearby'} and isinstance(c.get('result'), dict) and 'error' not in c['result']
+                       for c in calls) or re.search(r'\d(?:\.\d+)?\s*km\b', answer)
+        return (any(_keyword(answer, phrase) for phrase in CLARIFIES) and not measured
                 and not verdict and not any(n >= 1000 for n in numbers(result['answer']))
                 and not tool_verdict)
     return not calls and any(_keyword(answer, phrase) for phrase in DECLINES)
@@ -123,6 +126,14 @@ def grounding(question, result):
     total = len(checked['numbers'])
     supported = total - len(checked['ungrounded'])
     return {'supported': supported, 'total': total, 'rate': supported / total if total else 1.0}
+
+
+def _map_context(question):
+    if not question.get('context'):
+        return ''
+    from ask_hdb.api import mapdata
+
+    return mapdata.context_line(mapdata.resolve(question['context'])) or ''
 
 
 def score(question, result):

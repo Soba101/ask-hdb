@@ -206,8 +206,8 @@ def schools_nearby(selection, km=2.0):
                     "band": band, "lat": round(float(row.lat), 5), "lng": round(float(row.lng), 5)})
     return {"km": km, "schools": out, "limits": [
         "Straight-line distances from our coordinates, not MOE's measurement.",
-        ("MOE ranks applicants by distance (within 1 km, then 1 to 2 km, then beyond 2 km) only when a school has more "
-         "applicants than places in the later registration phases, and measures from the school boundary to the home address. "
+        ("When a school has more applicants than places in the later registration phases, MOE ranks them by citizenship and then by distance (within 1 km, then 1 to 2 km, then beyond 2 km), "
+         "measured from the school boundary to the home address, so the bands here are approximate. "
          "A child can apply to any school; being nearby does not guarantee a place. Check MOE's P1 registration page and "
          "OneMap before relying on this."),
         "Borderline: just over 2 km by our point, which may fall within 2 km of the school boundary."]}

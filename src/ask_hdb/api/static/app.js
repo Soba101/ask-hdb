@@ -166,6 +166,7 @@ function showChoices(question, candidates) {
     button.className = "secondary";
     button.textContent = c.label;
     button.onclick = () => {
+      if (send.disabled) return; // a question is running; keep the chips so the choice is not lost
       choices.remove();
       setSelected({ kind: c.kind, id: c.id, label: c.label, lat: c.lat, lng: c.lng });
       mapLayer.fly([c.lng, c.lat, c.lng, c.lat]);
@@ -277,6 +278,7 @@ document.querySelectorAll(".radius button").forEach((b) => {
 });
 
 function setSelected(point) {
+  if (schoolRings) mapLayer.highlight([]); // the school highlights belong to the old place
   selected = point;
   schoolRings = false;
   $("selected").hidden = !point;

@@ -16,7 +16,7 @@ from ask_hdb.geo.streets import normalize_street
 
 MAX_CANDIDATES = 5
 STOP = {"MRT", "LRT", "STATION", "STN", "PRIMARY", "SCHOOL", "THE", "OF", "BTO", "PROJECT"}
-KIND_WORDS = {"MRT": ("mrt", "lrt"), "LRT": ("mrt", "lrt"), "STATION": ("mrt", "lrt"), "STN": ("mrt", "lrt"),
+KIND_WORDS = {"MRT": ("mrt",), "LRT": ("lrt",), "STATION": ("mrt", "lrt"), "STN": ("mrt", "lrt"),
               "PRIMARY": ("primary_school",), "SCHOOL": ("primary_school",)}
 
 
@@ -57,7 +57,9 @@ def _named_candidates(tokens):
         return []
     kinds = {k for w in tokens for k in KIND_WORDS.get(w, ())}
     found, exact = [], []
+    bto_only = "BTO" in tokens or "PROJECT" in tokens  # "Tampines BTO" means a project, never the station or school
     places = load_places()
+    places = places.iloc[0:0] if bto_only else places
     for r in places[places.lat.notna() & places.lng.notna()].itertuples():
         if kinds and r.kind not in kinds:
             continue

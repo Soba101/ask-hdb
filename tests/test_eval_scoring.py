@@ -208,3 +208,14 @@ def test_worked_equation_result_counts_but_first_number_wrong_still_fails():
     assert answer_passes(q, result('638888 - 590000 = 48888'))
     assert not answer_passes(q, result('638888 - 590000 = 50000'))
     assert not answer_passes(q, result('The answer is 50000 (not 48888 = x)'))
+
+
+def test_clarification_fails_when_a_place_was_picked_and_measured():
+    q = question({'clarify': True}, 'refuse')
+    picked = {'name': 'nearest_places', 'result': {'places': [{'km': 0.5}]}}
+    measured = {'answer': 'Please specify if you meant another block.', 'tool_calls': [picked], 'error': None}
+    assert not answer_passes(q, measured)
+    figure = {'answer': 'The nearest MRT is 0.52 km away; please specify if you meant another.', 'tool_calls': [], 'error': None}
+    assert not answer_passes(q, figure)
+    asked = {'answer': 'Which block do you mean? Please specify.', 'tool_calls': [{'name': 'resolve_place', 'result': {'status': 'ambiguous'}}], 'error': None}
+    assert answer_passes(q, asked)

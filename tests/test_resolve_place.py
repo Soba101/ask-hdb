@@ -67,9 +67,12 @@ def test_nearest_places_from_a_station_or_a_bto_site_never_returns_the_origin_it
         filters.nearest_places("mrt_nowhere", "mrt")
 
 
-def test_digits_in_a_code_written_label_are_evidence_but_other_prose_is_not():
+def test_a_label_from_a_tool_result_is_a_name_but_other_numbers_still_need_evidence():
     from ask_hdb import grounding
 
-    result = {"candidates": [{"label": "Blk 227 Bishan St 23", "id": "blk_227_bishan-st-23"}], "note": "See 99 places"}
-    values, _ = grounding.evidence([result])
-    assert {227, 23} <= {int(v) for v in values} and 99 not in {int(v) for v in values}
+    results = [{"candidates": [{"label": "Blk 227 Bishan St 23", "id": "x"}, {"label": "227 Ang Mo Kio Ave 3", "id": "y"}],
+                "n_within": 9, "note": "See 99 places"}]
+    named = grounding.check("Did you mean Blk 227 Bishan St 23 or 227 Ang Mo Kio Ave 3?", "How far from Blk 227?", results)
+    assert named["ungrounded"] == []
+    invented = grounding.check("Blk 227 Bishan St 23 has 23 primary schools nearby.", "q", results)
+    assert invented["ungrounded"] == ["23"]  # the name is left out, the invented count is not
