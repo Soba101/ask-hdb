@@ -1,10 +1,11 @@
 // Plain JS, no build step. The chat history lives only in this page's memory and is sent with each question.
 // The map is the main view: click a block, school, station or BTO site to select it; the chat then knows what
 // "this block" means. Map highlights come from the server, built by code from tool results, never from model text.
-import { initBuildings, initLayers } from "./buildings.js";
+import { initBuildings } from "./buildings.js";
 import { initCard } from "./card.js";
+import { initSheet } from "./sheet.js";
 const $ = (id) => document.getElementById(id);
-initLayers();
+const sheet = initSheet({ chat: () => tab("chat") });
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
 const tools = $("tools"), sources = $("sources"), empty = $("empty");
 const history = [];
@@ -182,6 +183,7 @@ function showChoices(question, candidates) {
 
 function show(question, event) {
   const div = add("bot", event.answer);
+  sheet.answer();
   if (pendingChoices) { showChoices(question, pendingChoices); pendingChoices = null; }
   // The server accepts at most 2000 characters per earlier turn; cut here so a long answer cannot block later questions.
   history.push({ role: "user", content: question.slice(0, 1000) }, { role: "assistant", content: event.answer.slice(0, 2000) });
@@ -245,7 +247,7 @@ function fmtMoney(n) { return "$" + Math.round(n).toLocaleString("en-SG"); }
 async function applyLayer() {
   const mine = ++layerRequest;
   card.refreshMetrics(); // A different flat type must not retain the previous type's headline.
-  document.querySelectorAll("#layers [data-mode]").forEach((b) => {
+  document.querySelectorAll(".seg [data-mode]").forEach((b) => {
     const on = b.dataset.mode === layerMode;
     b.classList.toggle("on", on);
     b.setAttribute("aria-pressed", String(on));
@@ -289,7 +291,7 @@ async function applyLayer() {
     ? "Grey: fewer than " + data.min_sales + " sales, or above your budget. " + data.limits.join(" ")
     : data.limits[2] + " Based on the lease start year of each block.";
 }
-document.querySelectorAll("#layers [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
+document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
 $("flat-type").onchange = applyLayer;
 $("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); $("budget").setAttribute("aria-valuetext", fmtMoney(Number($("budget").value))); if (metricsCache[$("flat-type").value]) applyLayer(); };
 
@@ -304,6 +306,7 @@ const mapLayer = {
   fly(bbox) { todo.fly = bbox; },
 };
 const card = initCard({
+  onSelect: sheet.select, onSection: sheet.section,
   mapLayer,
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
   ask: (question) => { tab("chat"); ask(question); },
@@ -346,6 +349,7 @@ async function startMap() {
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
         layers: [{ id: "osm", type: "raster", source: "osm" }] },
     });
+    sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.on("load", async () => {
       let data;
@@ -406,7 +410,7 @@ async function startMap() {
         if (rings.length && fit) {
           const bounds = new maplibregl.LngLatBounds();
           rings.forEach((r) => r.ring.forEach((c) => bounds.extend(c)));
-          map.fitBounds(bounds, { padding: 60, duration: 500 });
+          map.fitBounds(bounds, { padding: sheet.padding(60), duration: 500 });
         }
       };
       let lastMetrics = null, lastMode = null;
@@ -449,7 +453,7 @@ async function startMap() {
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);
       mapLayer.fly = (bbox) => {
         if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
-        else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, maxZoom: 16, duration: 600 });
+        else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: sheet.padding(60), maxZoom: 16, duration: 600 });
       };
       if (todo.layer) mapLayer.layer(todo.layer.mode, todo.layer.data, todo.layer.budget);
       if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);

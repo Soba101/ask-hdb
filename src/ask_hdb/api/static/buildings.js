@@ -6,31 +6,6 @@ const $ = (id) => document.getElementById(id);
 const SUN_COLOR = ["interpolate", ["linear"], ["coalesce", ["feature-state", "exposure"], 0],
   0, "#39465c", 0.5, "#dba247", 1, "#fff0a6"];
 
-export function initLayers() {
-  const toggle = $("layers-toggle"), controls = $("map-controls"), panel = $("layers");
-  const mobile = window.matchMedia("(max-width: 800px)");
-  function close(focus = false) {
-    toggle.setAttribute("aria-expanded", "false");
-    if (focus) toggle.focus();
-  }
-  toggle.onclick = () => {
-    toggle.setAttribute("aria-expanded", String(toggle.getAttribute("aria-expanded") !== "true"));
-  };
-  document.addEventListener("pointerdown", (event) => {
-    if (mobile.matches && !controls.contains(event.target)) close();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (mobile.matches && event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") close(true);
-  });
-  // Each phone layout starts compact, even after rotating or resizing from desktop.
-  mobile.addEventListener("change", () => {
-    const focused = panel.contains(document.activeElement);
-    close(mobile.matches && focused);
-    if (!mobile.matches && document.activeElement === toggle) panel.querySelector("button").focus();
-  });
-  close();
-}
-
 export function wallExposure(az, alt, bearing) {
   // Same cosine incidence as ask_hdb/sun.py; night is excluded by the caller there.
   const value = Math.max(0, Math.min(1, Math.cos(alt * Math.PI / 180) * Math.cos((az - bearing) * Math.PI / 180)));

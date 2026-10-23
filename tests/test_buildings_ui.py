@@ -18,7 +18,7 @@ def test_building_controls_and_sun_formula_offline(tmp_path):
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("buildings.js", "sun-controls.js", "shadows.js", "building-card.js", "card.js", "card-map.js", "app.js"):
+    for name in ("buildings.js", "sun-controls.js", "shadows.js", "building-card.js", "card.js", "card-map.js", "app.js", "sheet.js", "sheet-gestures.js"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
@@ -63,13 +63,13 @@ class PageTree(HTMLParser):
         self.stack[-1]["children"].append(data)
 
 
-@pytest.mark.parametrize("script", ["card_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs"])
+@pytest.mark.parametrize("script", ["card_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs", "sheet_ui.mjs"])
 def test_card_offline(tmp_path, script):
     node = shutil.which("node")
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js"):
+    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
@@ -107,18 +107,15 @@ def test_phone_markup_and_touch_css_offline():
     ids = [node["attrs"]["id"] for node in nodes if "id" in node["attrs"]]
     assert len(ids) == len(set(ids))
     by_id = {node["attrs"]["id"]: node for node in nodes if "id" in node["attrs"]}
-    # Preserve the published DOM contract while adding a separate disclosure button.
+    # Preserve the published DOM contract while replacing the mobile overlay.
     contract = ("card card-close card-title card-facts card-limits card-actions schools schools-list "
                 "schools-summary schools-limits radius-counts points toggle-3d sun-panel sun-date "
                 "sun-time sun-time-label sun-position building-error card-buildings card-sun budget flat-type")
     assert set(contract.split()) <= by_id.keys()
-    toggle = by_id["layers-toggle"]
-    assert toggle["tag"] == "button"
-    assert toggle["attrs"]["aria-controls"] == "layers"
-    assert toggle["attrs"]["aria-expanded"] == "false"
-    assert "Layers" in toggle["children"]
-    siblings = by_id["map-controls"]["children"]
-    assert siblings.index(toggle) < siblings.index(by_id["layers"])
+    assert "layers-toggle" not in by_id
+    for name in ("topbar", "chips", "chip-detail", "sun-bar", "sheet-notes", "peek-hint"):
+        assert not by_id[name]["children"], name + " starts empty"
+    assert by_id["sun-panel-limits"] != by_id["sun-limits"]
     assert by_id["layers"]["attrs"]["aria-label"] == "Colour the blocks"
     assert {node["attrs"]["data-mode"] for node in nodes if "data-mode" in node["attrs"]} == {"type", "price", "lease"}
     assert {node["attrs"]["data-km"] for node in nodes if "data-km" in node["attrs"]} == {"0", "0.5", "1", "2"}
@@ -134,24 +131,33 @@ def test_phone_markup_and_touch_css_offline():
     assert "flex-wrap: wrap" in css_block(css, ".legend")
     assert "white-space: nowrap" in css_block(css, ".legend-item")
     assert "right: 64px" in css_block(css, "#map-controls")
-    assert "grid-template-columns: auto minmax(0, 1fr)" in css_block(mobile, "#map-controls")
-    assert "display: none" in css_block(css, "#layers-toggle")
-    assert "display: block" in css_block(mobile, "#layers-toggle")
-    assert "min-height: 44px" in css_block(mobile, "#layers-toggle")
-    assert "display: none" in css_block(mobile, "#layers")
-    assert "position: absolute" in css_block(mobile, "#layers")
-    assert "width: min(320px, 100%)" in css_block(mobile, "#layers")
-    assert "max-height:" in css_block(mobile, "#layers")
-    assert "display: block" in css_block(mobile, '#layers-toggle[aria-expanded="true"] ~ #layers')
-    assert "grid-template-columns: minmax(0, 1fr)" in css_block(mobile, "#app")
-    assert "grid-template-rows: 42dvh minmax(0, 1fr)" in css_block(mobile, "#app")
-    sheet = css_block(mobile, ".card")
-    for rule in ("top: auto", "bottom: 0", "width: 100%", "max-height: 58dvh", "overflow-y: auto",
-                 "env(safe-area-inset-bottom)", "overscroll-behavior-y: contain"):
+    assert "display: block" in css_block(mobile, "#app")
+    assert "height: 100%" in css_block(mobile, "#mapwrap")
+    assert "display: none" in css_block(mobile, "#map-controls, #layers")
+    sheet = css_block(mobile, "#side")
+    for rule in ("position: fixed", "height: var(--sheet-h)", "bottom: var(--kb)",
+                 "max-height: calc(100dvh - var(--kb))", "env(safe-area-inset-bottom)"):
         assert rule in sheet
+    assert "transform" not in sheet
+    assert "overscroll-behavior: contain" in css_block(mobile, "#sheet-content")
+    assert "touch-action: none" in css_block(mobile, "#sheet-handle")
+    assert mobile.count("touch-action: none") == 1
+    assert "position: relative" in css_block(mobile, "#sheet-content .card")
+    assert "max-height: none" in css_block(mobile, "#sheet-content .card")
+    assert "display: none" in css_block(mobile, "#sun-bar:has(#sun-panel[hidden])")
+    assert "bottom: calc(var(--sheet-h)" in css_block(mobile, ".maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right")
+    assert "var(--topbar-bottom" in css_block(mobile, ".maplibregl-ctrl-top-right")
+    assert "var(--sheet-h)" in css_block(mobile, ".mapnote")
+    assert "transition: none" in css_block(css_block(css, "@media (prefers-reduced-motion: reduce)"), "#side")
+    app = (STATIC / "app.js").read_text()
+    assert app.count('padding: sheet.padding(60)') == 2
+    assert 'sheet.answer();' in app
+    assert '#layers [data-mode]' not in app
+    assert app.count('.seg [data-mode]') == 2
+    assert "initLayers" not in (STATIC / "buildings.js").read_text()
     targets = css_block(coarse, "button, summary, input, select, textarea")
     assert "min-height: 44px" in targets and "min-width: 44px" in targets
-    assert "min-width: 44px" in css_block(coarse, ".layers .seg button")
-    assert "font-size: 16px" in css_block(coarse, "input, select, textarea, .layers input[type=date], .layers select")
+    assert "min-width: 44px" in css_block(coarse, ".seg button")
+    assert "font-size: 16px" in css_block(coarse, "input, select, textarea, input[type=date], select")
     assert "touch-action: pan-y" in css_block(coarse, "input[type=range]")
-    assert "width: 100%" in css_block(coarse, ".layers input[type=date]")
+    assert "width: 100%" in css_block(coarse, "input[type=date]")

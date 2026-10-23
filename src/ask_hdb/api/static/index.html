@@ -12,8 +12,11 @@
   <div id="mapwrap">
     <div id="map" role="region" aria-label="Map of HDB blocks, MRT stations, primary schools and BTO sites"></div>
     <p id="mapnote" class="mapnote" hidden></p>
+    <div id="topbar"></div>
+    <div id="chips"></div>
+    <div id="chip-detail"></div>
+    <div id="sun-bar"></div>
     <div id="map-controls">
-    <button id="layers-toggle" class="secondary" type="button" aria-controls="layers" aria-expanded="false">Layers</button>
     <p class="legend">
       <span class="legend-item"><span class="dot block"></span>Block</span>
       <span class="legend-item"><span class="dot mrt"></span>MRT/LRT</span>
@@ -41,7 +44,7 @@
           <button id="sun-play" class="secondary" type="button" aria-pressed="false">Play</button>
         </div>
         <p id="sun-position" class="small" role="status"></p>
-        <p class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat.
+        <p id="sun-panel-limits" class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat.
           The 3D light shades each wall by its direction but does not cast shadows onto other buildings.
           Shadows drawn on the ground are illustrative (ground shadows only), using the convex hull of each footprint;
           this overestimates L-shaped and courtyard blocks. No trees or clouds; overlaps may look darker.
@@ -118,8 +121,10 @@
   <aside id="side">
     <header>
       <h1>Ask HDB</h1>
+      <p id="peek-hint"></p>
       <p>Click a block, school or station, then ask about it. Every number comes from a tool.</p>
     </header>
+    <div id="sheet-notes"></div>
     <nav class="tabs" aria-label="Panels">
       <button id="tab-chat" class="tab on" aria-pressed="true">Chat</button>
       <button id="tab-evidence" class="tab" aria-pressed="false">Evidence <span id="evidence-count"></span></button>

@@ -30,7 +30,7 @@ h1, h2, b, strong { font-weight: 600; }
            border: 1px solid var(--warn); border-radius: var(--radius); padding: var(--space-2) var(--space-3); margin: 0; z-index: 2; }
 #map-controls { position: absolute; left: var(--space-3); right: 64px; top: var(--space-3); z-index: 1;
                 display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-height: calc(100% - 44px); }
-#layers-toggle { display: none; }
+#topbar, #chips, #chip-detail, #sun-bar, #sheet-notes, #peek-hint { display: none; }
 .legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); flex-shrink: 0; max-width: 100%; margin: 0; padding: var(--space-1) var(--space-3); border-radius: var(--pill);
           background: var(--panel); color: var(--muted); border: 1px solid var(--line); font-size: var(--caption); }
 .legend-item { display: inline-flex; align-items: center; white-space: nowrap; gap: var(--space-1); }
@@ -134,40 +134,89 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .view-options > button { margin-top: var(--space-2); }
 
 @media (max-width: 800px) {
-  /* Controls share a row, leaving the map navigation its own space on the right. */
-  #app, #mapwrap, #side { min-width: 0; }
-  #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 42dvh minmax(0, 1fr); height: 100dvh; }
-  #map-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; max-height: none; z-index: 3;
-                  top: max(var(--space-3), env(safe-area-inset-top)); }
-  #layers-toggle { display: block; min-width: 44px; min-height: 44px; background: var(--panel); }
-  .legend { border-radius: var(--radius); }
-  #layers { display: none; position: absolute; top: calc(100% + 8px); left: 0; width: min(320px, 100%);
-            max-height: min(70dvh, calc(100dvh - 160px - env(safe-area-inset-bottom))); overscroll-behavior-y: contain; }
-  #layers-toggle[aria-expanded="true"] ~ #layers { display: block; }
-  .mapnote { top: auto; bottom: var(--space-6); }
-  /* Fit short summaries to their content; long details scroll below the full map. */
-  .card { position: fixed; top: auto; bottom: 0; left: 0; width: 100%; max-height: 58dvh;
-          border-radius: var(--card-radius) var(--card-radius) 0 0; padding: var(--space-4);
-          padding-bottom: max(var(--space-4), env(safe-area-inset-bottom)); overflow-x: hidden; overflow-y: auto;
-          overscroll-behavior-y: contain; scroll-padding-bottom: var(--space-4); }
-  .card h2 { margin-right: 44px; }
-  .card button { max-width: 100%; white-space: normal; }
-  #side { border-left: 0; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  #app { display: block; height: 100dvh; --sheet-h: 112px; --kb: 0px; }
+  #mapwrap { width: 100%; height: 100%; }
+  /* Empty desktop hosts remain in place, without trapping controls in closed details. */
+  #map-controls, #layers { display: none; }
+  #topbar, #chips, #chip-detail, #sun-bar { position: absolute; z-index: 3;
+    left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); }
+  #topbar { display: flex; flex-direction: column; top: max(12px, env(safe-area-inset-top));
+    background: var(--floating); border: 1px solid var(--line); border-radius: var(--card-radius);
+    padding: 8px; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+  #topbar form { margin: 0; }
+  #question { height: 44px; padding: 10px 12px; line-height: 22px; resize: none; overflow: hidden; }
+  #question::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #topbar .selected { margin-top: 4px; }
+  /* A selected-place chip adds a row; every floating control follows that measured height. */
+  #chips { display: flex; top: calc(var(--topbar-bottom, 74px) + 8px); gap: 8px;
+    overflow-x: auto; scrollbar-width: none; }
+  #chips::-webkit-scrollbar { display: none; }
+  #chips .seg { display: flex; gap: 8px; }
+  #chips .seg-label { display: none; }
+  #chips button { flex-shrink: 0; background: var(--panel); min-height: 44px; }
+  #chips button.on { background: var(--accent-text); }
+  #chip-detail { display: block; top: calc(var(--topbar-bottom, 74px) + 60px); }
+  #chip-detail > div { padding: 8px; background: var(--floating); border: 1px solid var(--line); border-radius: 12px; }
+  #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 4px 8px; }
+  #price-controls label { min-width: 0; font-size: var(--caption); }
+  #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: 10px; }
+  #chip-detail input, #chip-detail select { width: 100%; }
+  #chip-detail select, #sun-bar input[type=date] { background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--radius); font: inherit; min-width: 0; }
+  #sun-bar { display: block; bottom: calc(var(--sheet-h) + var(--kb) + 8px); }
+  #sun-bar:has(#sun-panel[hidden]) { display: none; }
+  #sun-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 8px;
+    padding: 8px; background: var(--floating); border: 1px solid var(--line); border-radius: 12px; }
+  #sun-panel label { display: flex; flex-wrap: wrap; min-width: 0; font-size: var(--caption); }
+  #sun-panel input { width: 100%; min-width: 0; }
+  #sun-panel .sun-actions { margin: 0; flex-wrap: nowrap; }
+  #sun-position { margin: 0; align-self: center; }
+  #side { position: fixed; z-index: 4; bottom: var(--kb); left: 0; width: 100%; height: var(--sheet-h);
+    max-height: calc(100dvh - var(--kb)); border: 1px solid var(--line); border-bottom: 0;
+    border-radius: var(--card-radius) var(--card-radius) 0 0; overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom); transition: height 180ms ease; }
+  #side[data-dragging] { transition: none; }
+  #sheet-peek { position: relative; flex-shrink: 0; padding: 0 12px 4px; }
+  #sheet-handle { display: block; width: 48px; min-height: 20px; padding: 0; margin: 0 auto;
+    background: transparent; border: 0; border-radius: var(--pill); touch-action: none; }
+  #sheet-handle::after { content: ""; display: block; width: 32px; height: 4px; margin: auto;
+    background: var(--muted); border-radius: var(--pill); }
+  #sheet-header { padding: 0; }
+  #sheet-header > p:not(#peek-hint) { display: none; }
+  #peek-hint { display: block; font-size: var(--caption); }
+  #sheet-peek .legend { padding: 0; border: 0; font-size: 10px; margin-top: 4px; }
+  #sheet-peek h2 { font-size: 17px; margin: 0 44px 0 0; }
+  #sheet-peek > .close { position: absolute; top: 20px; right: 8px; min-height: 44px; min-width: 44px; }
+  #sheet-peek .headline { display: flex; list-style: none; gap: 4px; padding: 0; margin: 4px 0 0; }
+  #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 4px; font-size: var(--caption); }
+  #side[data-snap=peek] #sheet-peek { max-height: 112px; overflow: hidden; }
+  #side[data-snap=peek] #card-subtitle, #side[data-snap=peek] .headline small { display: none; }
+  #sheet-content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  #sheet-content .card { position: relative; inset: auto; width: 100%; max-height: none; overflow: visible;
+    border: 0; border-radius: 0; margin: 0; padding: 8px 12px; }
+  #sheet-notes { display: block; padding: 0 17px; }
+  #chat, #evidence { min-height: auto; }
+  #log { overflow: visible; }
   #side, .selected { overflow-wrap: anywhere; }
   .selected > span { min-width: 0; }
   .selected .close { flex-shrink: 0; }
-  #chat { overflow-y: auto; }
+  .maplibregl-ctrl-top-right { top: calc(var(--topbar-bottom, 74px) + 60px + var(--chip-detail-h, 0px)); }
+  .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: calc(var(--sheet-h) + var(--kb)); }
+  .mapnote { top: auto; bottom: calc(var(--sheet-h) + var(--kb) + 32px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #side { transition: none; }
 }
 
 @media (pointer: coarse) {
   /* Include generated chips, disclosures and the map library's controls. */
   button, summary, input, select, textarea { min-height: 44px; min-width: 44px; }
-  .layers .seg button { min-width: 44px; }
-  input, select, textarea, .layers input[type=date], .layers select { font-size: 16px; }
+  .seg button { min-width: 44px; }
+  input, select, textarea, input[type=date], select { font-size: 16px; }
   summary { align-content: center; }
   input[type=range] { width: 100%; margin: 0; touch-action: pan-y; }
   .layers input[type=range] { font-size: 16px; }
-  .layers input[type=date] { display: block; width: 100%; min-width: 0; }
+  input[type=date] { display: block; width: 100%; min-width: 0; }
   .layers label { min-width: 0; }
   button { touch-action: manipulation; }
 }
