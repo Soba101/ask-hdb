@@ -1,0 +1,11 @@
+.git
+.venv
+.claude
+.env
+**/__pycache__
+data/raw
+eval/reports
+docs
+tests
+scripts
+*.md

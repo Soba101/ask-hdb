@@ -1,0 +1,25 @@
+# Simulated hosting: the same image you would deploy, run locally.
+# The model is reached over the network, never inside the container: by default the Ollama on this machine.
+# For a hosted model put LLM_PROVIDER, LLM_MODEL and LLM_API_KEY in .env (never in this file).
+services:
+  app:
+    build: .
+    image: ask-hdb:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-420}
+      API_RATE_PER_MINUTE: ${API_RATE_PER_MINUTE:-6}
+      API_DAILY_TOKEN_CAP: ${API_DAILY_TOKEN_CAP:-2000000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
