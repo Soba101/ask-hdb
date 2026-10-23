@@ -85,7 +85,7 @@ Use `--only price --verbose --limit 2` for a small run. Held-out questions run o
 `--heldout`. Reports resume explicitly; existing completed results and errors are retained.
 See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results.md).
 
-The first four rows are the 72-question dev set (2026-10-22/23, two runs each so the spread is visible); the bank has since grown to 85 dev questions. One 9B local model (qwen3.5-9b-16k on a MacBook):
+Rows 2-5 are the 72-question dev set (2026-10-22/23, two runs each so the spread is visible); the last row is the full 85-question dev set on the final code (3 failures: two persistent, one variance). One 9B local model (qwen3.5-9b-16k on a MacBook):
 
 | Condition | Number | Verdict | Refusal | Grounding |
 |---|---|---|---|---|
@@ -94,6 +94,7 @@ The first four rows are the 72-question dev set (2026-10-22/23, two runs each so
 | Single agent, run B | 96.1% | 92.9% | 85.7% | 100% |
 | Agent plus "Is this right?" profile confirmation, run A | 94.1% | 100% | 85.7% | 100% |
 | Agent plus "Is this right?" profile confirmation, run B | 94.1% | 92.9% | 100% | 100% |
+| Single agent, final code, 85 questions (one run, 2026-10-23) | 96.7% | 92.9% | 100% | 100% |
 
 After the map questions were added, the map (9/9), distance (5/5) and refusal (11/11 after a scorer wording fix) kinds were re-run, not the whole set. The confirmation step is a safety feature, not an accuracy gain. Every round, regression and fix is in
 [docs/eval-results.md](docs/eval-results.md). The 30 held-out questions that existed in week 5 were run once (24 of 30) and not tuned on; 38 are held out now.
