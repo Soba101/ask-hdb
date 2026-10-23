@@ -16,6 +16,31 @@
       <span class="dot block"></span>Block <span class="dot mrt"></span>MRT/LRT <span class="dot school"></span>School
       <span class="dot bto"></span>BTO site (approximate)
     </p>
+    <div id="layers" class="layers" role="group" aria-label="Colour the blocks">
+      <div class="seg">
+        <span>Colour blocks by</span>
+        <button class="secondary on" data-mode="type" aria-pressed="true">Type</button>
+        <button class="secondary" data-mode="price" aria-pressed="false">Price</button>
+        <button class="secondary" data-mode="lease" aria-pressed="false">Lease</button>
+      </div>
+      <div id="price-controls" hidden>
+        <label>Flat type
+          <select id="flat-type">
+            <option>3 ROOM</option><option selected>4 ROOM</option><option>5 ROOM</option><option>EXECUTIVE</option>
+          </select>
+        </label>
+        <label>Budget up to <b id="budget-label"></b>
+          <input id="budget" type="range" step="10000">
+        </label>
+        <div class="ramp"><span id="ramp-low">cheaper</span><i></i><span id="ramp-high">dearer</span></div>
+        <p class="small">Colours compare blocks by their median for this flat type (10th to 90th percentile); grey: no median or above your budget.</p>
+      </div>
+      <div id="lease-controls" hidden>
+        <div class="steps"><span class="l1"></span>under 60 yrs <span class="l2"></span>60-75 <span class="l3"></span>75-90 <span class="l4"></span>90+ left</div>
+        <p class="small">Whether a short lease limits CPF use, HDB loans or grants depends on your age and the years left (for example, the lease should cover the youngest buyer to age 95). Check HDB's rules.</p>
+      </div>
+      <details class="small"><summary>About this layer</summary><p id="layer-note" class="small"></p></details>
+    </div>
     <div id="card" class="card" hidden aria-live="polite">
       <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
       <h2 id="card-title"></h2>

@@ -236,3 +236,11 @@ def test_the_page_script_has_valid_syntax():
         path.write_text(source)
         done = subprocess.run([node, "--check", str(path)], check=False, capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
+
+
+def test_smoke_the_page_wires_the_price_and_lease_layers_to_the_metrics_route():
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    html = (Path(api.__file__).parent / "static/index.html").read_text()
+    assert "/map/metrics?flat_type=" in js and 'data-mode="lease"' in html and 'id="budget"' in html
+    assert 'metricsCache' in js and '"#b8bdc9"' in js  # grey for blocks with too few sales or above the budget

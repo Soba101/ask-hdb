@@ -24,13 +24,13 @@ def tables(monkeypatch):
                               "category": "Standard", "units": 1, "wait_months": 1, "town": float("nan")}])
     sales = pd.DataFrame([
         *[{"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-09-01"), "flat_type": "4 ROOM",
-          "lease_commence_year": 1980, "resale_price": 400000 + i * 1000} for i in range(5)],
+          "lease_commence_year": 1980, "lease_left_months": 636, "resale_price": 400000 + i * 1000} for i in range(5)],
         {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-08-01"), "flat_type": "3 ROOM",
-         "lease_commence_year": 1980, "resale_price": 300000},
+         "lease_commence_year": 1980, "lease_left_months": 637, "resale_price": 300000},
         {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2025-01-01"), "flat_type": "4 ROOM",
-         "lease_commence_year": 1980, "resale_price": 250000},
+         "lease_commence_year": 1980, "lease_left_months": 660, "resale_price": 250000},
         {"block_id": "other", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM",
-         "lease_commence_year": 1990, "resale_price": 500000}])
+         "lease_commence_year": 1990, "lease_left_months": 700, "resale_price": 500000}])
     for module, name, value in ((mapdata, "load_blocks", blocks), (mapdata, "load_places", places),
                                 (mapdata, "load_projects", projects), (mapdata, "load_sales", sales)):
         monkeypatch.setattr(module, name, lambda value=value: value)
@@ -146,3 +146,44 @@ def test_place_names_keep_acronyms_and_small_words():
     from ask_hdb.geo.names import pretty_name
     assert pretty_name("CHIJ OUR LADY OF GOOD COUNSEL") == "CHIJ Our Lady of Good Counsel"
     assert pretty_name("ST. ANTHONY'S PRIMARY SCHOOL") == "St. Anthony's Primary School"
+
+
+def test_metrics_give_a_median_only_with_enough_recent_sales_and_a_lease_estimate():
+    mapdata.metrics.cache_clear()
+    got = mapdata.metrics("4 ROOM")
+    row = got["blocks"]["blk_1_a-st"]
+    # six 4-room sales in 24 months (3-room one left out); newest sale 2026-09 had 636 months left, so 635 at 2026-10: 52 years
+    assert row == [401500, 6, 52] and got["as_of"] == "2026-10"
+    assert got["blocks"]["other"][0] is None and got["blocks"]["other"][1] == 1  # one sale: no median
+    assert any("not a valuation" in text for text in got["limits"])
+    with pytest.raises(ValueError):
+        mapdata.metrics("1 ROOM")
+
+
+def test_metrics_route_accepts_only_the_offered_flat_types():
+    mapdata.metrics.cache_clear()
+    client = TestClient(api.create_app())
+    assert client.get("/map/metrics?flat_type=4 ROOM").json()["window_months"] == 24
+    assert client.get("/map/metrics?flat_type=1 ROOM").status_code == 404
+
+
+def test_metrics_boundaries_for_the_window_and_the_minimum_sales(monkeypatch):
+    sales = pd.DataFrame([
+        {"block_id": "edge", "sale_month": pd.Timestamp("2024-11-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
+         "lease_left_months": 700, "resale_price": 500000},   # exactly 24 months before 2026-10: inside
+        {"block_id": "edge", "sale_month": pd.Timestamp("2024-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
+         "lease_left_months": 701, "resale_price": 900000},   # one month earlier: outside
+        {"block_id": "edge", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
+         "lease_left_months": 670, "resale_price": 520000},
+        {"block_id": "three", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
+         "lease_left_months": 900, "resale_price": 600000},
+        {"block_id": "three", "sale_month": pd.Timestamp("2026-09-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
+         "lease_left_months": 899, "resale_price": 610000},
+        {"block_id": "three", "sale_month": pd.Timestamp("2026-08-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
+         "lease_left_months": 898, "resale_price": 620000}])
+    monkeypatch.setattr(mapdata, "load_sales", lambda: sales)
+    mapdata.metrics.cache_clear()
+    got = mapdata.metrics("4 ROOM")["blocks"]
+    assert got["edge"][:2] == [None, 2]          # two sales in the window: no median
+    assert got["three"] == [610000, 3, 75]       # exactly three sales: a median; 900 months left = 75 years
+    mapdata.metrics.cache_clear()
