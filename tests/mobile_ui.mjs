@@ -40,3 +40,19 @@ for (const width of [360, 375, 430, 800, 801]) {
   assert.equal(clicks, 2, "moved controls retain their original handlers");
 }
 console.log("Phone widths and exact desktop restoration passed.");
+// iOS phone styling: string-match the key rules, and check they all sit inside the phone query so desktop is unchanged.
+import { readFileSync } from "node:fs";
+const css = readFileSync(folder + "/style.css", "utf8");
+const ios = css.slice(css.indexOf("Phone only: native iOS"));
+for (const rule of ["blur(30px) saturate(180%)", "-webkit-backdrop-filter: blur(30px) saturate(180%)", "border-radius: 12px 12px 0 0",
+  "width: 36px; height: 5px", "rgba(118, 118, 128, .12)", "rgba(118, 118, 128, .24)", "#007aff", "#0a84ff", "cubic-bezier(.2, .9, .3, 1.1)",
+  "data:image/svg+xml", "border-radius: 50%", "#card-sections { display: contents; }", "min-height: 44px", "width: 22px; height: 22px",
+  "height: 4px", "font-size: var(--t-title); font-weight: 700", '"SF Pro Display"', "rgba(235, 235, 245, .6)", "rgba(60, 60, 67, .6)"])
+  assert.ok(ios.includes(rule), "missing phone rule: " + rule);
+assert.ok(!/font-weight:\s*500/.test(css), "no weight 500");
+assert.ok(!ios.includes("gradient"), "no new gradients");
+// The spring only runs when motion is welcome.
+assert.match(ios, /prefers-reduced-motion: no-preference\) \{\s*#side \{ transition: height 420ms cubic-bezier/);
+// Every top-level at-rule after the marker is a phone query, so nothing leaks to desktop.
+for (const match of ios.matchAll(/^@media ([^{]+)\{/gm)) assert.match(match[1], /max-width: 800px/);
+console.log("iOS phone styling rules passed.");
