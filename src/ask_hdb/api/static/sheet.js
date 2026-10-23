@@ -28,6 +28,7 @@ export function initSheet({ chat = () => {} } = {}) {
     side.dataset.snap = ["peek", "half", "full"][state];
     content.inert = state === 0;
     side.scrollTop = 0;
+    if (state === 0) content.scrollTop = 0; // a place opens at its summary, not wherever the last scroll left the sheet
     handle.setAttribute("aria-label", "Results, " + ["peek", "half height", "full height"][state] +
       (state === 2 ? ". Press to collapse." : ". Press to expand."));
     map?.setPadding({ top: 0, left: 0, right: 0, bottom: pixels });
