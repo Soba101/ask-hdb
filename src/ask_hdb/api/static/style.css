@@ -28,8 +28,12 @@ h1, h2, b, strong { font-weight: 600; }
 #map { position: absolute; inset: 0; }
 .mapnote { position: absolute; top: var(--space-3); left: var(--space-3); right: var(--space-3); background: var(--panel); color: var(--warn);
            border: 1px solid var(--warn); border-radius: var(--radius); padding: var(--space-2) var(--space-3); margin: 0; z-index: 2; }
-.legend { position: absolute; left: var(--space-3); top: var(--space-3); margin: 0; padding: var(--space-1) var(--space-3); border-radius: var(--pill); z-index: 1;
+#map-controls { position: absolute; left: var(--space-3); right: 64px; top: var(--space-3); z-index: 1;
+                display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-height: calc(100% - 44px); }
+#layers-toggle { display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); flex-shrink: 0; max-width: 100%; margin: 0; padding: var(--space-1) var(--space-3); border-radius: var(--pill);
           background: var(--panel); color: var(--muted); border: 1px solid var(--line); font-size: var(--caption); }
+.legend-item { display: inline-flex; align-items: center; white-space: nowrap; gap: var(--space-1); }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 var(--space-1) 0 var(--space-2); vertical-align: middle; }
 .dot:first-child { margin-left: 0; }
 /* Legend colours match the map data, independently of the interface accent. */
@@ -81,11 +85,6 @@ h2.section { font-size: 17px; margin: var(--space-2) 0; }
 #sources ul { padding-left: var(--space-5); margin: var(--space-1) 0; font-size: var(--small); overflow-wrap: anywhere; }
 .points { margin: var(--space-2) 0; padding-left: var(--space-5); font-size: var(--small); color: var(--muted); }
 a { color: var(--accent); }
-@media (max-width: 800px) {
-  #app { grid-template-columns: 1fr; grid-template-rows: 42dvh minmax(0, 1fr); height: 100dvh; }
-  #side { border-left: 0; border-top: 1px solid var(--line); }
-}
-
 .radius { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0 var(--space-1); flex-wrap: wrap; font-size: var(--small); }
 button.secondary.on { background: var(--accent-text); border-color: var(--accent-text); color: var(--on-accent); }
 
@@ -94,14 +93,14 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .schools ul { margin: var(--space-1) 0; padding-left: var(--space-5); max-height: 160px; overflow-y: auto; }
 .schools li button { background: none; border: 0; color: var(--accent); padding: 0; text-align: left; font: inherit; cursor: pointer; }
 
-.layers { position: absolute; left: var(--space-3); top: 48px; width: min(300px, calc(100% - 24px)); z-index: 1; padding: var(--space-2) var(--space-3);
+.layers { width: min(300px, 100%); min-height: 0; padding: var(--space-2) var(--space-3);
           background: var(--panel); border: 1px solid var(--line); border-radius: var(--card-radius); font-size: var(--small); }
 /* Translucent floating bars keep their text readable over the map. */
 .mapnote, .legend, .layers { background: var(--floating); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
 .layers .seg { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .layers label { display: block; margin-top: var(--space-2); }
 .layers select, .layers input[type=range] { width: 100%; font: inherit; }
-.layers { max-height: calc(100% - 90px); overflow-y: auto; }
+.layers { overflow-y: auto; overflow-wrap: anywhere; }
 .layers input[type=date] { font: inherit; max-width: 100%; }
 .layers select, .layers input[type=date] { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-1); }
 .layers input { accent-color: var(--accent); }
@@ -134,11 +133,40 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .view-options > button { margin-top: var(--space-2); }
 
 @media (max-width: 800px) {
-  /* The card occupies the lower pane as a single sheet; the map keeps its full height. */
+  /* Controls share a row, leaving the map navigation its own space on the right. */
   #app, #mapwrap, #side { min-width: 0; }
-  .legend { max-width: calc(100% - 24px); }
-  .card { position: fixed; top: 42dvh; bottom: 0; left: 0; width: 100%; max-height: none;
+  #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 42dvh minmax(0, 1fr); height: 100dvh; }
+  #map-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; max-height: none; z-index: 3;
+                  top: max(var(--space-3), env(safe-area-inset-top)); }
+  #layers-toggle { display: block; min-width: 44px; min-height: 44px; background: var(--panel); }
+  .legend { border-radius: var(--radius); }
+  #layers { display: none; position: absolute; top: calc(100% + 8px); left: 0; width: min(320px, 100%);
+            max-height: min(70dvh, calc(100dvh - 160px - env(safe-area-inset-bottom))); overscroll-behavior-y: contain; }
+  #layers-toggle[aria-expanded="true"] ~ #layers { display: block; }
+  .mapnote { top: auto; bottom: var(--space-6); }
+  /* Fit short summaries to their content; long details scroll below the full map. */
+  .card { position: fixed; top: auto; bottom: 0; left: 0; width: 100%; max-height: 58dvh;
           border-radius: var(--card-radius) var(--card-radius) 0 0; padding: var(--space-4);
-          padding-bottom: max(var(--space-4), env(safe-area-inset-bottom)); overflow-x: hidden; }
+          padding-bottom: max(var(--space-4), env(safe-area-inset-bottom)); overflow-x: hidden; overflow-y: auto;
+          overscroll-behavior-y: contain; scroll-padding-bottom: var(--space-4); }
+  .card h2 { margin-right: 44px; }
   .card button { max-width: 100%; white-space: normal; }
+  #side { border-left: 0; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  #side, .selected { overflow-wrap: anywhere; }
+  .selected > span { min-width: 0; }
+  .selected .close { flex-shrink: 0; }
+  #chat { overflow-y: auto; }
+}
+
+@media (pointer: coarse) {
+  /* Include generated chips, disclosures and the map library's controls. */
+  button, summary, input, select, textarea { min-height: 44px; min-width: 44px; }
+  .layers .seg button { min-width: 44px; }
+  input, select, textarea, .layers input[type=date], .layers select { font-size: 16px; }
+  summary { align-content: center; }
+  input[type=range] { width: 100%; margin: 0; touch-action: pan-y; }
+  .layers input[type=range] { font-size: 16px; }
+  .layers input[type=date] { display: block; width: 100%; min-width: 0; }
+  .layers label { min-width: 0; }
+  button { touch-action: manipulation; }
 }

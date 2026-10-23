@@ -108,6 +108,7 @@ export function initCard({ mapLayer, metrics, ask }) {
   async function select(point) {
     reset(); const mine = cardRequest, stamp = map.select(point), sectionMine = sectionRequest;
     $("card").hidden = !point;
+    $("card").scrollTop = 0; // A new place always opens at its summary, not the previous detail.
     if (!point) return;
     current = point;
     $("card-title").textContent = point.label; $("card-subtitle").textContent = "Loading details…";

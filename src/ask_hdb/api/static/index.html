@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ask HDB</title>
 <link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
@@ -12,9 +12,13 @@
   <div id="mapwrap">
     <div id="map" role="region" aria-label="Map of HDB blocks, MRT stations, primary schools and BTO sites"></div>
     <p id="mapnote" class="mapnote" hidden></p>
+    <div id="map-controls">
+    <button id="layers-toggle" class="secondary" type="button" aria-controls="layers" aria-expanded="false">Layers</button>
     <p class="legend">
-      <span class="dot block"></span>Block <span class="dot mrt"></span>MRT/LRT <span class="dot school"></span>School
-      <span class="dot bto"></span>BTO site (approximate)
+      <span class="legend-item"><span class="dot block"></span>Block</span>
+      <span class="legend-item"><span class="dot mrt"></span>MRT/LRT</span>
+      <span class="legend-item"><span class="dot school"></span>School</span>
+      <span class="legend-item"><span class="dot bto"></span>BTO site (approximate)</span>
     </p>
     <div id="layers" class="layers" role="group" aria-label="Colour the blocks">
       <div class="seg">
@@ -54,6 +58,7 @@
         <p class="small">Whether a short lease limits CPF use, HDB loans or grants depends on your age and the years left (for example, the lease should cover the youngest buyer to age 95). Check HDB's rules.</p>
       </div>
       <details class="small"><summary>About this layer</summary><p id="layer-note" class="small"></p></details>
+    </div>
     </div>
     <div id="card" class="card" hidden>
       <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
