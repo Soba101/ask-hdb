@@ -41,3 +41,5 @@ The owner wants the map to be the main view with the chat beside it: click or as
 ## Status 2026-10-24
 Done and merged: 6-1 API (PR #52), 6-2 front end (#53), 6-3 2D map (#54), phase A map-first page (#55), phase B place lookup, radius ring, schools within 2 km with 1 km / 2 km rings, 18 map eval questions (#56).
 Not started: price and lease layers, trend chart, shortlist and compare, eligibility form, Docker, tracing (Langfuse), deploy with a cloud model, README, travel time to town (needs the owner's decision on OneMap routing), 3D (owner decides after using the 2D map).
+
+Update 2026-10-23: price and lease layers (PR #57), Docker, optional tracing and README (PR #58) merged. Left: public deploy (host, cloud model, key, dev eval on that model), live Langfuse check (account and keys), 3D (owner's call), travel time (OneMap routing decision), trend chart, shortlist and compare, eligibility form.

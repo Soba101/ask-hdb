@@ -91,16 +91,16 @@ Three phases; each gets approval before building.
 - **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).
 
 ## Week 6: ship (in progress; plan and status: docs/week6-plan.md)
-- [ ] Langfuse tracing on every run.
+- [~] Langfuse tracing: built as an optional extra behind env keys, text redacted by default (PR #58); not checked against a live account.
 - [x] Web app, map-first (done 2026-10-24, PRs #52-#56: API with streamed tool evidence, rate limit and token cap; plain-JS page; MapLibre map of every block, station, school and BTO site; click to select; info cards; place lookup; radius ring; primary schools within 2 km with 1 km / 2 km rings). Original description: (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
       (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
       chat on the left, tool results and sources on the right, 3D map panel (MapLibre) with block, MRT and school markers.
       Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
       Needs: rate limit per visitor, a cost cap, no personal data stored, a clear "not financial advice" line.
-- [ ] Docker Compose: web app (FastAPI + static front end), MCP server, Postgres + pgvector (Langfuse cloud free tier, or self-hosted).
-- [ ] Deploy to one small VM with a cloud model (no GPU needed there).
+- [x] Docker image and compose file for the web app (PR #58); checked locally as simulated hosting. Postgres/pgvector and a self-hosted Langfuse are not part of it.
+- [ ] Deploy to one small VM with a cloud model: not done; needs a host, a cloud model and key, and a dev eval on that model first.
 - [ ] 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
-- [ ] README: demo GIF, results table, architecture picture, "what I learned".
+- [~] README rewritten with screenshots and the results table (PR #58); no demo GIF or architecture picture yet.
 - **Exit:** a stranger uses the public link with no help.
 
 ## Decisions log
