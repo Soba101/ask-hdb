@@ -92,14 +92,19 @@ def ask(question, history=None, confirm=False, on_event=None, context=None) -> d
     context is one line made by code about what the user selected on the map; it goes in front of the question."""
     load_dotenv()
     source = os.getenv("TOOL_SOURCE", "direct")
-    if source == "direct":
-        return _ask(question, history, TOOLS, confirm, on_event, context)
-    if source != "mcp":
+    if source not in ("direct", "mcp"):
         raise ValueError("TOOL_SOURCE must be direct or mcp")
-    from ask_hdb.mcp.client import load_mcp_tools
+    # One trace per question, even when a grounding rewrite makes a second graph run.
+    with tracing.turn(source) as trace:
+        if source == "direct":
+            result = _ask(question, history, TOOLS, confirm, on_event, context)
+        else:
+            from ask_hdb.mcp.client import load_mcp_tools
 
-    with load_mcp_tools() as tools:
-        return _ask(question, history, tools, confirm, on_event, context)
+            with load_mcp_tools() as tools:
+                result = _ask(question, history, tools, confirm, on_event, context)
+        trace.record(question, result)
+        return result
 
 
 def _ask(question, history, tools, confirm=False, on_event=None, context=None):

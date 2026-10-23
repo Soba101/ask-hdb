@@ -110,7 +110,7 @@ After the map questions were added, the map (9/9), distance (5/5) and refusal (1
 | Model | Local model via llama-server (OpenAI-compatible). Swappable for a cloud model |
 | RAG | not built (deferred) |
 | Data | data.gov.sg resale prices, OneMap (geocoding, MRT, schools) |
-| Tracing | Optional Langfuse (`uv sync --extra tracing`), off unless keys are set, text redacted by default |
+| Tracing | Optional Langfuse (`uv sync --extra tracing`; Docker: `TRACING=1`), off unless keys are set. One trace per question, named `answer-question` (tags `ask-hdb`, `tools-direct`/`tools-mcp`; version, model and tool source in metadata), with scores `grounded`, `ungrounded_numbers`, `grounding_rewritten`, `stopped`, `tool_calls`. Sent: timings, tool names, token counts, numeric scores. Not sent: question, answer and tool data (`[redacted]` unless `TRACE_TEXT=1`), error messages, user or session ids. Set `LANGFUSE_BASE_URL` and `LANGFUSE_TRACING_ENVIRONMENT` as needed |
 | UI | FastAPI + plain-JS page, MapLibre 2D map (3D not built) |
 | Deploy | Docker image and compose file, run locally as simulated hosting; no public host yet |
 
