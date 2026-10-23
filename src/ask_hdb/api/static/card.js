@@ -30,7 +30,7 @@ async function get(path) {
   return response.json();
 }
 
-export function initCard({ mapLayer, metrics, ask }) {
+export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSection = () => {} }) {
   const map = initCardMap(mapLayer);
   let cardRequest = 0, current = null, facts = null;
   let sectionRequest = 0, renderedMetrics = null;
@@ -108,6 +108,7 @@ export function initCard({ mapLayer, metrics, ask }) {
   async function select(point) {
     reset(); const mine = cardRequest, stamp = map.select(point), sectionMine = sectionRequest;
     $("card").hidden = !point;
+    onSelect(point);
     $("card").scrollTop = 0; // A new place always opens at its summary, not the previous detail.
     if (!point) return;
     current = point;
@@ -148,6 +149,7 @@ export function initCard({ mapLayer, metrics, ask }) {
           $(chip.id).hidden = !open; chip.button.setAttribute("aria-expanded", String(open));
           chip.button.classList.toggle("on", open);
         });
+        if (opening) onSection();
         if (!opening || loaded) return;
         loaded = true; // Also deduplicates opens while a request is still pending.
         await ready;
@@ -171,6 +173,6 @@ export function initCard({ mapLayer, metrics, ask }) {
     }
     return ready;
   }
-  $("card-close").onclick = () => { cardRequest++; sectionRequest++; clearBuildingCard(); $("card").hidden = true; };
+  $("card-close").onclick = () => { cardRequest++; sectionRequest++; clearBuildingCard(); $("card").hidden = true; onSelect(null); };
   return { select, refreshMetrics, chatHighlight: map.chatHighlight };
 }
