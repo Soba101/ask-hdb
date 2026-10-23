@@ -13,7 +13,8 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-ins
 COPY src ./src
 COPY rules ./rules
 COPY data/clean ./data/clean
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
+# The offline builder must run before building the image; raw outlines stay outside the context.
+RUN --mount=type=cache,target=/root/.cache/uv test -s data/clean/buildings.geojson && uv sync --frozen --no-dev
 
 # Not run as root: the app only reads its own files, so make sure local file modes do not lock it out.
 RUN chmod -R a+rX /app/data /app/rules /app/src && useradd --system --no-create-home app

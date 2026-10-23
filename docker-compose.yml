@@ -6,7 +6,8 @@ services:
     build: .
     image: ask-hdb:local
     ports:
-      - "8000:8000"
+      # Loopback by default; set BIND_ADDR in .env to your LAN address to share it on your network only.
+      - "${BIND_ADDR:-127.0.0.1}:8000:8000"
     env_file:
       - path: .env
         required: false

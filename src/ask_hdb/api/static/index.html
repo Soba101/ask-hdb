@@ -22,6 +22,17 @@
         <button class="secondary on" data-mode="type" aria-pressed="true">Type</button>
         <button class="secondary" data-mode="price" aria-pressed="false">Price</button>
         <button class="secondary" data-mode="lease" aria-pressed="false">Lease</button>
+        <button id="toggle-3d" class="secondary" aria-pressed="false" disabled>3D</button>
+      </div>
+      <p id="building-error" class="small" role="status"></p>
+      <div id="sun-panel" hidden>
+        <label>Sun date <input id="sun-date" type="date" required></label>
+        <label>Time <b id="sun-time-label">12:00 (+08:00)</b>
+          <input id="sun-time" type="range" min="360" max="1170" step="15" value="720" disabled>
+        </label>
+        <p id="sun-position" class="small" role="status"></p>
+        <p class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat. No shade from other blocks or clouds.
+          In Type mode, grey to yellow shows increasing exposure on the sunnier long facade. Facing is approximate per block, not per unit.</p>
       </div>
       <div id="price-controls" hidden>
         <label>Flat type
@@ -45,6 +56,8 @@
       <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
       <h2 id="card-title"></h2>
       <ul id="card-facts"></ul>
+      <div id="card-buildings" class="small"></div>
+      <div id="card-sun" class="small"></div>
       <div class="radius" role="group" aria-label="Show a radius around this place">
         <span>Radius:</span>
         <button class="secondary on" data-km="0" aria-pressed="true">Off</button>
