@@ -17,7 +17,7 @@ for (const width of [360, 375, 430, 800, 801]) {
   for (let round = 0; round < 2; round++) {
     mobile.matches = true; mobile.change();
     for (const [id, host] of [["form", "topbar"], ["selected", "topbar"], ["toggle-3d", "chips"],
-      ["price-controls", "chip-detail"], ["lease-controls", "chip-detail"], ["sun-panel", "sun-bar"],
+      ["price-controls", "chip-detail"], ["lease-controls", "chip-detail"], ["mop-controls", "chip-detail"], ["sun-panel", "sun-bar"],
       ["building-error", "sheet-notes"], ["sun-panel-limits", "sheet-notes"]]) assert.equal(get(id).parentNode.id, host);
     assert.equal(get("card").parentNode.children[0], get("card"));
     assert.ok(get("sheet-notes").contains(get("layer-note")));

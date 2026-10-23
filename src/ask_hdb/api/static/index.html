@@ -21,7 +21,7 @@
       <span class="legend-item"><span class="dot block"></span>Block</span>
       <span class="legend-item"><span class="dot mrt"></span>MRT/LRT</span>
       <span class="legend-item"><span class="dot school"></span>School</span>
-      <span class="legend-item"><span class="dot bto"></span>BTO site (approximate)</span>
+      <span class="legend-item"><span class="dot bto"></span>BTO site (upcoming, approximate)</span>
     </p>
     <div id="layers" class="layers" role="group" aria-label="Colour the blocks">
       <div class="seg">
@@ -29,6 +29,7 @@
         <button class="secondary on" data-mode="type" aria-pressed="true">Type</button>
         <button class="secondary" data-mode="price" aria-pressed="false">Price</button>
         <button class="secondary" data-mode="lease" aria-pressed="false">Lease</button>
+        <button class="secondary" data-mode="mop" aria-pressed="false">MOP</button>
       </div>
       <details class="view-options">
         <summary>View</summary>
@@ -67,6 +68,10 @@
       <div id="lease-controls" hidden>
         <div class="steps"><span class="l1"></span>under 60 yrs <span class="l2"></span>60-75 <span class="l3"></span>75-90 <span class="l4"></span>90+ left</div>
         <p class="small">Whether a short lease limits CPF use, HDB loans or grants depends on your age and the years left (for example, the lease should cover the youngest buyer to age 95). Check HDB's rules.</p>
+      </div>
+      <div id="mop-controls" hidden>
+        <div class="steps"><span class="m1"></span>within MOP <span class="m2"></span><b id="mop-end-label">MOP ends this year</b> <span class="m3"></span>past MOP</div>
+        <p class="small">Approximate, from each block's lease start year. Blocks with no resale yet are not shown.</p>
       </div>
       <details class="small"><summary>About this layer</summary><p id="layer-note" class="small"></p></details>
     </div>

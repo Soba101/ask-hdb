@@ -153,7 +153,7 @@ def test_metrics_give_a_median_only_with_enough_recent_sales_and_a_lease_estimat
     got = mapdata.metrics("4 ROOM")
     row = got["blocks"]["blk_1_a-st"]
     # six 4-room sales in 24 months (3-room one left out); newest sale 2026-09 had 636 months left, so 635 at 2026-10: 52 years
-    assert row == [401500, 6, 52] and got["as_of"] == "2026-10"
+    assert row[:3] == [401500, 6, 52] and got["as_of"] == "2026-10"
     assert got["blocks"]["other"][0] is None and got["blocks"]["other"][1] == 1  # one sale: no median
     assert any("not a valuation" in text for text in got["limits"])
     with pytest.raises(ValueError):
@@ -185,5 +185,55 @@ def test_metrics_boundaries_for_the_window_and_the_minimum_sales(monkeypatch):
     mapdata.metrics.cache_clear()
     got = mapdata.metrics("4 ROOM")["blocks"]
     assert got["edge"][:2] == [None, 2]          # two sales in the window: no median
-    assert got["three"] == [610000, 3, 75]       # exactly three sales: a median; 900 months left = 75 years
+    assert got["three"][:3] == [610000, 3, 75]       # exactly three sales: a median; 900 months left = 75 years
     mapdata.metrics.cache_clear()
+
+
+def _sales_with_lease_starts(starts):
+    return pd.DataFrame([
+        {"block_id": f"b{y}", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": y,
+         "lease_left_months": 900, "resale_price": 500000} for y in starts])
+
+
+def test_mop_codes_at_the_edge_years(monkeypatch):
+    # Data year 2026, MOP 5 years: start 2020 ended in 2025 (past), 2021 ends in 2026 (this data year), 2022 ends in 2027 (within).
+    monkeypatch.setattr(mapdata, "load_sales", lambda: _sales_with_lease_starts([2020, 2021, 2022]))
+    mapdata.metrics.cache_clear()
+    got = mapdata.metrics("4 ROOM")
+    assert [got["blocks"][f"b{y}"][3] for y in (2020, 2021, 2022)] == [2, 1, 0]
+    assert got["mop_years"] == 5 and got["mop_rule"]["id"] == "mop.standard_years" and "5 years" in got["mop_limits"]
+    mapdata.metrics.cache_clear()
+
+
+def test_mop_years_come_from_the_rules_getter(monkeypatch):
+    monkeypatch.setattr(mapdata, "load_sales", lambda: _sales_with_lease_starts([2016]))
+    mapdata.metrics.cache_clear()
+    assert mapdata.metrics("4 ROOM")["blocks"]["b2016"][3] == 2
+    monkeypatch.setattr(mapdata, "_mop_years", lambda: 10)
+    mapdata.metrics.cache_clear()
+    got = mapdata.metrics("4 ROOM")
+    assert got["blocks"]["b2016"][3] == 1 and got["mop_years"] == 10 and "10 years" in got["mop_limits"]
+    mapdata.metrics.cache_clear()
+
+
+def test_block_card_has_an_approximate_mop_fact():
+    card = mapdata.card(mapdata.resolve({"kind": "block", "id": "blk_1_a-st"}))
+    assert "MOP (estimated, approximate): past MOP" in card["facts"]
+    assert any("approximate" in text and "Check HDB" in text for text in card["limits"])
+
+
+def test_bto_estimated_completion(monkeypatch):
+    projects = pd.DataFrame([
+        {"project_id": "p1", "name": "P1", "lat": 1.3, "lng": 103.8, "category": "Standard", "units": 10, "wait_months": 47,
+         "first_launch": "2025-02", "town": "BEDOK"},
+        {"project_id": "p2", "name": "P2", "lat": 1.3, "lng": 103.8, "category": "Standard", "units": 10, "wait_months": 47,
+         "first_launch": None, "town": "BEDOK"},
+        {"project_id": "p3", "name": "P3", "lat": 1.3, "lng": 103.8, "category": "Standard", "units": 10, "wait_months": 12,
+         "first_launch": "2020-01", "town": "BEDOK"},
+        {"project_id": "p4", "name": "P4", "lat": 1.3, "lng": 103.8, "category": "Standard", "units": 10, "wait_months": 5,
+         "first_launch": "garbage", "town": "BEDOK"}])
+    monkeypatch.setattr(mapdata, "load_projects", lambda: projects)
+    facts = {p: mapdata.card({"kind": "bto", "id": p, "label": p})["facts"] for p in ("p1", "p2", "p3", "p4")}
+    assert any(f.startswith("Estimated completion: about 2029-01") and "approximate" in f for f in facts["p1"])
+    assert not any("Estimated" in f for f in facts["p2"] + facts["p4"])
+    assert "Estimated completion has passed; check HDB for the actual date." in facts["p3"]
