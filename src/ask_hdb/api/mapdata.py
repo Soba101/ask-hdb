@@ -211,3 +211,39 @@ def schools_nearby(selection, km=2.0):
          "A child can apply to any school; being nearby does not guarantee a place. Check MOE's P1 registration page and "
          "OneMap before relying on this."),
         "Borderline: just over 2 km by our point, which may fall within 2 km of the school boundary."]}
+
+
+METRIC_FLAT_TYPES = ("3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE")
+METRIC_MONTHS = 24
+METRIC_MIN_SALES = 3
+LEASE_YEARS = 99
+
+
+@lru_cache(maxsize=8)
+def metrics(flat_type):
+    """Per block: median resale price of one flat type over the last 24 months (when at least 3 sales) and remaining lease.
+
+    Remaining lease is 99 years from the lease start year to the data's latest year (a whole-year estimate).
+    Blocks with fewer sales have no price and are drawn grey. Descriptive only: not a valuation or a forecast.
+    """
+    if flat_type not in METRIC_FLAT_TYPES:
+        raise ValueError("Unsupported flat type")
+    sales = load_sales()
+    latest = sales.sale_month.max()
+    recent = sales[(sales.flat_type == flat_type) & (sales.sale_month > latest - pd.DateOffset(months=METRIC_MONTHS))]
+    grouped = recent.groupby("block_id").resale_price.agg(["median", "count"])
+    lease_start = sales.sort_values("sale_month").groupby("block_id").lease_commence_year.last()
+    blocks = {}
+    for block_id, start in lease_start.items():
+        row = [None, 0, int(start) + LEASE_YEARS - int(latest.year)]
+        if block_id in grouped.index:
+            row[1] = int(grouped.loc[block_id, "count"])
+            if row[1] >= METRIC_MIN_SALES:
+                row[0] = int(grouped.loc[block_id, "median"])
+        blocks[block_id] = row
+    return {"flat_type": flat_type, "window_months": METRIC_MONTHS, "min_sales": METRIC_MIN_SALES,
+            "as_of": f"{latest:%Y-%m}", "blocks": blocks,
+            "limits": [(f"Median of the last {METRIC_MONTHS} months of recorded resales (data.gov.sg, to {latest:%Y-%m}) for one flat type, "
+                        f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
+                       "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
+                       "Remaining lease is a whole-year estimate (99 years from the lease start year)."]}

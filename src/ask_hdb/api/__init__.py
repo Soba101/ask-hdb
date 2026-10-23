@@ -103,6 +103,12 @@ def create_app():
     def map_features():
         return JSONResponse(mapdata.features(), headers={"Cache-Control": "public, max-age=3600"})
 
+    @app.get("/map/metrics")
+    def map_metrics(flat_type: str):
+        if flat_type not in mapdata.METRIC_FLAT_TYPES:
+            raise HTTPException(404, "Unsupported flat type.")
+        return JSONResponse(mapdata.metrics(flat_type), headers={"Cache-Control": "public, max-age=3600"})
+
     @app.get("/around/{kind}/{key}")
     def around(kind: str, key: str, km: float):
         selection = mapdata.resolve({"kind": kind, "id": key})

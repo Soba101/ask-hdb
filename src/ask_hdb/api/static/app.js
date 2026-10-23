@@ -362,11 +362,60 @@ async function showCard(point) {
   }
 }
 
+// ---------- price and lease layers ----------
+let layerMode = "type";
+const metricsCache = {};
+
+function fmtMoney(n) { return "$" + Math.round(n).toLocaleString("en-SG"); }
+
+async function applyLayer() {
+  document.querySelectorAll("#layers [data-mode]").forEach((b) => {
+    const on = b.dataset.mode === layerMode;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
+  $("price-controls").hidden = layerMode !== "price";
+  $("lease-controls").hidden = layerMode !== "lease";
+  $("layer-note").textContent = "";
+  if (layerMode === "type") { mapLayer.layer("type", null, 0); return; }
+  const flat = layerMode === "price" ? $("flat-type").value : "4 ROOM"; // lease does not depend on the flat type
+  try {
+    if (!metricsCache[flat]) {
+      const response = await fetch("/map/metrics?flat_type=" + encodeURIComponent(flat));
+      if (!response.ok) throw new Error("no metrics");
+      metricsCache[flat] = await response.json();
+    }
+  } catch (error) {
+    $("layer-note").textContent = "Price and lease data could not be loaded.";
+    return;
+  }
+  const data = metricsCache[flat];
+  const prices = Object.values(data.blocks).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
+  const slider = $("budget");
+  if (layerMode === "price" && prices.length) {
+    if (slider.dataset.flat !== flat) { // a new flat type resets the budget to the top of its range
+      slider.min = String(Math.floor(prices[0] / 10000) * 10000);
+      slider.max = String(Math.ceil(prices[prices.length - 1] / 10000) * 10000);
+      slider.value = slider.max;
+      slider.dataset.flat = flat;
+    }
+    $("budget-label").textContent = fmtMoney(Number(slider.value));
+  }
+  mapLayer.layer(layerMode, data, Number(slider.value || 0));
+  $("layer-note").textContent = layerMode === "price"
+    ? "Grey: fewer than " + data.min_sales + " sales, or above your budget. " + data.limits.join(" ")
+    : data.limits[2] + " Based on the lease start year of each block.";
+}
+document.querySelectorAll("#layers [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
+$("flat-type").onchange = applyLayer;
+$("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); if (metricsCache[$("flat-type").value]) applyLayer(); };
+
 // ---------- map ----------
 // Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
-const todo = { highlight: [], select: null, fly: null, ring: null };
+const todo = { highlight: [], select: null, fly: null, ring: null, layer: null };
 const mapLayer = {
   ring(rings, fit) { todo.ring = rings.length ? { rings, fit } : null; },
+  layer(mode, data, budget) { todo.layer = { mode, data, budget }; },
   highlight(points) { todo.highlight = points; },
   select(point) { todo.select = point; },
   fly(bbox) { todo.fly = bbox; },
@@ -422,6 +471,7 @@ async function startMap() {
       }
       const blocks = { type: "FeatureCollection", features: data.features.filter((f) => f.properties.kind === "block") };
       const places = { type: "FeatureCollection", features: data.features.filter((f) => f.properties.kind !== "block") };
+      const blockFeatures = blocks.features;
       map.addSource("blocks", { type: "geojson", data: blocks });
       map.addSource("places", { type: "geojson", data: places });
       map.addSource("highlight", { type: "geojson", data: EMPTY });
@@ -464,12 +514,44 @@ async function startMap() {
           map.fitBounds(bounds, { padding: 60, duration: 500 });
         }
       };
+      mapLayer.layer = (mode, metricsData, budget) => {
+        // Price and lease colouring of the blocks: values come from /map/metrics (computed by code from the sales data).
+        const rows = metricsData ? metricsData.blocks : {};
+        for (const f of blockFeatures) {
+          const row = rows[f.properties.id];
+          f.properties.price = row && row[0] ? row[0] : 0;
+          f.properties.lease = row ? row[2] : 0;
+        }
+        map.getSource("blocks").setData({ type: "FeatureCollection", features: blockFeatures });
+        let color = COLORS, opacity = 0.6;
+        if (mode === "price" && metricsData) {
+          const prices = Object.values(rows).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
+          const at = (q) => prices[Math.min(prices.length - 1, Math.floor(prices.length * q))] || 1;
+          color = ["case", ["==", ["get", "price"], 0], "#b8bdc9", [">", ["get", "price"], budget], "#b8bdc9",
+            ["interpolate", ["linear"], ["get", "price"], at(0.1), "#1a9850", at(0.5), "#fee08b", at(0.9), "#d73027"]];
+          opacity = 0.9;
+        } else if (mode === "lease" && metricsData) {
+          color = ["step", ["get", "lease"], "#d73027", 60, "#fc8d59", 75, "#fee08b", 90, "#1a9850"];
+          opacity = 0.9;
+        }
+        map.setPaintProperty("blocks", "circle-color", color);
+        map.setPaintProperty("blocks", "circle-opacity", opacity);
+        // In a price or lease view the blocks carry the meaning, so draw them larger and the places quieter.
+        const coloured = mode !== "type";
+        map.setPaintProperty("blocks", "circle-radius", ["interpolate", ["linear"], ["zoom"], 10, coloured ? 2.2 : 1.5,
+          14, coloured ? 5 : 4, 17, coloured ? 9 : 8]);
+        map.setPaintProperty("places", "circle-opacity", coloured ? 0.5 : 1);
+        map.setPaintProperty("places", "circle-stroke-opacity", coloured ? 0.5 : 1);
+        map.setPaintProperty("places", "circle-radius", ["interpolate", ["linear"], ["zoom"], 10, coloured ? 2.5 : 3.5,
+          14, coloured ? 4 : 6, 17, coloured ? 7 : 9]);
+      };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);
       mapLayer.fly = (bbox) => {
         if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
         else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, maxZoom: 16, duration: 600 });
       };
+      if (todo.layer) mapLayer.layer(todo.layer.mode, todo.layer.data, todo.layer.budget);
       if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);
       mapLayer.highlight(todo.highlight);
       if (todo.select) mapLayer.select(todo.select);

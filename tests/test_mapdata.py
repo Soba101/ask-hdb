@@ -146,3 +146,21 @@ def test_place_names_keep_acronyms_and_small_words():
     from ask_hdb.geo.names import pretty_name
     assert pretty_name("CHIJ OUR LADY OF GOOD COUNSEL") == "CHIJ Our Lady of Good Counsel"
     assert pretty_name("ST. ANTHONY'S PRIMARY SCHOOL") == "St. Anthony's Primary School"
+
+
+def test_metrics_give_a_median_only_with_enough_recent_sales_and_a_lease_estimate():
+    mapdata.metrics.cache_clear()
+    got = mapdata.metrics("4 ROOM")
+    row = got["blocks"]["blk_1_a-st"]
+    assert row == [401500, 6, 1980 + 99 - 2026] and got["as_of"] == "2026-10"  # six 4-room sales in 24 months, 3-room one left out
+    assert got["blocks"]["other"][0] is None and got["blocks"]["other"][1] == 1  # one sale: no median
+    assert any("not a valuation" in text for text in got["limits"])
+    with pytest.raises(ValueError):
+        mapdata.metrics("1 ROOM")
+
+
+def test_metrics_route_accepts_only_the_offered_flat_types():
+    mapdata.metrics.cache_clear()
+    client = TestClient(api.create_app())
+    assert client.get("/map/metrics?flat_type=4 ROOM").json()["window_months"] == 24
+    assert client.get("/map/metrics?flat_type=1 ROOM").status_code == 404
