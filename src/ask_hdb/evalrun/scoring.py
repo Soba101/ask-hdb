@@ -16,7 +16,8 @@ DECLINES = (
     'cannot provide travel', "can't provide travel", 'no travel times', 'travel times are not available',
 )
 CLARIFIES = ('please provide', 'what is your', 'what are your', 'need your', 'tell me',
-             'could you share', 'could you provide', 'please share')
+             'could you share', 'could you provide', 'please share', 'please specify', 'could you specify',
+             'could you please specify', 'please clarify')
 DENIAL = r"\b(?:not eligible|ineligible|cannot buy|can't buy|not able to buy)\b"
 BENEFIT = r'\b(?:grants?|loans?|EHG|CPF)\b'
 
