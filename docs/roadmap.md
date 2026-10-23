@@ -90,9 +90,9 @@ Three phases; each gets approval before building.
 - [x] 5-4 (done 2026-10-23): `full` vs `agent`, two runs each on 72 dev questions: both 94-96% number, 93-100% verdict, grounding 100%; inside the same run-to-run spread (`docs/eval-results.md`).
 - **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).
 
-## Week 6: ship
+## Week 6: ship (in progress; plan and status: docs/week6-plan.md)
 - [ ] Langfuse tracing on every run.
-- [ ] Web app (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
+- [x] Web app, map-first (done 2026-10-24, PRs #52-#56: API with streamed tool evidence, rate limit and token cap; plain-JS page; MapLibre map of every block, station, school and BTO site; click to select; info cards; place lookup; radius ring; primary schools within 2 km with 1 km / 2 km rings). Original description: (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
       (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
       chat on the left, tool results and sources on the right, 3D map panel (MapLibre) with block, MRT and school markers.
       Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
