@@ -17,7 +17,7 @@ globalThis.document = { getElementById: get, createElement: () => new Element() 
 globalThis.requestAnimationFrame = (fn) => { fn(); return 1; };
 globalThis.cancelAnimationFrame = () => {};
 const { initBuildings, wallExposure } = await import(pathToFileURL(folder + "/buildings.js"));
-const { showBuildingFacts, clearBuildingCard, refreshFacade } = await import(pathToFileURL(folder + "/building-card.js"));
+const { showBuildingFacts, clearBuildingCard, refreshFacade, openBuildingSun } = await import(pathToFileURL(folder + "/building-card.js"));
 // Check the actual bundled conversion, whose azimuth convention differs from compass bearings.
 const { Or: sphericalToCartesian } = await import(pathToFileURL(process.cwd() + "/src/ask_hdb/api/static/vendor/maplibre/maplibre-gl-shared.mjs"));
 for (const row of fixture.exposures) assert.ok(Math.abs(wallExposure(...row.args) - row.value) < 1e-10);
@@ -102,10 +102,11 @@ const point = { id: "blk_a" };
 const facts = { floors: 12, height_source: "property_info", facing_label: "<img src=x>",
   storey_prices: [], storey_prices_limits: "Historical only" };
 showBuildingFacts(facts, point);
-await refreshFacade();
+await openBuildingSun(point);
 assert.ok(get("card-buildings").children.some((p) => p.textContent.includes("<img src=x>")));
 assert.ok(get("card-sun").children.some((p) => p.textContent.includes("Illustrative")));
 pendingFacade = {};
+get("sun-date").value = "2026-03-21";
 const late = refreshFacade();
 clearBuildingCard();
 pendingFacade.resolve(response(fixture.facades));
