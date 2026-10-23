@@ -2,7 +2,7 @@
 // The map is the main view: click a block, school, station or BTO site to select it; the chat then knows what
 // "this block" means. Map highlights come from the server, built by code from tool results, never from model text.
 import { initBuildings } from "./buildings.js";
-import { clearBuildingCard, showBuildingFacts } from "./building-card.js";
+import { initCard } from "./card.js";
 const $ = (id) => document.getElementById(id);
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
 const tools = $("tools"), sources = $("sources"), empty = $("empty");
@@ -225,159 +225,14 @@ $("tab-chat").onclick = () => tab("chat");
 $("tab-evidence").onclick = () => tab("evidence");
 
 // ---------- selection and info card ----------
-const QUESTIONS = {
-  block: ["What are the 3 nearest primary schools to this block?", "What were the recent resale prices here?"],
-  bto: ["What are the 3 nearest MRT stations to this project?", "What are the launch prices of this project?"],
-  mrt: [], lrt: [], primary_school: [],
-};
-
-// ---------- radius ring ----------
-let radiusKm = 0; // 0 = off; kept when another place is selected
-let radiusRequest = 0;
-
-function circle(lat, lng, km) {
-  // A display-only ring (flat-earth approximation, fine at this size); the counts come from the server.
-  const ring = [];
-  const dLat = km / 110.574;
-  const dLng = km / (111.32 * Math.cos((lat * Math.PI) / 180));
-  for (let i = 0; i <= 64; i++) {
-    const t = (i / 64) * 2 * Math.PI;
-    ring.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]);
-  }
-  return ring;
-}
-
-let schoolRings = false; // the "primary schools" view: 1 km solid ring and 2 km dashed ring
-
-function drawRadius(fit) {
-  const counts = $("radius-counts");
-  counts.textContent = "";
-  document.querySelectorAll(".radius button").forEach((b) => {
-    const on = !schoolRings && Number(b.dataset.km) === radiusKm;
-    b.classList.toggle("on", on);
-    b.setAttribute("aria-pressed", String(on));
-  });
-  const rings = [];
-  if (selected && schoolRings) rings.push({ km: 2, dash: true }, { km: 1, dash: false });
-  else if (selected && radiusKm) rings.push({ km: radiusKm, dash: true });
-  mapLayer.ring(selected ? rings.map((r) => ({ ...r, ring: circle(selected.lat, selected.lng, r.km) })) : [], fit);
-  if (!selected || !radiusKm || schoolRings) return;
-  const mine = ++radiusRequest;
-  fetch("/around/" + encodeURIComponent(selected.kind) + "/" + encodeURIComponent(selected.id) + "?km=" + radiusKm)
-    .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no counts"))))
-    .then((data) => {
-      if (mine !== radiusRequest) return; // the radius or the place changed meanwhile
-      const c = data.counts;
-      counts.textContent = "Within " + (radiusKm < 1 ? radiusKm * 1000 + " m" : radiusKm + " km") + " (straight-line): " +
-        c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites. " +
-        data.limits.join(" ");
-    })
-    .catch(() => { if (mine === radiusRequest) counts.textContent = "Counts could not be loaded."; });
-}
-
-document.querySelectorAll(".radius button").forEach((b) => {
-  b.onclick = () => { schoolRings = false; radiusKm = Number(b.dataset.km); drawRadius(true); };
-});
-
 function setSelected(point) {
-  if (schoolRings) mapLayer.highlight([]); // the school highlights belong to the old place
   selected = point;
-  schoolRings = false;
   $("selected").hidden = !point;
   if (point) $("selected-label").textContent = point.label;
   mapLayer.select(point);
-  if (point) showCard(point);
-  else { cardRequest++; clearBuildingCard(); $("card").hidden = true; }
-  drawRadius(false);
+  card.select(point);
 }
 $("selected-clear").onclick = () => setSelected(null);
-$("card-close").onclick = () => { $("card").hidden = true; };
-
-function addLayerFacts(point) {
-  const flat = layerMode === "lease" ? "4 ROOM" : $("flat-type").value;
-  const data = layerMode !== "type" ? metricsCache[flat] : null;
-  const row = data && data.blocks[point.id];
-  if (!row) return;
-  const add = (text) => { const li = document.createElement("li"); li.textContent = text; $("card-facts").appendChild(li); };
-  if (layerMode === "price") add(row[0] ? flat + " median, last " + data.window_months + " months: " + fmtMoney(row[0]) + " from " + row[1] + " sales"
-    : flat + ": " + row[1] + " sale(s) in " + data.window_months + " months, too few for a median");
-  add("Remaining lease: about " + row[2] + " years");
-}
-
-let schoolList = [];
-
-async function showSchools(point, mine) {
-  const box = $("schools");
-  box.hidden = true;
-  schoolList = [];
-  try {
-    const response = await fetch("/schools/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
-    if (!response.ok) return;
-    const data = await response.json();
-    if (mine !== cardRequest) return;
-    schoolList = data.schools;
-    const list = $("schools-list");
-    list.replaceChildren();
-    for (const school of data.schools) {
-      const li = document.createElement("li");
-      const button = document.createElement("button");
-      button.textContent = school.label;
-      button.onclick = () => mapLayer.fly([school.lng, school.lat, school.lng, school.lat]);
-      li.append(button, " \u2013 " + school.km.toFixed(2) + " km (" + school.band + ")");
-      list.appendChild(li);
-    }
-    const inside = data.schools.filter((s) => s.band !== "borderline").length;
-    $("schools-summary").textContent = "Primary schools within 2 km: " + inside +
-      (data.schools.length > inside ? " (+" + (data.schools.length - inside) + " borderline)" : "");
-    $("schools-limits").textContent = data.limits.join(" ");
-    box.hidden = false;
-    box.open = true; // the point is to let the buyer compare, so show the list without a click
-  } catch (error) { /* the list is an extra; the card still works without it */ }
-}
-$("schools-show").onclick = () => {
-  if (!schoolList.length || !selected) return;
-  schoolRings = true; // 1 km solid ring, 2 km dashed ring, schools ringed by band (green: within 1 km, amber: 1 to 2 km, grey: borderline)
-  radiusKm = 0;
-  mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolList.map((s) => ({ ...s, role: "result" }))]);
-  drawRadius(true);
-};
-
-let cardRequest = 0; // only the latest selection may fill the card
-async function showCard(point) {
-  const mine = ++cardRequest;
-  clearBuildingCard();
-  const card = $("card");
-  $("card-title").textContent = point.label;
-  $("card-facts").replaceChildren();
-  $("card-actions").replaceChildren();
-  $("card-limits").textContent = "";
-  card.hidden = false;
-  showSchools(point, mine);
-  try {
-    const response = await fetch("/card/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
-    if (!response.ok) throw new Error("no card");
-    const data = await response.json();
-    if (mine !== cardRequest) return; // the visitor clicked something else meanwhile
-    for (const fact of data.facts) {
-      const li = document.createElement("li");
-      li.textContent = fact;
-      $("card-facts").appendChild(li);
-    }
-    if (point.kind === "block") addLayerFacts(point); // the same figures the colours show, so colour is not the only cue
-    if (point.kind === "block") showBuildingFacts(data, point);
-    $("card-limits").textContent = data.limits.join(" ");
-  } catch (error) {
-    if (mine === cardRequest) $("card-limits").textContent = "No details could be loaded for this place.";
-  }
-  if (mine !== cardRequest) return;
-  for (const question of QUESTIONS[point.kind] || []) {
-    const button = document.createElement("button");
-    button.className = "secondary";
-    button.textContent = question.replace(/^What (are|were) (the )?/, "").replace(/\?$/, "");
-    button.onclick = () => { tab("chat"); ask(question); };
-    $("card-actions").appendChild(button);
-  }
-}
 
 // ---------- price and lease layers ----------
 let layerMode = "type";
@@ -388,6 +243,7 @@ function fmtMoney(n) { return "$" + Math.round(n).toLocaleString("en-SG"); }
 
 async function applyLayer() {
   const mine = ++layerRequest;
+  card.refreshMetrics(); // A different flat type must not retain the previous type's headline.
   document.querySelectorAll("#layers [data-mode]").forEach((b) => {
     const on = b.dataset.mode === layerMode;
     b.classList.toggle("on", on);
@@ -410,6 +266,7 @@ async function applyLayer() {
     return;
   }
   if (mine !== layerRequest) return; // an older response must not overwrite the current colour mode
+  card.refreshMetrics();
   const data = metricsCache[flat];
   const prices = Object.values(data.blocks).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
   const slider = $("budget");
@@ -445,6 +302,11 @@ const mapLayer = {
   select(point) { todo.select = point; },
   fly(bbox) { todo.fly = bbox; },
 };
+const card = initCard({
+  mapLayer,
+  metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
+  ask: (question) => { tab("chat"); ask(question); },
+});
 let maplibregl = null;
 const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
   "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
@@ -453,6 +315,7 @@ const EMPTY = { type: "FeatureCollection", features: [] };
 function runMapActions(actions) {
   for (const action of actions) {
     if (action.op === "highlight") {
+      card.chatHighlight();
       mapLayer.highlight(action.points);
       const list = $("points");
       list.replaceChildren();

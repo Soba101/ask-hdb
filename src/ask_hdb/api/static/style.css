@@ -112,3 +112,33 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .steps { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; margin-top: var(--space-2); }
 .steps span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: var(--space-2); }
 .steps .l1 { background: #440154; } .steps .l2 { background: #3b528b; } .steps .l3 { background: #21908d; } .steps .l4 { background: #fde725; }
+
+/* The summary stays short; chips reveal one detail section without nested scrolling. */
+.card { width: min(400px, calc(100% - 24px)); overflow-wrap: anywhere; }
+#card-subtitle { margin-top: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .headline { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; margin-top: var(--space-3); list-style: none; }
+.headline li { flex: 1 1 120px; padding: var(--space-2); border-radius: var(--radius); background: var(--bg); font-size: var(--small); }
+#card-sections { gap: var(--space-1); margin-top: var(--space-3); }
+.headline small { display: block; color: var(--muted); font-size: var(--caption); margin-top: var(--space-1); }
+.card-section { border-top: 1px solid var(--line); margin-top: var(--space-3); padding-top: var(--space-2); }
+.card-section h3 { font-size: var(--small); font-weight: 600; margin: 0; }
+.card-section p { margin: var(--space-2) 0; }
+.schools ul { max-height: none; overflow: visible; }
+#card-actions { border-top: 1px solid var(--line); padding-top: var(--space-2); }
+#card-actions button { font-size: var(--caption); text-align: left; max-width: 100%; }
+#card-about { margin-top: var(--space-3); }
+.layers .seg { gap: var(--space-1); padding: var(--space-1); background: var(--bg); border-radius: var(--radius); }
+.layers .seg-label { flex-basis: 100%; font-size: var(--caption); color: var(--muted); }
+.layers .seg button { flex: 1; min-width: 0; border-color: transparent; }
+.view-options { border-top: 1px solid var(--line); margin-top: var(--space-2); padding-top: var(--space-1); }
+.view-options > button { margin-top: var(--space-2); }
+
+@media (max-width: 800px) {
+  /* The card occupies the lower pane as a single sheet; the map keeps its full height. */
+  #app, #mapwrap, #side { min-width: 0; }
+  .legend { max-width: calc(100% - 24px); }
+  .card { position: fixed; top: 42dvh; bottom: 0; left: 0; width: 100%; max-height: none;
+          border-radius: var(--card-radius) var(--card-radius) 0 0; padding: var(--space-4);
+          padding-bottom: max(var(--space-4), env(safe-area-inset-bottom)); overflow-x: hidden; }
+  .card button { max-width: 100%; white-space: normal; }
+}
