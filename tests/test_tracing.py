@@ -144,7 +144,7 @@ def test_turn_names_tags_and_scores_one_trace(monkeypatch):
     assert prop["metadata"] == {"tool_source": "mcp", "model": "m1"}
     assert "user_id" not in prop and "session_id" not in prop
     assert log["update"]["input"] == "what is my grant?" and log["update"]["output"] == RESULT["answer"]
-    assert log["update"]["metadata"] == {"tokens": 900, "tool_calls": 2, "stopped_reason": None}
+    assert "metadata" not in log["update"]  # the mask would hide it; the scores carry the numbers
     scores = {s["name"]: (s["value"], s["data_type"]) for s in log["scores"]}
     assert scores == {"stopped": (0.0, "BOOLEAN"), "tool_calls": (2.0, "NUMERIC"), "grounded": (0.0, "BOOLEAN"),
                       "ungrounded_numbers": (1.0, "NUMERIC"), "grounding_rewritten": (1.0, "BOOLEAN")}
@@ -168,8 +168,11 @@ def test_tracing_errors_never_reach_the_caller(monkeypatch):
     with tracing.turn("direct") as t:
         t.client = types.SimpleNamespace(create_score=lambda **kw: 1 / 0)
         t.record("q", RESULT)  # a failing score is swallowed
+    log2 = {}
+    _fake_langfuse(monkeypatch, log2)
     with pytest.raises(KeyError), tracing.turn("direct"):
         raise KeyError("the answer's own error still propagates")
+    assert log2["update"] == {"level": "ERROR"}  # root marked failed, with no message
 
 
 def test_ask_wraps_the_whole_question_in_one_turn(monkeypatch):

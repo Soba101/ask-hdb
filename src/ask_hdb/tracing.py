@@ -10,6 +10,7 @@ Every tracing step swallows its own errors, so tracing can never break or fail a
 
 import os
 from contextlib import ExitStack, contextmanager, suppress
+from functools import cache
 
 REDACTED = "[redacted]"
 
@@ -56,6 +57,7 @@ def _client():
     return Langfuse(mask=mask, mask_otel_spans=mask_otel_spans)  # same singleton the callback handler uses
 
 
+@cache
 def _version():
     from importlib.metadata import version
 
@@ -77,8 +79,8 @@ class _Turn:
             calls = len(result.get("tool_calls") or [])
             stopped = result.get("stopped_reason")
             # Input and output go through the mask, so they read [redacted] unless TRACE_TEXT=1.
-            self.root.update(input=question, output=result.get("answer"),
-                             metadata={"tokens": result.get("tokens"), "tool_calls": calls, "stopped_reason": stopped})
+            # Token and tool-call counts are not set as metadata: the mask would hide them, so the scores and the generation usage carry them.
+            self.root.update(input=question, output=result.get("answer"))
             scores = [("stopped", bool(stopped), "BOOLEAN"), ("tool_calls", calls, "NUMERIC")]
             if grounding:  # absent when the run stopped or asked for confirmation
                 scores += [("grounded", not grounding.get("ungrounded"), "BOOLEAN"),
@@ -112,6 +114,11 @@ def turn(source):
                 stack.close()
     try:
         yield t
+    except BaseException:
+        if t.root is not None:
+            with suppress(Exception):
+                t.root.update(level="ERROR")  # no message: error text can quote visitor input
+        raise
     finally:
         with suppress(Exception):
             stack.close()
