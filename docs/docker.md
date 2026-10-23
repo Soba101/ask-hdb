@@ -16,7 +16,11 @@ docker compose up --build        # http://localhost:8000 (this machine only)
 - **Safety settings:** read-only file system, no new privileges, non-root user, a health check on `/health`, rate limit and daily token cap
   (`API_RATE_PER_MINUTE`, `API_DAILY_TOKEN_CAP`). Nothing about visitors is stored.
 - **Behind a proxy:** run `ask-hdb serve --forwarded-allow-ips <proxy ip>` (or set `FORWARDED_ALLOW_IPS`) so each visitor gets their own rate limit.
-- **Tracing:** the image does not include the optional Langfuse package, so tracing stays off in Docker; add `--extra tracing` to the `uv sync` lines to use it.
+- **Tracing:** off by default; the image does not include the optional Langfuse package. To use it, build with `TRACING=1 docker compose up --build`
+  (or `docker build --build-arg TRACING=1 .`), which installs the `tracing` extra, and put `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in `.env`.
+  Also set `LANGFUSE_BASE_URL` (`LANGFUSE_HOST` is the older name) for a non-default or self-hosted region, and `LANGFUSE_TRACING_ENVIRONMENT`
+  (for example `production` or `development`) so test traces stay apart. Visitor text stays `[redacted]` unless `TRACE_TEXT=1`.
+  Traces carry no user or session id, because the app deliberately stores nothing that links one question to another.
 - **Rate limit:** behind Docker Desktop port publishing every visitor can look like the same address, so all share one bucket.
 - **Worktrees:** if `data` is a symlink (git worktrees) `COPY data/clean` fails; copy the real folder into the build context.
 - **Checked 2026-10-23:** image builds (888 MB), starts healthy, serves the page, map data, cards and metrics, and answers a real question through

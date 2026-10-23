@@ -3,7 +3,11 @@
 # For a hosted model put LLM_PROVIDER, LLM_MODEL and LLM_API_KEY in .env (never in this file).
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # 1 installs the optional Langfuse package (the LANGFUSE_* keys in .env still switch tracing on).
+        TRACING: ${TRACING:-0}
     image: ask-hdb:local
     ports:
       # Loopback by default; set BIND_ADDR in .env to your LAN address to share it on your network only.

@@ -4,9 +4,12 @@ Visitor text is private: unless TRACE_TEXT=1 every input, output and metadata va
 messages (which can quote tool arguments the visitor's text produced) are dropped from the exported spans, so traces keep only
 structure: which tools ran, timings, token counts and whether a step failed.
 Install with `uv sync --extra tracing`; the app runs without the package.
+One visitor question is one trace (`turn`). No user or session id is set: the app keeps nothing that links questions.
+Every tracing step swallows its own errors, so tracing can never break or fail an answer.
 """
 
 import os
+from contextlib import ExitStack, contextmanager, suppress
 
 REDACTED = "[redacted]"
 
@@ -45,3 +48,70 @@ def callbacks():
         return []
     Langfuse(mask=mask, mask_otel_spans=mask_otel_spans)  # configures the client used by the handler (host and keys come from the environment)
     return [CallbackHandler()]
+
+
+def _client():
+    from langfuse import Langfuse
+
+    return Langfuse(mask=mask, mask_otel_spans=mask_otel_spans)  # same singleton the callback handler uses
+
+
+def _version():
+    from importlib.metadata import version
+
+    with suppress(Exception):
+        return version("ask-hdb")
+
+
+class _Turn:
+    """Handed to `ask()`; `record` adds the answer and the scores once the result exists."""
+
+    def __init__(self, client=None, root=None):
+        self.client, self.root = client, root
+
+    def record(self, question, result):
+        if self.root is None:
+            return
+        with suppress(Exception):  # tracing must never break an answer
+            grounding = result.get("grounding") or {}
+            calls = len(result.get("tool_calls") or [])
+            stopped = result.get("stopped_reason")
+            # Input and output go through the mask, so they read [redacted] unless TRACE_TEXT=1.
+            self.root.update(input=question, output=result.get("answer"),
+                             metadata={"tokens": result.get("tokens"), "tool_calls": calls, "stopped_reason": stopped})
+            scores = [("stopped", bool(stopped), "BOOLEAN"), ("tool_calls", calls, "NUMERIC")]
+            if grounding:  # absent when the run stopped or asked for confirmation
+                scores += [("grounded", not grounding.get("ungrounded"), "BOOLEAN"),
+                           ("ungrounded_numbers", len(grounding.get("ungrounded") or []), "NUMERIC"),
+                           ("grounding_rewritten", bool(grounding.get("rewritten")), "BOOLEAN")]
+            for name, value, kind in scores:  # numbers only, never a comment
+                self.client.create_score(name=name, value=float(value), data_type=kind,
+                                         trace_id=self.root.trace_id)
+
+
+@contextmanager
+def turn(source):
+    """One trace for one visitor question, however many graph runs it takes. A no-op when tracing is off."""
+    stack, t = ExitStack(), _Turn()
+    if enabled():
+        try:
+            from langfuse import propagate_attributes
+
+            client = _client()
+            model = os.getenv("LLM_MODEL")
+            meta = {"tool_source": source, **({"model": model} if model else {})}
+            version = _version()
+            stack.enter_context(propagate_attributes(
+                trace_name="answer-question", tags=["ask-hdb", f"tools-{source}"], metadata=meta,
+                **({"version": version} if version else {})))
+            t = _Turn(client, stack.enter_context(
+                client.start_as_current_observation(name="answer-question", as_type="agent")))
+        except Exception:  # noqa: BLE001 - a broken tracing setup means no tracing, not a failed answer
+            t = _Turn()
+            with suppress(Exception):
+                stack.close()
+    try:
+        yield t
+    finally:
+        with suppress(Exception):
+            stack.close()
