@@ -10,6 +10,7 @@ and that are **near what matters to you** (MRT, schools, parents).
 
 A map of every HDB block, MRT/LRT station, primary school and BTO site, with a chat beside it. Click a place and the chat knows what
 "this block" means; ask, and the answer shows its tool results, sources and the places on the map.
+The [3D view](docs/week7-3d.md) adds building heights, approximate block facing and illustrative sun geometry (no shade).
 
 | Answers shown on the map | Primary schools within 2 km (1 km and 2 km rings) |
 |---|---|

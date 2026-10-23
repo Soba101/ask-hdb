@@ -3,6 +3,7 @@
 .claude
 .env
 **/__pycache__
+# Keep raw outlines out; data/clean/buildings.geojson is included by COPY data/clean.
 data/raw
 eval/reports
 docs

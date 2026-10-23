@@ -1,6 +1,8 @@
 // Plain JS, no build step. The chat history lives only in this page's memory and is sent with each question.
 // The map is the main view: click a block, school, station or BTO site to select it; the chat then knows what
 // "this block" means. Map highlights come from the server, built by code from tool results, never from model text.
+import { initBuildings } from "./buildings.js";
+import { clearBuildingCard, showBuildingFacts } from "./building-card.js";
 const $ = (id) => document.getElementById(id);
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
 const tools = $("tools"), sources = $("sources"), empty = $("empty");
@@ -284,7 +286,8 @@ function setSelected(point) {
   $("selected").hidden = !point;
   if (point) $("selected-label").textContent = point.label;
   mapLayer.select(point);
-  if (point) showCard(point); else $("card").hidden = true;
+  if (point) showCard(point);
+  else { cardRequest++; clearBuildingCard(); $("card").hidden = true; }
   drawRadius(false);
 }
 $("selected-clear").onclick = () => setSelected(null);
@@ -342,6 +345,7 @@ $("schools-show").onclick = () => {
 let cardRequest = 0; // only the latest selection may fill the card
 async function showCard(point) {
   const mine = ++cardRequest;
+  clearBuildingCard();
   const card = $("card");
   $("card-title").textContent = point.label;
   $("card-facts").replaceChildren();
@@ -360,6 +364,7 @@ async function showCard(point) {
       $("card-facts").appendChild(li);
     }
     if (point.kind === "block") addLayerFacts(point); // the same figures the colours show, so colour is not the only cue
+    if (point.kind === "block") showBuildingFacts(data, point);
     $("card-limits").textContent = data.limits.join(" ");
   } catch (error) {
     if (mine === cardRequest) $("card-limits").textContent = "No details could be loaded for this place.";
@@ -377,10 +382,12 @@ async function showCard(point) {
 // ---------- price and lease layers ----------
 let layerMode = "type";
 const metricsCache = {};
+let layerRequest = 0;
 
 function fmtMoney(n) { return "$" + Math.round(n).toLocaleString("en-SG"); }
 
 async function applyLayer() {
+  const mine = ++layerRequest;
   document.querySelectorAll("#layers [data-mode]").forEach((b) => {
     const on = b.dataset.mode === layerMode;
     b.classList.toggle("on", on);
@@ -398,10 +405,11 @@ async function applyLayer() {
       metricsCache[flat] = await response.json();
     }
   } catch (error) {
+    if (mine !== layerRequest) return;
     $("layer-note").textContent = "Price and lease data could not be loaded.";
     return;
   }
-  if (layerMode !== "lease" && flat !== $("flat-type").value) return; // the visitor switched flat type while this one loaded
+  if (mine !== layerRequest) return; // an older response must not overwrite the current colour mode
   const data = metricsCache[flat];
   const prices = Object.values(data.blocks).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
   const slider = $("budget");
@@ -510,15 +518,21 @@ async function startMap() {
         "circle-radius": ["case", ["==", ["get", "role"], "origin"], 11, 8] } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
+      const buildings = initBuildings(map);
+      const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
       for (const layer of ["places", "blocks", "highlight"]) {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
       map.on("click", (e) => {
         const box = [[e.point.x - 7, e.point.y - 7], [e.point.x + 7, e.point.y + 7]];
-        const hits = map.queryRenderedFeatures(box, { layers: ["places", "highlight", "blocks"] });
+        const layers = ["places", "highlight", "blocks"];
+        if (map.getLayer("buildings")) layers.push("buildings");
+        const hits = map.queryRenderedFeatures(box, { layers });
         if (!hits.length) return;
-        const f = hits[0]; // places are drawn above blocks, so they come first
+        const hit = hits[0]; // places are drawn above blocks, so they come first
+        const f = hit.layer.id === "buildings" ? blockIndex.get(hit.properties.block_id) : hit;
+        if (!f) return;
         const [lng, lat] = f.geometry.coordinates;
         setSelected({ kind: f.properties.kind, id: f.properties.id, label: f.properties.label, lat, lng });
       });
@@ -556,6 +570,7 @@ async function startMap() {
           opacity = 0.9;
         }
         map.setPaintProperty("blocks", "circle-color", color);
+        buildings.setMetrics(mode, rows, color);
         map.setPaintProperty("blocks", "circle-opacity", opacity);
         // In a price or lease view the blocks carry the meaning, so draw them larger and the places quieter.
         const coloured = mode !== "type";

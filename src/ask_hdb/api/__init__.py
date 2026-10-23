@@ -18,7 +18,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
 from ask_hdb import agent
-from ask_hdb.api import mapdata
+from ask_hdb.api import buildings, mapdata
 from ask_hdb.api.points import map_actions, map_points
 
 NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "
@@ -98,6 +98,7 @@ def create_app():
     app.state.limits = limits
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.include_router(buildings.router)
 
     @app.get("/map/features")
     def map_features():
