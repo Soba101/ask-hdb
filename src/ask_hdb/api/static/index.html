@@ -36,8 +36,16 @@
         <label>Time <b id="sun-time-label">12:00 (+08:00)</b>
           <input id="sun-time" type="range" min="360" max="1170" step="15" value="720" disabled>
         </label>
+        <div class="sun-actions" role="group" aria-label="Sun playback">
+          <button id="sun-now" class="secondary" type="button">Now</button>
+          <button id="sun-play" class="secondary" type="button" aria-pressed="false">Play</button>
+        </div>
         <p id="sun-position" class="small" role="status"></p>
-        <p class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat. No shade from other blocks or clouds.
+        <p class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat.
+          The 3D light shades each wall by its direction but does not cast shadows onto other buildings.
+          Shadows drawn on the ground are illustrative (ground shadows only), using the convex hull of each footprint;
+          this overestimates L-shaped and courtyard blocks. No trees or clouds; overlaps may look darker.
+          Shadows appear at zoom 15 or closer, for up to 600 nearby buildings, with lengths capped at 300 m and hidden below 10° sun altitude.
           In Type mode, grey to yellow shows increasing exposure on the sunnier long facade. Facing is approximate per block, not per unit.</p>
       </div>
       </details>

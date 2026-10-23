@@ -18,7 +18,7 @@ def test_building_controls_and_sun_formula_offline(tmp_path):
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("buildings.js", "building-card.js", "card.js", "card-map.js", "app.js"):
+    for name in ("buildings.js", "sun-controls.js", "shadows.js", "building-card.js", "card.js", "card-map.js", "app.js"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
@@ -28,14 +28,17 @@ def test_building_controls_and_sun_formula_offline(tmp_path):
     fixture = {
         "sun": {"date": "2026-03-20", "positions": samples},
         "facades": {"date": "2026-03-20", "facades": facade_day("2026-03-20", [90, 270]), "limits": "No shade"},
-        "buildings": {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {},
+        "buildings": {"type": "FeatureCollection", "features": [{"type": "Feature",
+                       "geometry": {"type": "Polygon", "coordinates": [[[103.8, 1.3], [103.8001, 1.3],
+                       [103.8001, 1.3001], [103.8, 1.3001], [103.8, 1.3]]]},
                        "properties": {"block_id": "blk_a", "height_m": 33.6, "facing": [90, 270]}}]},
         "exposures": [{"args": [s["azimuth"], s["altitude"], b],
                        "value": wall_exposure(s["azimuth"], s["altitude"], b) if s["altitude"] > 0 else 0}
                       for s in samples for b in range(0, 360, 45)]}
     (tmp_path / "fixture.json").write_text(json.dumps(fixture))
-    done = subprocess.run([node, "tests/buildings_ui.mjs", str(tmp_path)], check=False, capture_output=True, text=True)
-    assert done.returncode == 0, done.stdout + done.stderr
+    for script in ("buildings_ui.mjs", "shadows_ui.mjs"):
+        done = subprocess.run([node, "tests/" + script, str(tmp_path)], check=False, capture_output=True, text=True)
+        assert done.returncode == 0, done.stdout + done.stderr
 
 
 class PageTree(HTMLParser):
@@ -66,7 +69,7 @@ def test_card_offline(tmp_path, script):
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js"):
+    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
