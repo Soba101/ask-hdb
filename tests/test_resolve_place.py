@@ -76,3 +76,11 @@ def test_a_label_from_a_tool_result_is_a_name_but_other_numbers_still_need_evide
     assert named["ungrounded"] == []
     invented = grounding.check("Blk 227 Bishan St 23 has 23 primary schools nearby.", "q", results)
     assert invented["ungrounded"] == ["23"]  # the name is left out, the invented count is not
+
+
+def test_a_block_number_the_user_wrote_may_be_restated():
+    from ask_hdb import grounding
+
+    echoed = grounding.check("Several blocks are numbered 227; which one?", "How far is the nearest MRT from Blk 227?", [])
+    assert echoed["ungrounded"] == []
+    assert grounding.check("There are 228 matches.", "How far from Blk 227?", [])["ungrounded"] == ["228"]

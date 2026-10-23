@@ -152,6 +152,10 @@ def _labels(node):
 def check(answer, question, results):
     """Return the stated numbers (question echoes left out) and the ungrounded ones."""
     given = {c[1] for c in claims(question)}
+    # "Blk 227" in the question is a label the claims skip, but the user did write 227, so restating it is an echo.
+    for pattern in LABELS[1:3]:
+        for match in re.finditer(pattern, str(question), re.IGNORECASE):
+            given.update(Decimal(n) for n in re.findall(r'\d+', match.group()))
     asked_dates = {iso for _, iso in _date_claims(str(question))[1]}
     # A question number is only an echo when it is not presented as a threshold.
     # A place label that code wrote from our tables ("Blk 227 Bishan St 23") is a name, not a claim: leave exactly that text out.
