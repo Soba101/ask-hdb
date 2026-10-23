@@ -254,6 +254,7 @@ async function applyLayer() {
   });
   $("price-controls").hidden = layerMode !== "price";
   $("lease-controls").hidden = layerMode !== "lease";
+  $("mop-controls").hidden = layerMode !== "mop";
   $("layer-note").textContent = "";
   if (layerMode === "type") { mapLayer.layer("type", null, 0); return; }
   const flat = layerMode === "price" ? $("flat-type").value : "4 ROOM"; // lease does not depend on the flat type
@@ -265,7 +266,7 @@ async function applyLayer() {
     }
   } catch (error) {
     if (mine !== layerRequest) return;
-    $("layer-note").textContent = "Price and lease data could not be loaded.";
+    $("layer-note").textContent = "Layer data could not be loaded.";
     return;
   }
   if (mine !== layerRequest) return; // an older response must not overwrite the current colour mode
@@ -287,8 +288,12 @@ async function applyLayer() {
     $("ramp-high").textContent = fmtMoney(at(0.9));
   }
   mapLayer.layer(layerMode, data, Number(slider.value || 0));
+  const year = data.as_of.slice(0, 4);
+  $("mop-end-label").textContent = "MOP ends around " + year;
   $("layer-note").textContent = layerMode === "price"
     ? "Grey: fewer than " + data.min_sales + " sales, or above your budget. " + data.limits.join(" ")
+    : layerMode === "mop"
+    ? "Amber: within MOP. Light amber: MOP ends around " + year + ". Blue: past MOP. Grey: no data. " + data.mop_limits
     : data.limits[2] + " Based on the lease start year of each block.";
 }
 document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
@@ -421,6 +426,7 @@ async function startMap() {
           const row = rows[f.properties.id];
           f.properties.price = row && row[0] ? row[0] : 0;
           f.properties.lease = row ? row[2] : -1; // -1: no lease known, drawn grey
+          f.properties.mop = row?.[3] ?? -1;
         }
         if (lastMetrics !== metricsData || lastMode !== mode) { // a slider move only changes the colour expression
           map.getSource("blocks").setData({ type: "FeatureCollection", features: blockFeatures });
@@ -435,6 +441,9 @@ async function startMap() {
           opacity = 0.9;
         } else if (mode === "lease" && metricsData) {
           color = ["case", ["<", ["get", "lease"], 0], "#b8bdc9", ["step", ["get", "lease"], "#440154", 60, "#3b528b", 75, "#21908d", 90, "#fde725"]];
+          opacity = 0.9;
+        } else if (mode === "mop" && metricsData) {
+          color = ["match", ["get", "mop"], 0, "#d98200", 1, "#f7c873", 2, "#1d5fd6", "#b8bdc9"];
           opacity = 0.9;
         }
         map.setPaintProperty("blocks", "circle-color", color);
