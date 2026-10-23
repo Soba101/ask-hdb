@@ -3,7 +3,7 @@
 An agent that helps you find HDB resale flats you are **eligible for**, can **afford**,
 and that are **near what matters to you** (MRT, schools, parents).
 
-> Status (2026-10-24): data tools, rules, the grounded agent, an eval bank (124 questions) and a map-first web app are built and run locally
+> Status (2026-10-23): data tools, rules, the grounded agent, an eval bank (124 questions) and a map-first web app are built and run locally
 > on a 9B model. Not deployed. See [docs/roadmap.md](docs/roadmap.md) and [docs/week6-plan.md](docs/week6-plan.md).
 
 ## The app
@@ -85,7 +85,7 @@ Use `--only price --verbose --limit 2` for a small run. Held-out questions run o
 `--heldout`. Reports resume explicitly; existing completed results and errors are retained.
 See [evaluation details](docs/eval.md) and [comparison status](docs/eval-results.md).
 
-Results on the dev set (85 questions), one 9B local model (qwen3.5-9b-16k on a MacBook), 2026-10-23; two runs each, so the spread is visible:
+The first four rows are the 72-question dev set (2026-10-22/23, two runs each so the spread is visible); the bank has since grown to 85 dev questions. One 9B local model (qwen3.5-9b-16k on a MacBook):
 
 | Condition | Number | Verdict | Refusal | Grounding |
 |---|---|---|---|---|
@@ -95,9 +95,8 @@ Results on the dev set (85 questions), one 9B local model (qwen3.5-9b-16k on a M
 | Agent plus "Is this right?" profile confirmation, run A | 94.1% | 100% | 85.7% | 100% |
 | Agent plus "Is this right?" profile confirmation, run B | 94.1% | 92.9% | 100% | 100% |
 
-Rows 2-5 are the 72-question dev set before the map questions were added; the map, distance and refusal questions were re-run after (map 9/9,
-refusal 11/11). The confirmation step is a safety feature, not an accuracy gain. Every round, regression and fix is in
-[docs/eval-results.md](docs/eval-results.md). Held-out questions were run once (24 of 30) and not tuned on.
+After the map questions were added, the map (9/9), distance (5/5) and refusal (11/11 after a scorer wording fix) kinds were re-run, not the whole set. The confirmation step is a safety feature, not an accuracy gain. Every round, regression and fix is in
+[docs/eval-results.md](docs/eval-results.md). The 30 held-out questions that existed in week 5 were run once (24 of 30) and not tuned on; 38 are held out now.
 
 ## Stack (each picked to match current AI engineer job descriptions)
 

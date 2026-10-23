@@ -17,7 +17,7 @@ def get_chat_model():
     if provider == "local":
         # Thinking tokens made a 9B model slow and sloppy on tool calls; turn them off.
         options["reasoning_effort"] = os.getenv("LLM_REASONING_EFFORT", "none")
-        return ChatOpenAI(**options, base_url=url or "http://localhost:11434/v1",
+        return ChatOpenAI(**options, base_url=url or os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
                           api_key=key or "none")
     if provider == "openai":
         return ChatOpenAI(**options, **({"api_key": key} if key else {}),

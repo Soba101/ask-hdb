@@ -1,5 +1,5 @@
 # Simulated hosting: the same image you would deploy, run locally.
-# The model is reached over the network, never inside the container: by default the Ollama on this machine.
+# The model is reached over the network, never inside the container: by default the Ollama on this machine (LOCAL_LLM_URL).
 # For a hosted model put LLM_PROVIDER, LLM_MODEL and LLM_API_KEY in .env (never in this file).
 services:
   app:
@@ -11,7 +11,8 @@ services:
       - path: .env
         required: false
     environment:
-      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      # Only the local-model default points at the host; a hosted provider ignores it, so its API key never goes to port 11434.
+      LOCAL_LLM_URL: ${LOCAL_LLM_URL:-http://host.docker.internal:11434/v1}
       LLM_TIMEOUT: ${LLM_TIMEOUT:-420}
       API_RATE_PER_MINUTE: ${API_RATE_PER_MINUTE:-6}
       API_DAILY_TOKEN_CAP: ${API_DAILY_TOKEN_CAP:-2000000}
