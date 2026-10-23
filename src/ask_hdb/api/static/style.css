@@ -272,9 +272,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
   /* (d) map zoom control: separate circular floating buttons */
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group { display: flex; flex-direction: column; gap: 8px; background: none; box-shadow: none; border-radius: 0; }
-  .maplibregl-ctrl-group button { width: 44px; height: 44px; border-radius: 50%; background-color: var(--material);
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group button { width: 44px; height: 44px; border-radius: 50%; background-color: var(--material);
     -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
-  .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
 
   /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
   #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
@@ -311,7 +311,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
     --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3;
   }
-  .maplibregl-ctrl-icon { filter: invert(1); }
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
 }
 /* Spring-like settle for the sheet, only when motion is welcome; the drag state keeps its own no-transition rule. */
 @media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
