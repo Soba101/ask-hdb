@@ -137,8 +137,11 @@ def _mop_code(start, data_year, years):
 
 
 def _mop_limits(years):
-    return (f"MOP is {years} years from key collection. We only know each block's lease start year, so this status is approximate "
-            "(a block can reach MOP months earlier or later). Blocks with no resale yet are not shown. Check HDB for a specific flat.")
+    plus_prime = load_rules(BTO_FILE).get("mop.plus_prime_years")
+    return (f"MOP is {years} years from key collection for standard flats. We only know each block's lease start year, so this status is approximate "
+            "(a block can reach MOP months earlier or later). "
+            f"Plus and Prime flats have a {plus_prime}-year MOP; the data cannot identify them, and none has been resold yet. "
+            "Blocks with no resale yet are not shown. Check HDB for a specific flat.")
 
 
 def _block_facts(selection):

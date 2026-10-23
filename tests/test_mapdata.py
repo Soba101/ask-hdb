@@ -202,6 +202,7 @@ def test_mop_codes_at_the_edge_years(monkeypatch):
     got = mapdata.metrics("4 ROOM")
     assert [got["blocks"][f"b{y}"][3] for y in (2020, 2021, 2022)] == [2, 1, 0]
     assert got["mop_years"] == 5 and got["mop_rule"]["id"] == "mop.standard_years" and "5 years" in got["mop_limits"]
+    assert "Plus and Prime flats have a 10-year MOP" in got["mop_limits"]  # not every flat is 5 years
     mapdata.metrics.cache_clear()
 
 
