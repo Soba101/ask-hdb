@@ -225,9 +225,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (max-width: 800px) {
   :root {
     --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
-    --text: #000; --muted: rgba(60, 60, 67, .6); --line: rgba(60, 60, 67, .29);
-    --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .72); --floating: var(--material);
-    --grabber: rgba(60, 60, 67, .3); --ios-blue: #007aff;
+    --text: #000; --muted: #636366; --line: rgba(60, 60, 67, .29);
+    --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .9); --floating: var(--material);
+    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3;
     --t-title: 22px; --t-body: 17px; --t-sub: 15px; --t-foot: 13px; --t-cap: 12px;
   }
   body { font-family: var(--font); color: var(--text); }
@@ -276,28 +276,21 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
   .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
 
-  /* (e) card sections as an iOS inset grouped list; same buttons, and flex order lets each row expand in place */
-  #sheet-content .card { display: flex; flex-direction: column; }
-  #card-sections { display: contents; }
+  /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
+  #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
   #card-sections > button.secondary, #card-sections > button.secondary.on { display: flex; align-items: center; justify-content: space-between;
     width: 100%; min-height: 44px; margin: 0; padding: 0 16px; border: 0; border-bottom: .5px solid var(--line); border-radius: 0;
-    background: var(--fill); color: var(--text); font-size: var(--t-body); font-weight: 600; text-align: left; }
-  #card-sections > button:first-child { margin-top: 12px; border-radius: 12px 12px 0 0; }
-  #card-sections > button:last-child:not([aria-expanded="true"]) { border-bottom: 0; border-radius: 0 0 12px 12px; }
-  #card-sections > button:first-child:last-child:not([aria-expanded="true"]) { border-radius: 12px; }
+    background: transparent; color: var(--text); font-size: var(--t-body); font-weight: 600; text-align: left; }
+  #card-sections > button:last-child { border-bottom: 0; }
   #card-sections > button::after { content: ""; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0;
     transform: rotate(45deg); flex-shrink: 0; margin-left: 12px; }
   #card-sections > button[aria-expanded="true"]::after { transform: rotate(135deg); }
-  #card-sections > [aria-controls="card-prices"] { order: 1; } #card-prices { order: 2; }
-  #card-sections > [aria-controls="card-lease"] { order: 3; } #card-lease { order: 4; }
-  #card-sections > [aria-controls="card-facing"] { order: 5; } #card-facing { order: 6; }
-  #card-sections > [aria-controls="schools"] { order: 7; } #schools { order: 8; }
-  #card-sections > [aria-controls="card-nearby"] { order: 9; } #card-nearby { order: 10; }
-  #card-prices, #card-lease, #card-facing, #schools, #card-nearby { background: var(--fill); margin: 0; padding: 8px 16px; border-top: 0; }
-  #card-nearby { border-radius: 0 0 12px 12px; }
-  #card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { display: none; }
+  #card-prices, #card-lease, #card-facing, #schools, #card-nearby { background: var(--fill); margin: 8px 0 0; padding: 8px 16px; border: 0; border-radius: 12px; }
+  /* The row already names the section; keep the heading for screen readers. */
+  #card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }
   #schools > h3 { font-size: var(--t-sub); }
-  #card-actions { order: 20; border-top: 0; } #card-about { order: 21; }
+  #side[data-snap=peek] #sheet-peek h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* (g) sun bar: compact floating capsule, 4px track, 22px thumb, capsule buttons */
   #sun-panel { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
@@ -315,8 +308,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 }
 @media (max-width: 800px) and (prefers-color-scheme: dark) {
   :root {
-    --text: #fff; --muted: rgba(235, 235, 245, .6); --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .72); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0a84ff;
+    --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3;
   }
   .maplibregl-ctrl-icon { filter: invert(1); }
 }
