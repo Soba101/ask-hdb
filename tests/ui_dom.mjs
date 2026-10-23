@@ -34,7 +34,10 @@ class Element {
   removeAttribute(key) { delete this.attrs[key]; }
   querySelectorAll(selector) { return query(this, selector); }
   querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
-  focus() { const previous = document.activeElement; document.activeElement = this; fire(this, "focusin", { relatedTarget: previous }); }
+  closest(selector) { for (let n = this; n; n = n.parentNode) if (matches(n, selector)) return n; return null; }
+  focus() {
+    for (let n = this; n; n = n.parentNode) if (n.inert) return; // inert subtrees refuse focus
+    const previous = document.activeElement; document.activeElement = this; fire(this, "focusin", { relatedTarget: previous }); }
   setPointerCapture(id) { this.capture = id; }
   hasPointerCapture(id) { return this.capture === id; }
   releasePointerCapture() { this.capture = null; }

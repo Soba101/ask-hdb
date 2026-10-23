@@ -9,7 +9,7 @@ export function sheetGestures({ handles, button, active, height, points, snap, p
       suppressClick = false;
       // Capture immediately so a pointer leaving the header cannot strand a pending drag.
       // Other buttons keep their native click target, including the card close button.
-      if (event.target.tagName.toLowerCase() === "button" && event.target !== button) return;
+      if (event.target.closest("button") && event.target !== button) return;
       const capture = event.target === button ? button : node;
       drag = { id: event.pointerId, y: event.clientY, height: height(), moved: false, node: capture };
       capture.setPointerCapture(event.pointerId);

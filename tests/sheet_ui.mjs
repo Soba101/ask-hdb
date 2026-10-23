@@ -72,8 +72,20 @@ for (const target of [get("log"), get("map")]) {
   fire(target, "pointerup", { clientY: 100 }); assert.equal(state(), "peek");
 }
 get("question").focus(); get("tab-evidence").focus();
-assert.equal(state(), "half", "focus entering folded content raises it without a focus handoff");
-assert.equal(document.activeElement, get("tab-evidence"));
+assert.equal(document.activeElement, get("question"), "inert content refuses focus");
+fire(side, "pointerdown"); handle.focus(); fire(side, "pointerup");
+assert.equal(state(), "peek", "a press focusing the handle leaves the click to step it");
+get("question").focus(); handle.focus();
+assert.equal(state(), "half", "Tab from the search bar into the peek area raises the sheet");
+key("Escape", get("question")); assert.equal(state(), "peek");
+assert.equal(key("Escape", get("question")).defaultPrevented, false, "Escape at peek is not prevented");
+assert.equal(key("Escape").defaultPrevented, false);
+// A tap on a child of a header button still clicks that button.
+const child = document.createElement("span"); get("card-close").append(child);
+let clicks = 0; get("card-close").addEventListener("click", () => { clicks++; });
+fire(child, "pointerdown", { clientY: 400 }); fire(child, "pointermove", { clientY: 300 });
+fire(child, "pointerup", { clientY: 300 }); fire(child, "click");
+assert.equal(clicks, 1); assert.equal(state(), "peek"); child.remove();
 key("Escape"); fire(get("question"), "click");
 assert.equal(chats, 1); assert.equal(state(), "full");
 assert.equal(document.activeElement, get("question"));
@@ -134,7 +146,7 @@ assert.equal(get("toggle-3d").getAttribute("aria-pressed"), "false");
 window.visualViewport.height = 500; window.visualViewport.offsetTop = 20; view.keyboard();
 assert.equal(get("app").style.getPropertyValue("--kb"), "280px");
 assert.equal(sheetHeight(), 400); assert.equal(side.dataset.snap, "half");
-assert.deepEqual(sheet.padding(60), { top: 60, left: 60, right: 60, bottom: 460 });
+assert.equal(sheet.padding(60), 60, "setPadding already applies the sheet height");
 window.visualViewport.height = 800; window.visualViewport.offsetTop = 0; view.keyboard();
 assert.equal(get("app").style.getPropertyValue("--kb"), "0px");
 window.innerHeight = 1000; window.visualViewport.height = 1000; view.resize();
