@@ -1,10 +1,19 @@
 # Buildings and sun
 
-Use the map's **3D** button to tilt the map and show HDB outlines. The date and time controls
-move the light and show the sun's compass azimuth and altitude in Singapore time (+08:00).
+Tilting the map above 10 degrees with a user gesture shows HDB outlines automatically;
+levelling it below 3 degrees restores the flat map. The **3D** button remains a manual override,
+including on phones without a tilt gesture. Automatic changes never move the camera or change
+its saved pitch; programmatic pitch changes cannot trigger automatic mode. A failed outline
+load is not retried by tilting; the button reports the error and allows a manual retry.
+The date and time controls move the light and show the sun's compass azimuth and altitude
+in Singapore time (+08:00). **Now** uses UTC+8 regardless of the browser's zone, rounds down
+to a quarter hour and clamps to 06:00–19:30; outside that range it says “The sun is down.”
+**Play** advances one quarter-hour step about every 150 ms (about 8 seconds for 54 steps),
+stopping at 19:30 without wrapping. Slider, date, Now and 3D input or a hidden tab stop play;
+panning does not. Reduced-motion preferences disable play.
 Price and Lease keep their existing colours and budget filter. In Type mode, grey to yellow
 shows increasing exposure on the sunnier of the block's two long facades. Turning 3D off
-restores the point layer, previous pitch and light. A building click uses the same block
+restores the point layer and previous light; manual off also restores the saved pitch. A building click uses the same block
 selection, card and chat context as a point click.
 
 Run this offline before building the Docker image:
@@ -37,9 +46,19 @@ there is no unit-level facing or price.
 with quarter-hour samples. `/sun/block/{key}` computes cosine incidence on each vertical
 facade, sampled direct-sun hours and first peak time. Dates default to today in Singapore.
 This is **illustrative geometry, not measured heat**. It ignores shade from other blocks,
-clouds, atmospheric refraction, balconies and local terrain. The light does not cast building
-shadows. Hours are sampled, not precise sunrise/sunset integration; the same solar position
+clouds, atmospheric refraction, balconies and local terrain. Hours are sampled, not precise
+sunrise/sunset integration; the same solar position
 is used across Singapore. The model does not calculate these facts.
+
+The 3D light shades each wall by its direction but does not cast shadows onto other buildings'
+walls or roofs. Shadows drawn on the ground are illustrative (**ground shadows only**).
+Each polygon part uses the convex hull of its footprint and its offset, separately for a
+MultiPolygon; this overestimates L-shaped and courtyard blocks. No trees or clouds are
+included, overlaps may look darker, and heights come from floor counts. Shadows appear at
+zoom 15 or closer, for up to 600 buildings in the viewport widened by 300 m on the sun's side.
+Length is height divided by the tangent of sun altitude, capped at 300 m; shadows are hidden
+below 10 degrees altitude and cleared when 3D is off. This display never changes the facade
+exposures or direct-sun hours, which still ignore shade from other blocks.
 
 Block cards also show recorded resale medians for three-storey bands over the latest
 24 months in the dataset, only with at least five sales per band. All flat types are pooled,
