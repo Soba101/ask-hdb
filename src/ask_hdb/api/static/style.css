@@ -220,3 +220,100 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .layers label { min-width: 0; }
   button { touch-action: manipulation; }
 }
+
+/* Phone only: native iOS / Apple Maps look. Everything below sits inside the phone query, so desktop is untouched. */
+@media (max-width: 800px) {
+  :root {
+    --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+    --text: #000; --muted: #636366; --line: rgba(60, 60, 67, .29);
+    --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .9); --floating: var(--material);
+    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3;
+    --t-title: 22px; --t-body: 17px; --t-sub: 15px; --t-foot: 13px; --t-cap: 12px;
+  }
+  body { font-family: var(--font); color: var(--text); }
+  button, textarea, input, select { font-family: var(--font); }
+  button { font-weight: 600; }
+  h1, h2, h3, b, strong { font-weight: 700; }
+
+  /* (a) bottom sheet: frosted material, 12px top radius, hairline, no heavy shadow */
+  #side { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: 0; border-top: .5px solid var(--line); border-radius: 12px 12px 0 0; box-shadow: none; }
+  #sheet-handle::after { width: 36px; height: 5px; background: var(--grabber); }
+  #sheet-peek h2 { font-size: var(--t-title); font-weight: 700; line-height: 1.18; }
+  #side h1 { font-size: var(--t-title); font-weight: 700; }
+  #card-subtitle { font-size: var(--t-sub); color: var(--muted); }
+  .headline li { background: var(--fill); border-radius: 10px; font-size: var(--t-foot); }
+  .headline small, #peek-hint, .notice, .small { font-size: var(--t-cap); }
+  .tab { min-height: 44px; font-size: var(--t-sub); font-weight: 600; background: var(--fill); border: 0; color: var(--text); }
+  .tab.on { background: var(--ios-blue); color: #fff; }
+
+  /* (b) search bar: iOS search field with a CSS-drawn magnifier and a circular Send */
+  #topbar { background: var(--material); border: .5px solid var(--line); border-radius: 14px; box-shadow: none; }
+  #topbar form { align-items: center; }
+  #question { font-size: 16px; font-weight: 400; height: 44px; border: 0; border-radius: 10px; background-color: var(--fill); color: var(--text);
+    padding: 10px 12px 10px 38px; background-repeat: no-repeat; background-position: 12px center; background-size: 17px 17px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5L21 21'/%3E%3C/svg%3E"); }
+  #question::placeholder { color: var(--muted); opacity: 1; }
+  #topbar #send { width: 44px; height: 44px; min-width: 44px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%;
+    background: var(--ios-blue); font-size: 0; position: relative; }
+  /* The arrow is a mask, so the "Send" text stays for screen readers. */
+  #topbar { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
+  #topbar #send::after { content: ""; position: absolute; inset: 0; background: #fff;
+    -webkit-mask: center / 20px 20px no-repeat var(--arrow); mask: center / 20px 20px no-repeat var(--arrow); }
+  #topbar .selected { background: var(--fill); font-size: var(--t-foot); }
+
+  /* (c) chips: translucent capsules, selected = system blue */
+  #chips button { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: .5px solid var(--line); color: var(--text); min-height: 44px; font-size: 15px; font-weight: 600; }
+  #chips button.on, #chips button[aria-pressed="true"] { background: var(--ios-blue); border-color: var(--ios-blue); color: #fff; }
+  #chip-detail > div { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: .5px solid var(--line); border-radius: 12px; }
+  #chip-detail select, #sun-bar input[type=date] { background: var(--fill); border: 0; border-radius: 10px; min-height: 44px; font-size: 16px; color: var(--text); }
+
+  /* (d) map zoom control: separate circular floating buttons */
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group { display: flex; flex-direction: column; gap: 8px; background: none; box-shadow: none; border-radius: 0; }
+  .maplibregl-ctrl-group button { width: 44px; height: 44px; border-radius: 50%; background-color: var(--material);
+    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
+  .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
+
+  /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
+  #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
+  #card-sections > button.secondary, #card-sections > button.secondary.on { display: flex; align-items: center; justify-content: space-between;
+    width: 100%; min-height: 44px; margin: 0; padding: 0 16px; border: 0; border-bottom: .5px solid var(--line); border-radius: 0;
+    background: transparent; color: var(--text); font-size: var(--t-body); font-weight: 600; text-align: left; }
+  #card-sections > button:last-child { border-bottom: 0; }
+  #card-sections > button::after { content: ""; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0;
+    transform: rotate(45deg); flex-shrink: 0; margin-left: 12px; }
+  #card-sections > button[aria-expanded="true"]::after { transform: rotate(135deg); }
+  #card-prices, #card-lease, #card-facing, #schools, #card-nearby { background: var(--fill); margin: 8px 0 0; padding: 8px 16px; border: 0; border-radius: 12px; }
+  /* The row already names the section; keep the heading for screen readers. */
+  #card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }
+  #schools > h3 { font-size: var(--t-sub); }
+  #side[data-snap=peek] #sheet-peek h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* (g) sun bar: compact floating capsule, 4px track, 22px thumb, capsule buttons */
+  #sun-panel { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: .5px solid var(--line); border-radius: 22px; padding: 8px 16px; font-size: var(--t-foot); }
+  #sun-panel label { font-size: var(--t-foot); }
+  #sun-panel input[type=range] { -webkit-appearance: none; appearance: none; height: 44px; background: transparent; margin: 0; }
+  #sun-panel input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grabber); }
+  #sun-panel input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grabber); }
+  #sun-panel input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px; border-radius: 50%;
+    background: #fff; border: .5px solid var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); }
+  #sun-panel input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: .5px solid var(--line); }
+  #sun-panel .sun-actions button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--fill);
+    color: var(--text); font-size: 15px; font-weight: 600; }
+  #sun-panel .sun-actions button[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
+}
+@media (max-width: 800px) and (prefers-color-scheme: dark) {
+  :root {
+    --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3;
+  }
+  .maplibregl-ctrl-icon { filter: invert(1); }
+}
+/* Spring-like settle for the sheet, only when motion is welcome; the drag state keeps its own no-transition rule. */
+@media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
+  #side { transition: height 420ms cubic-bezier(.2, .9, .3, 1.1); }
+}

@@ -69,7 +69,7 @@ def test_card_offline(tmp_path, script):
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js"):
+    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js", "style.css"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
