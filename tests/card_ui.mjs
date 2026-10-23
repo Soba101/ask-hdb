@@ -38,7 +38,9 @@ const chip = (label) => get("card-sections").children.find((e) => e.textContent 
 const count = (prefix) => calls.filter((url) => url.startsWith(prefix)).length;
 const text = () => get("card").textContent;
 const openCount = () => get("card-sections").children.filter((e) => e.getAttribute("aria-expanded") === "true").length;
+get("card").scrollTop = 500;
 await card.select(point); await tick();
+assert.equal(get("card").scrollTop, 0, "a new selection starts at the summary");
 assert.equal(openCount(), 0);
 for (const b of get("card-sections").children) assert.equal(get(b.getAttribute("aria-controls")).hidden, true);
 assert.equal(count("/card/"), 1); assert.equal(count("/schools/"), 1); assert.equal(count("/sun/"), 0);

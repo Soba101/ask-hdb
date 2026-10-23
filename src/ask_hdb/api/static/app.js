@@ -1,9 +1,10 @@
 // Plain JS, no build step. The chat history lives only in this page's memory and is sent with each question.
 // The map is the main view: click a block, school, station or BTO site to select it; the chat then knows what
 // "this block" means. Map highlights come from the server, built by code from tool results, never from model text.
-import { initBuildings } from "./buildings.js";
+import { initBuildings, initLayers } from "./buildings.js";
 import { initCard } from "./card.js";
 const $ = (id) => document.getElementById(id);
+initLayers();
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
 const tools = $("tools"), sources = $("sources"), empty = $("empty");
 const history = [];
