@@ -15,6 +15,7 @@ from ask_hdb import calc, compare, sales
 from ask_hdb.bto import plans, scenario
 from ask_hdb.bto import queries as bto
 from ask_hdb.geo import filters as geo_filters
+from ask_hdb.geo import resolve as geo_resolve
 from ask_hdb.rules import BuyerProfile, Flat, eligibility, grants, loan
 from ask_hdb.rules import bto as bto_rules
 from ask_hdb.tool_inputs import (
@@ -31,12 +32,13 @@ from ask_hdb.tool_inputs import (
     PhgArgs,
     ProfileArgs,
     RailPlansArgs,
+    ResolveArgs,
     RuleArgs,
     SalesArgs,
 )
 
 # Tools that read their own tables instead of the resale sales frame.
-NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history", "rail_plans"}
+NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history", "rail_plans", "resolve_place"}
 
 
 @lru_cache(maxsize=1)
@@ -156,7 +158,10 @@ phg_amount = _tool("phg_amount", "Compute the Proximity Housing Grant for living
 max_loan = _tool("max_loan", "Estimate the HDB loan cap; disclose needs_check and valuation limits.",
                  LoanArgs, loan.max_loan, rule=True)
 
-nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance. For 'how many within X km', pass within_km and quote n_within.",
+resolve_place = _tool("resolve_place", "Find the id of ONE specific place the user names in words (a block like 'Blk 227 Bishan St 23', a named station, a named school like 'Catholic High School' or a named BTO project). NEVER use it for a category ('a primary school', 'schools in Bishan') or for sales near schools or stations: those use price_stats or find_sales with near_kind and near_km. Skip it when the Map context line already gives the id. If several candidates come back, ask the user which one; if none, say it was not found. A town is not a point.",
+                      ResolveArgs, geo_resolve.resolve_place)
+
+nearest_places = _tool("nearest_places", "Find nearest places by straight-line distance from a block, station, school or BTO site (pass its id as block_id). For 'how many within X km', pass within_km and quote n_within.",
                        NearestArgs, geo_filters.nearest_places)
 
 calculate = _tool("calculate", "Add, subtract, multiply or divide numbers taken from tool results. Use it for ALL arithmetic.",
@@ -186,4 +191,4 @@ bto_ehg_amount = _tool("bto_ehg_amount", "EHG for a NEW BTO flat ONLY (no resale
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
          cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount,
-         bto_scenario, bto_history, rail_plans]
+         bto_scenario, bto_history, rail_plans, resolve_place]

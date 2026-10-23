@@ -96,3 +96,53 @@ def test_place_cards_count_blocks_by_straight_line_and_keep_the_school_caveat():
     assert "Blocks with resales since 2017 within 1 km (straight-line): 1" in school["facts"] and any("MOE" in t for t in school["limits"])
     station = mapdata.card(mapdata.resolve({"kind": "mrt", "id": "mrt_x"}))
     assert any("within 500 m" in f for f in station["facts"]) and not any("MOE" in t for t in station["limits"])
+
+
+def test_radius_counts_are_inclusive_straight_line_and_leave_out_the_place_itself():
+    mine = mapdata.resolve({"kind": "block", "id": "blk_1_a-st"})
+    got = mapdata.around(mine, 0.5)
+    assert got["counts"] == {"blocks": 0, "mrt_lrt": 0, "primary_schools": 1, "bto_sites": 0}  # the school is ~140 m away
+    far = mapdata.around(mine, 2.0)
+    assert far["counts"]["mrt_lrt"] == 1 and far["counts"]["bto_sites"] == 0
+    assert any("MOE" in text for text in far["limits"]) and not any("MOE" in t for t in got["limits"])
+    with pytest.raises(ValueError):
+        mapdata.around(mine, 3.0)
+
+
+def test_radius_route_accepts_only_the_offered_radii(monkeypatch):
+    client = TestClient(api.create_app())
+    assert client.get("/around/block/blk_1_a-st?km=1").json()["km"] == 1.0
+    assert client.get("/around/block/blk_1_a-st?km=3").status_code == 404
+    assert client.get("/around/block/nope?km=1").status_code == 404
+    from pathlib import Path
+    js = (Path(api.__file__).parent / "static/app.js").read_text()
+    assert "radiusRequest" in js and "mapLayer.ring(selected ?" in js
+    assert "schoolRings" in js and "{ km: 2, dash: true }, { km: 1, dash: false }" in js
+
+
+def test_schools_within_two_km_are_banded_and_the_moe_caveat_is_attached():
+    mine = mapdata.resolve({"kind": "block", "id": "blk_1_a-st"})
+    got = mapdata.schools_nearby(mine)
+    assert [(s["id"], s["band"]) for s in got["schools"]] == [("sch_y", "within 1 km")]
+    assert any("boundary" in text and "does not guarantee" in text for text in got["limits"])
+    assert got["schools"][0]["km"] < 0.2 and got["schools"][0]["label"] == "St. Anthony's Primary School"
+
+
+def test_borderline_schools_and_the_route(monkeypatch):
+    places = pd.DataFrame([
+        {"place_id": "near", "kind": "primary_school", "name": "NEAR PRIMARY", "lat": 1.30, "lng": 103.8},
+        {"place_id": "mid", "kind": "primary_school", "name": "MID PRIMARY", "lat": 1.315, "lng": 103.8},    # ~1.7 km
+        {"place_id": "edge", "kind": "primary_school", "name": "EDGE PRIMARY", "lat": 1.3205, "lng": 103.8},  # ~2.3 km
+        {"place_id": "far", "kind": "primary_school", "name": "FAR PRIMARY", "lat": 1.40, "lng": 103.8},
+        {"place_id": "mrt_q", "kind": "mrt", "name": "Q", "lat": 1.30, "lng": 103.8}])
+    monkeypatch.setattr(mapdata, "load_places", lambda: places)
+    got = mapdata.schools_nearby({"id": "blk_1_a-st", "lat": 1.30, "lng": 103.8})
+    assert [(s["id"], s["band"]) for s in got["schools"]] == [("near", "within 1 km"), ("mid", "1 to 2 km"), ("edge", "borderline")]
+    client = TestClient(api.create_app())
+    assert client.get("/schools/block/blk_1_a-st").json()["km"] == 2.0 and client.get("/schools/block/nope").status_code == 404
+
+
+def test_place_names_keep_acronyms_and_small_words():
+    from ask_hdb.geo.names import pretty_name
+    assert pretty_name("CHIJ OUR LADY OF GOOD COUNSEL") == "CHIJ Our Lady of Good Counsel"
+    assert pretty_name("ST. ANTHONY'S PRIMARY SCHOOL") == "St. Anthony's Primary School"

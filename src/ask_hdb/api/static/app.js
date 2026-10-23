@@ -125,6 +125,7 @@ async function ask(question) {
   const timer = setInterval(() => { status.textContent = "Working on it… " + Math.round((Date.now() - started) / 1000) + "s"; }, 1000);
   const cards = [];
   let answered = false;
+  pendingChoices = null;
   try {
     const context = selected ? { selected: { kind: selected.kind, id: selected.id } } : {};
     const response = await fetch("/chat", {
@@ -139,6 +140,7 @@ async function ask(question) {
       if (event.type === "tool_call") cards.push(addTool(event));
       else if (event.type === "tool_result") addResult(cards[cards.length - 1] || addTool(event), event);
       else if (event.type === "map") runMapActions(event.actions);
+      else if (event.type === "choices") pendingChoices = event.candidates;
       else if (event.type === "error") throw new Error(event.message);
       else if (event.type === "answer") { answered = true; show(question, event); }
     }
@@ -153,8 +155,31 @@ async function ask(question) {
   }
 }
 
+let pendingChoices = null;
+
+function showChoices(question, candidates) {
+  const div = add("bot", "Which one do you mean?");
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  for (const c of candidates) {
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = c.label;
+    button.onclick = () => {
+      if (send.disabled) return; // a question is running; keep the chips so the choice is not lost
+      choices.remove();
+      setSelected({ kind: c.kind, id: c.id, label: c.label, lat: c.lat, lng: c.lng });
+      mapLayer.fly([c.lng, c.lat, c.lng, c.lat]);
+      ask(question); // ask the same question again, now about the chosen place
+    };
+    choices.appendChild(button);
+  }
+  div.appendChild(choices);
+}
+
 function show(question, event) {
   const div = add("bot", event.answer);
+  if (pendingChoices) { showChoices(question, pendingChoices); pendingChoices = null; }
   // The server accepts at most 2000 characters per earlier turn; cut here so a long answer cannot block later questions.
   history.push({ role: "user", content: question.slice(0, 1000) }, { role: "assistant", content: event.answer.slice(0, 2000) });
   if (event.needs_confirmation) {
@@ -204,15 +229,104 @@ const QUESTIONS = {
   mrt: [], lrt: [], primary_school: [],
 };
 
+// ---------- radius ring ----------
+let radiusKm = 0; // 0 = off; kept when another place is selected
+let radiusRequest = 0;
+
+function circle(lat, lng, km) {
+  // A display-only ring (flat-earth approximation, fine at this size); the counts come from the server.
+  const ring = [];
+  const dLat = km / 110.574;
+  const dLng = km / (111.32 * Math.cos((lat * Math.PI) / 180));
+  for (let i = 0; i <= 64; i++) {
+    const t = (i / 64) * 2 * Math.PI;
+    ring.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]);
+  }
+  return ring;
+}
+
+let schoolRings = false; // the "primary schools" view: 1 km solid ring and 2 km dashed ring
+
+function drawRadius(fit) {
+  const counts = $("radius-counts");
+  counts.textContent = "";
+  document.querySelectorAll(".radius button").forEach((b) => {
+    const on = !schoolRings && Number(b.dataset.km) === radiusKm;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
+  const rings = [];
+  if (selected && schoolRings) rings.push({ km: 2, dash: true }, { km: 1, dash: false });
+  else if (selected && radiusKm) rings.push({ km: radiusKm, dash: true });
+  mapLayer.ring(selected ? rings.map((r) => ({ ...r, ring: circle(selected.lat, selected.lng, r.km) })) : [], fit);
+  if (!selected || !radiusKm || schoolRings) return;
+  const mine = ++radiusRequest;
+  fetch("/around/" + encodeURIComponent(selected.kind) + "/" + encodeURIComponent(selected.id) + "?km=" + radiusKm)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no counts"))))
+    .then((data) => {
+      if (mine !== radiusRequest) return; // the radius or the place changed meanwhile
+      const c = data.counts;
+      counts.textContent = "Within " + (radiusKm < 1 ? radiusKm * 1000 + " m" : radiusKm + " km") + " (straight-line): " +
+        c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites. " +
+        data.limits.join(" ");
+    })
+    .catch(() => { if (mine === radiusRequest) counts.textContent = "Counts could not be loaded."; });
+}
+
+document.querySelectorAll(".radius button").forEach((b) => {
+  b.onclick = () => { schoolRings = false; radiusKm = Number(b.dataset.km); drawRadius(true); };
+});
+
 function setSelected(point) {
+  if (schoolRings) mapLayer.highlight([]); // the school highlights belong to the old place
   selected = point;
+  schoolRings = false;
   $("selected").hidden = !point;
   if (point) $("selected-label").textContent = point.label;
   mapLayer.select(point);
   if (point) showCard(point); else $("card").hidden = true;
+  drawRadius(false);
 }
 $("selected-clear").onclick = () => setSelected(null);
 $("card-close").onclick = () => { $("card").hidden = true; };
+
+let schoolList = [];
+
+async function showSchools(point, mine) {
+  const box = $("schools");
+  box.hidden = true;
+  schoolList = [];
+  try {
+    const response = await fetch("/schools/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
+    if (!response.ok) return;
+    const data = await response.json();
+    if (mine !== cardRequest) return;
+    schoolList = data.schools;
+    const list = $("schools-list");
+    list.replaceChildren();
+    for (const school of data.schools) {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.textContent = school.label;
+      button.onclick = () => mapLayer.fly([school.lng, school.lat, school.lng, school.lat]);
+      li.append(button, " \u2013 " + school.km.toFixed(2) + " km (" + school.band + ")");
+      list.appendChild(li);
+    }
+    const inside = data.schools.filter((s) => s.band !== "borderline").length;
+    $("schools-summary").textContent = "Primary schools within 2 km: " + inside +
+      (data.schools.length > inside ? " (+" + (data.schools.length - inside) + " borderline)" : "");
+    $("schools-limits").textContent = data.limits.join(" ");
+    box.hidden = false;
+    box.open = true; // the point is to let the buyer compare, so show the list without a click
+  } catch (error) { /* the list is an extra; the card still works without it */ }
+}
+$("schools-show").onclick = () => {
+  if (!schoolList.length || !selected) return;
+  schoolRings = true; // 1 km solid ring, 2 km dashed ring, schools ringed by band (green: within 1 km, amber: 1 to 2 km, grey: borderline)
+  radiusKm = 0;
+  mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolList.map((s) => ({ ...s, role: "result" }))]);
+  drawRadius(true);
+};
 
 let cardRequest = 0; // only the latest selection may fill the card
 async function showCard(point) {
@@ -223,6 +337,7 @@ async function showCard(point) {
   $("card-actions").replaceChildren();
   $("card-limits").textContent = "";
   card.hidden = false;
+  showSchools(point, mine);
   try {
     const response = await fetch("/card/" + encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id));
     if (!response.ok) throw new Error("no card");
@@ -249,8 +364,9 @@ async function showCard(point) {
 
 // ---------- map ----------
 // Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
-const todo = { highlight: [], select: null, fly: null };
+const todo = { highlight: [], select: null, fly: null, ring: null };
 const mapLayer = {
+  ring(rings, fit) { todo.ring = rings.length ? { rings, fit } : null; },
   highlight(points) { todo.highlight = points; },
   select(point) { todo.select = point; },
   fly(bbox) { todo.fly = bbox; },
@@ -278,7 +394,7 @@ function runMapActions(actions) {
 function asFeatures(points) {
   return { type: "FeatureCollection", features: points.map((p) => ({
     type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-    properties: { kind: p.kind, id: p.id, role: p.role, label: p.label, note: p.note || "" } })) };
+    properties: { kind: p.kind, id: p.id, role: p.role, label: p.label, note: p.note || "", band: p.band || "" } })) };
 }
 
 async function startMap() {
@@ -310,13 +426,20 @@ async function startMap() {
       map.addSource("places", { type: "geojson", data: places });
       map.addSource("highlight", { type: "geojson", data: EMPTY });
       map.addSource("selected", { type: "geojson", data: EMPTY });
+      map.addSource("radius", { type: "geojson", data: EMPTY });
+      map.addLayer({ id: "radius-fill", type: "fill", source: "radius", paint: { "fill-color": "#1d5fd6", "fill-opacity": 0.1 } });
+      map.addLayer({ id: "radius-line", type: "line", source: "radius", filter: ["==", ["get", "dash"], true],
+        paint: { "line-color": "#1d5fd6", "line-width": 2, "line-dasharray": [2, 2] } });
+      map.addLayer({ id: "radius-line-solid", type: "line", source: "radius", filter: ["==", ["get", "dash"], false],
+        paint: { "line-color": "#1d5fd6", "line-width": 2.5 } });
       map.addLayer({ id: "blocks", type: "circle", source: "blocks", paint: { "circle-color": COLORS, "circle-opacity": 0.6,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.5, 14, 4, 17, 8] } });
       map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": COLORS,
         "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 6, 17, 9] } });
       map.addLayer({ id: "highlight", type: "circle", source: "highlight", paint: { "circle-color": COLORS,
-        "circle-stroke-color": "#ffb000", "circle-stroke-width": 3,
+        "circle-stroke-color": ["match", ["get", "band"], "within 1 km", "#00a152", "1 to 2 km", "#ffb000", "borderline", "#9aa3b5", "#ffb000"],
+        "circle-stroke-width": 3,
         "circle-radius": ["case", ["==", ["get", "role"], "origin"], 11, 8] } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
@@ -332,12 +455,22 @@ async function startMap() {
         const [lng, lat] = f.geometry.coordinates;
         setSelected({ kind: f.properties.kind, id: f.properties.id, label: f.properties.label, lat, lng });
       });
+      mapLayer.ring = (rings, fit) => {
+        map.getSource("radius").setData({ type: "FeatureCollection", features: rings.map((r) => ({
+          type: "Feature", geometry: { type: "Polygon", coordinates: [r.ring] }, properties: { km: r.km, dash: r.dash } })) });
+        if (rings.length && fit) {
+          const bounds = new maplibregl.LngLatBounds();
+          rings.forEach((r) => r.ring.forEach((c) => bounds.extend(c)));
+          map.fitBounds(bounds, { padding: 60, duration: 500 });
+        }
+      };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);
       mapLayer.fly = (bbox) => {
         if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
         else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, maxZoom: 16, duration: 600 });
       };
+      if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);
       mapLayer.highlight(todo.highlight);
       if (todo.select) mapLayer.select(todo.select);
       if (todo.fly) mapLayer.fly(todo.fly);

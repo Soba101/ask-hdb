@@ -1321,3 +1321,155 @@
     tolerance: 0
   source: rules/plans/2026-10.yaml (LTA factsheet, 2026-03-04)
   heldout: true
+- id: q_map_001
+  kind: map
+  question: How far is the nearest primary school from this block, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.47
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_227_bishan-st-23
+- id: q_map_002
+  kind: map
+  question: How far is the nearest MRT station from this block, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.82
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_227_bishan-st-23
+- id: q_map_003
+  kind: map
+  question: How many primary schools are within 1 km (inclusive) of this block? Answer with one exact count.
+  expect:
+    number: 2
+    tolerance: 0
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_107_simei-st-1
+- id: q_map_004
+  kind: map
+  question: How many primary schools are within 1 km (inclusive) of here? Answer with one exact count.
+  expect:
+    number: 3
+    tolerance: 0
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_111_woodlands-st-13
+- id: q_map_005
+  kind: map
+  question: How far is the nearest MRT station from this school, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.59
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: primary_school
+    id: school_catholic-high-school
+- id: q_map_006
+  kind: map
+  question: How far is the nearest MRT station from this BTO project, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.38
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: bto
+    id: bto_tampines-nova
+- id: q_map_007
+  kind: map
+  question: How far is the nearest primary school from Blk 227 Bishan St 23, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.47
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+- id: q_map_008
+  kind: map
+  question: How many primary schools are within 1 km (inclusive) of Bishan MRT station? Answer with one exact count.
+  expect:
+    number: 2
+    tolerance: 0
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+- id: q_map_009
+  kind: map
+  question: How far is the nearest MRT station from Blk 103C Edgefield Plains, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 0.92
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  heldout: true
+- id: q_map_010
+  kind: map
+  question: How many MRT stations are within 2 km (inclusive) of the Tampines Nova BTO site? Answer with one exact count.
+  expect:
+    number: 3
+    tolerance: 0
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  heldout: true
+- id: q_map_011
+  kind: map
+  question: How far is the nearest primary school from this block, in kilometres to 2 decimals? Answer with one number.
+  expect:
+    number: 1.29
+    tolerance: 0.01
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_138b_yuan-ching-rd
+  heldout: true
+- id: q_map_012
+  kind: map
+  question: How many MRT stations are within 2 km (inclusive) of this block? Answer with one exact count.
+  expect:
+    number: 7
+    tolerance: 0
+  source: scripts/build_map_expected.py (plain numpy haversine on blocks, places and bto_projects parquet; straight-line)
+  context:
+    kind: block
+    id: blk_107_simei-st-1
+- id: q_refuse_010
+  kind: refuse
+  question: How far is the nearest primary school from this block?
+  expect:
+    clarify: true
+  source: 'map-first: no selection, so the answer must ask which block'
+- id: q_refuse_011
+  kind: refuse
+  question: How far is the nearest MRT station from Blk 227?
+  expect:
+    clarify: true
+  source: 'map-first: 11 blocks share the number 227, so the answer must ask which one'
+- id: q_refuse_012
+  kind: refuse
+  question: How far is the nearest MRT station from Blk 999 Nowhere Road?
+  expect:
+    clarify: true
+  source: 'map-first: no such block, so the answer must ask for the block number and street'
+- id: q_refuse_013
+  kind: refuse
+  question: What is the nearest primary school to Tampines?
+  expect:
+    clarify: true
+  source: 'map-first: a town is not a point, so the answer must ask for a block, station, school or BTO project'
+  heldout: true
+- id: q_refuse_014
+  kind: refuse
+  question: How long does it take to get to town from this block by MRT?
+  expect:
+    decline: true
+  source: 'map-first: no travel times are available, only straight-line distances'
+  context:
+    kind: block
+    id: blk_227_bishan-st-23
+- id: q_refuse_015
+  kind: refuse
+  question: How many minutes is the walk from Blk 227 Bishan St 23 to Bishan MRT station?
+  expect:
+    decline: true
+  source: 'map-first: no walking or travel times are available'
+  heldout: true

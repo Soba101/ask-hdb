@@ -13,6 +13,15 @@ from .report import markdown, save_report
 from .scoring import score
 
 
+def map_context(question):
+    """The context line the web app would send for a question's map selection (None when it has none)."""
+    if not question.get('context'):
+        return None
+    from ask_hdb.api import mapdata
+
+    return mapdata.context_line(mapdata.resolve(question['context']))
+
+
 def fingerprint(question):
     return hashlib.sha256(json.dumps(question, sort_keys=True).encode()).hexdigest()
 
@@ -80,7 +89,8 @@ def run(condition='agent', *, only=None, verbose=False, heldout=False, limit=Non
             # Factory errors belong to this question, just like provider request errors.
             if invoke is None:
                 invoke = make_condition(condition)
-            result.update(invoke(q['question']))
+            context = map_context(q)
+            result.update(invoke(q['question'], context=context) if context else invoke(q['question']))
             if result.get('stopped_reason'):
                 result['error'] = f"Stopped: {result['stopped_reason']}"
         except Exception as exc:  # noqa: BLE001 - each failed request must be recorded

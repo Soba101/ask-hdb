@@ -47,7 +47,7 @@ MONEY = re.compile(r'\$|\b(?:sgd|dollars?|instal+ments?|income|salary|price|cost
 LABELS = [
     r'\bblk_[\w-]+',                                  # stable block IDs
     r'\b(?:blk|block)\s+\d+[a-z]?\b',                  # "Blk 314", "Block 648A"
-    r'\b(?:ave|avenue|st|street|rd|road|dr|drive|cres|crescent|lane|sector|central)\s+\d+[a-z]?\b',
+    r'\b(?:ave|avenue|st|street|rd|road|dr|drive|cres|crescent|lane|sector|central|lor|lorong)\s+\d+[a-z]?\b',
     r'\b(?:19|20)\d{2}-\d{2}(?:-\d{2})?\b',            # ISO dates and months
     r'\b\d{1,2}(?:st|nd|rd|th)\b',                     # ordinals
     r'\b[1-5][\s-]?room\b',                            # flat types
@@ -136,11 +136,31 @@ def _matches(claim, values):
     return any(v.quantize(step, ROUND_HALF_UP) == value for v in values)
 
 
+def _labels(node):
+    """Every string under a `label` key in the tool results."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == 'label' and isinstance(value, str) and value.strip():
+                yield value.strip()
+            else:
+                yield from _labels(value)
+    elif isinstance(node, (list, tuple)):
+        for item in node:
+            yield from _labels(item)
+
+
 def check(answer, question, results):
     """Return the stated numbers (question echoes left out) and the ungrounded ones."""
     given = {c[1] for c in claims(question)}
+    # "Blk 227" in the question is a label the claims skip, but the user did write 227, so restating it is an echo.
+    for pattern in LABELS[1:3]:
+        for match in re.finditer(pattern, str(question), re.IGNORECASE):
+            given.update(Decimal(n) for n in re.findall(r'\d+', match.group()))
     asked_dates = {iso for _, iso in _date_claims(str(question))[1]}
     # A question number is only an echo when it is not presented as a threshold.
+    # A place label that code wrote from our tables ("Blk 227 Bishan St 23") is a name, not a claim: leave exactly that text out.
+    for label in sorted(_labels(results), key=len, reverse=True):
+        answer = re.sub(re.escape(label), ' ', str(answer), flags=re.IGNORECASE)
     stated = [c for c in claims(answer) if c[4] or c[1] not in given]
     found, dates = evidence(results)
     days = [(raw, iso) for raw, iso in _date_claims(str(answer))[1] if iso not in asked_dates]

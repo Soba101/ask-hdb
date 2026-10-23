@@ -75,11 +75,15 @@ class FindArgs(SalesArgs):
 
 
 class NearestArgs(Arguments):
-    block_id: str
+    block_id: str = Field(description="A block_id, or a place_id (station or school) or project_id (BTO) to measure from")
     kind: PlaceKind
     n: Annotated[int, Field(ge=1)] = 3
     within_km: Annotated[float, Field(gt=0, le=10)] | None = Field(
         None, description="For 'how many within X km' questions: n_within counts every place within X km (inclusive)")
+
+
+class ResolveArgs(Arguments):
+    text: str = Field(min_length=1, max_length=100, description="The place as the user wrote it, e.g. 'Blk 227 Bishan St 23', 'Bishan MRT', 'Catholic High School' or 'Tampines Nova'")
 
 
 class CompareArgs(Arguments):

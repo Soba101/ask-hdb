@@ -20,6 +20,21 @@
       <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
       <h2 id="card-title"></h2>
       <ul id="card-facts"></ul>
+      <div class="radius" role="group" aria-label="Show a radius around this place">
+        <span>Radius:</span>
+        <button class="secondary on" data-km="0" aria-pressed="true">Off</button>
+        <button class="secondary" data-km="0.5" aria-pressed="false">500 m</button>
+        <button class="secondary" data-km="1" aria-pressed="false">1 km</button>
+        <button class="secondary" data-km="2" aria-pressed="false">2 km</button>
+      </div>
+      <p id="radius-counts" class="small"></p>
+      <details id="schools" class="schools" hidden>
+        <summary id="schools-summary">Primary schools within 2 km</summary>
+        <ul id="schools-list"></ul>
+        <button id="schools-show" class="secondary">Show rings and schools on the map</button>
+        <p class="small">Solid ring: 1 km. Dashed ring: 2 km. Schools are ringed green (within 1 km), amber (1 to 2 km) or grey (borderline).</p>
+        <p id="schools-limits" class="small"></p>
+      </details>
       <div id="card-actions" class="choices"></div>
       <p id="card-limits" class="small"></p>
     </div>

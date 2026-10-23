@@ -16,7 +16,7 @@ def make_condition(condition):
 
     model = get_chat_model()
 
-    def baseline(question):
+    def baseline(question, context=None):
         reply = model.invoke([SystemMessage(content='Answer the question.'),
                               HumanMessage(content=question)])
         usage = reply.usage_metadata or {}
@@ -36,11 +36,12 @@ def _full():
 
     from ask_hdb.agent import ask
 
-    def full(question):
-        first = ask(question, confirm=True)
+    def full(question, context=None):
+        first = ask(question, confirm=True, context=context)
         if not first.get('needs_confirmation'):
             return first
-        second = ask('yes', [HumanMessage(content=question), AIMessage(content=first['answer'])], confirm=True)
+        second = ask('yes', [HumanMessage(content=question), AIMessage(content=first['answer'])], confirm=True,
+                     context=context)
         tokens = [r['tokens'] for r in (first, second) if r['tokens'] is not None]
         return {**second, 'tokens': sum(tokens) if tokens else None, 'confirmation': first['answer']}
 
