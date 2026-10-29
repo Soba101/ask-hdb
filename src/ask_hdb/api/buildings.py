@@ -98,7 +98,9 @@ def map_buildings(request: Request):
     headers = {"Cache-Control": "public, max-age=86400", "Vary": "Accept-Encoding"}
     try:
         headers["ETag"] = etag()
-        if request.headers.get("if-none-match") == headers["ETag"]:
+        # A proxy may weaken the tag (W/"..."), and a browser may send several.
+        sent = [tag.strip().removeprefix("W/") for tag in request.headers.get("if-none-match", "").split(",")]
+        if headers["ETag"] in sent:
             return Response(status_code=304, headers=headers)
         if "gzip" in request.headers.get("accept-encoding", ""):
             return Response(zipped(), media_type="application/json", headers={**headers, "Content-Encoding": "gzip"})

@@ -185,6 +185,9 @@ def create_app():
             raise HTTPException(429, "Today's usage limit has been reached. Please come back tomorrow.")
         if not await limits.take_turn():
             raise HTTPException(503, "Busy with other questions. Please try again in a moment.")
+        if await request.is_disconnected():  # the visitor left while queued: give the slot back before any model call
+            limits.busy.release()
+            raise HTTPException(499, "Client closed the request.")
         history = [(HumanMessage if turn.role == "user" else AIMessage)(content=turn.content)
                    for turn in body.history]
         events, left = Queue(), Event()

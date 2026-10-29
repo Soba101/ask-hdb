@@ -91,3 +91,9 @@ def test_card_storey_prices_threshold_window_and_height(client, monkeypatch):
         cached.cache_clear()
     data = client.get("/card/block/blk_a").json()
     assert data["floors"] is None and data["storey_prices"]
+
+
+def test_a_weakened_or_listed_etag_still_gets_a_304(client):
+    tag = client.get("/map/buildings").headers["etag"]
+    for sent in (f"W/{tag}", f'"other", {tag}'):
+        assert client.get("/map/buildings", headers={"if-none-match": sent}).status_code == 304

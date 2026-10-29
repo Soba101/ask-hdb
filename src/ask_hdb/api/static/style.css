@@ -259,7 +259,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (min-width: 801px) {
   :root {
     --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
-    --ios-blue: #0071e3; --accent: #0071e3; --accent-text: #0071e3;
+    --ios-blue: #0071e3; --tint: #0071e3; --accent: #0071e3; --accent-text: #0071e3;
     --text: #1d1d1f; --muted: #636366; --line: rgba(60, 60, 67, .22);
     --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .82); --floating: var(--material);
     --card-radius: 14px; --radius: 10px;
@@ -271,11 +271,11 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     border-left: .5px solid var(--line); }
   .tab { background: var(--fill); border: 0; color: var(--text); font-weight: 600; }
   .tab.on { background: var(--ios-blue); color: #fff; }
-  button { font-weight: 600; background: var(--ios-blue); border-color: var(--ios-blue); }
-  button.secondary { background: var(--fill); border: 0; color: var(--ios-blue); }
+  button { font-weight: 600; background: var(--ios-blue); border-color: var(--tint); }
+  button.secondary { background: var(--fill); border: 0; color: var(--tint); }
   button.secondary.on, button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
   button.close { background: transparent; color: var(--muted); }
-  details summary, a { color: var(--ios-blue); }
+  details summary, a { color: var(--tint); }
   textarea { background: var(--fill); border: 0; border-radius: var(--radius); padding: 10px 12px; }
   #form { align-items: flex-end; }
   #form { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
@@ -307,6 +307,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   :root {
     --text: #f5f5f7; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
     --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .82);
+    --tint: #2997ff; --accent: #2997ff; /* text on dark needs the lighter blue; filled buttons keep #0071e3 */
   }
   .layers .seg button.secondary.on, .radius button.secondary.on, #amenity-pills button.secondary.on { background: #636366; color: #fff; }
 }
@@ -399,7 +400,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (max-width: 800px) and (prefers-color-scheme: dark) {
   :root {
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3;
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #2997ff;
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
 }
@@ -419,7 +420,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
 @media (max-width: 800px) {
   /* One control style: tinted fills with blue text, solid blue when selected, and segmented groups. */
-  #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--ios-blue); font-weight: 600; }
+  #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--tint, var(--ios-blue)); font-weight: 600; }
   #side button.secondary.on, #side button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
   .radius, #amenity-pills { display: flex; flex-wrap: nowrap; gap: 2px; padding: 2px; background: var(--fill); border-radius: 10px; }
   .radius > span { display: none; }

@@ -20,3 +20,10 @@ def test_a_later_settled_call_of_the_same_tool_wins():
     calls = [("can_buy_resale", NULL), ("can_buy_resale", YES)]
     assert verdict.replacement("You are eligible to buy.", calls) is None
     assert verdict.replacement("You are eligible to buy.", calls[::-1])  # the null one came last
+
+
+def test_a_settled_check_keeps_its_verdict_and_more_phrasings_match():
+    mixed = [("can_buy_resale", YES), ("ehg_amount", NULL)]
+    assert verdict.replacement("You can buy a resale flat. For the EHG I need your income.", mixed) is None
+    for text in ("Yes, you qualify.", "You're eligible for the EHG.", "You’re not eligible."):
+        assert verdict.replacement(text, [("can_buy_resale", NULL)])

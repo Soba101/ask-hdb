@@ -6,7 +6,8 @@ import re
 VERDICT = re.compile(
     r"\b(?:you|they|he|she|we)\s+(?:are|is|can|cannot|can't|qualify|do not qualify|don't qualify|may|are not|aren't)\b[^.?!]{0,40}"
     r"\b(?:eligible|buy|apply|qualify|qualified|purchase)\b"
-    r"|\b(?:not eligible|ineligible|is eligible|are eligible|eligible to|not allowed|cannot buy|can buy|cannot apply|can apply)\b",
+    r"|\b(?:not eligible|ineligible|is eligible|are eligible|eligible to|eligible for|not allowed|cannot buy|can buy|cannot apply|can apply)\b"
+    r"|\byou(?:'re|\u2019re)\s+(?:not\s+)?eligible\b|\byou\s+(?:do not |don't |still )?qualify\b",
     re.IGNORECASE)
 
 
@@ -16,6 +17,8 @@ def open_questions(results):
     for name, result in results:
         if isinstance(result, dict) and "eligible" in result:
             last[name] = result
+    if any(result["eligible"] is not None for result in last.values()):
+        return []  # another check was settled: do not throw its verdict away for the one that is open
     missing = []
     for result in last.values():
         if result["eligible"] is None:
