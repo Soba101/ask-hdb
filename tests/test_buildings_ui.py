@@ -143,7 +143,7 @@ def test_phone_markup_and_touch_css_offline():
     assert "transform" not in sheet
     assert "overscroll-behavior: contain" in css_block(mobile, "#sheet-content")
     assert "touch-action: none" in css_block(mobile, "#sheet-handle")
-    assert mobile.count("touch-action: none") == 1
+    assert mobile.count("touch-action: none") == 2  # the grabber and the whole header area drag the sheet
     assert "position: relative" in css_block(mobile, "#sheet-content .card")
     assert "max-height: none" in css_block(mobile, "#sheet-content .card")
     assert "display: none" in css_block(mobile, "#sun-bar:has(#sun-panel[hidden])")

@@ -45,6 +45,32 @@ assert.equal(state(), "half"); assert.equal(document.activeElement, get("tab-cha
 assert.equal(content.inert, false);
 assert.match(handle.getAttribute("aria-label"), /half height/);
 key("Escape"); drag(8); assert.equal(state(), "peek");
+// A quick flick moves one snap even over a short distance; a slow drag of the same length does not.
+const flick = (distance, ms) => {
+  fire(handle, "pointerdown", { clientY: 600, timeStamp: 1000 });
+  fire(handle, "pointermove", { clientY: 600 - distance, timeStamp: 1000 + ms });
+  fire(handle, "pointerup", { clientY: 600 - distance, timeStamp: 1000 + ms + 10 });
+  fire(handle, "click");
+};
+flick(40, 40); assert.equal(state(), "half", "a short fast flick up opens the sheet one step");
+flick(40, 40); assert.equal(state(), "full");
+flick(-40, 40); assert.equal(state(), "half", "a short fast flick down closes it one step");
+flick(40, 900); assert.equal(state(), "half", "a slow drag of the same length returns to the nearest snap");
+key("Escape"); assert.equal(state(), "peek");
+// Touch on the content hands over to the sheet: up grows a sheet that is not full, down at the top shrinks it, otherwise it scrolls.
+const touch = (target, from, to, timeStamp = undefined) => {
+  fire(target, "touchstart", { touches: [{ clientY: from }], timeStamp });
+  const moved = fire(target, "touchmove", { touches: [{ clientY: to }], timeStamp });
+  fire(target, "touchend", { touches: [], timeStamp });
+  return moved;
+};
+key("ArrowUp"); assert.equal(state(), "half");
+content.scrollTop = 40; assert.equal(touch(content, 400, 600).defaultPrevented, false, "scrolled content keeps its native scroll");
+assert.equal(state(), "half");
+content.scrollTop = 0; assert.equal(touch(content, 300, 560).defaultPrevented, true); assert.equal(state(), "peek", "pulling down at the top closes the sheet");
+key("ArrowUp"); content.scrollTop = 0; touch(content, 600, 360); assert.equal(state(), "full", "pushing up on a half sheet grows it first");
+assert.equal(touch(content, 600, 500).defaultPrevented, false, "a full sheet scrolls");
+key("Escape"); key("Escape"); assert.equal(state(), "peek");
 drag(140); assert.equal(state(), "peek", "nearest point below the midpoint");
 drag(150); assert.equal(state(), "half"); assert.equal(sheetHeight(), 400);
 drag(169); assert.equal(state(), "full"); assert.equal(sheetHeight(), 720, "full stops below the search bar (bottom 72) so the chat input stays visible");
