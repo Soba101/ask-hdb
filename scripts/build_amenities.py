@@ -16,7 +16,7 @@ import httpx
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_places import stations  # noqa: E402
+from build_places import stations
 
 ROOT = Path(__file__).resolve().parents[1]
 OVERPASS = "https://overpass-api.de/api/interpreter"
@@ -53,7 +53,7 @@ def fetch(query, post=httpx.post, sleep=time.sleep, tries=2):
 def parse(body, kind):
     """Rows from an Overpass answer. A remark means a timeout or partial data, so the build stops."""
     if not isinstance(body, dict) or not isinstance(body.get("elements"), list):
-        raise ValueError(f"{kind}: unexpected Overpass response")
+        raise TypeError(f"{kind}: unexpected Overpass response")
     if body.get("remark"):
         raise ValueError(f"{kind}: Overpass remark: {body['remark']}")
     rows = {}  # keyed by OSM id, so an element returned twice counts once

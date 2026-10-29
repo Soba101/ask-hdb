@@ -127,4 +127,6 @@ export class MapStub {
   ring(rings, fit) { this.rings = rings; this.fits.push(fit); }
   highlight(points) { this.highlights = points; }
   fly(bounds) { this.flies.push(bounds); }
+  amenities(items) { this.markers = items; }
+  route(line) { this.line = line; }
 }

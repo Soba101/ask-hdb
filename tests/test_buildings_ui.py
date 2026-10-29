@@ -63,13 +63,13 @@ class PageTree(HTMLParser):
         self.stack[-1]["children"].append(data)
 
 
-@pytest.mark.parametrize("script", ["card_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs", "sheet_ui.mjs"])
+@pytest.mark.parametrize("script", ["card_ui.mjs", "amenity_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs", "sheet_ui.mjs"])
 def test_card_offline(tmp_path, script):
     node = shutil.which("node")
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("card.js", "card-map.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js", "style.css"):
+    for name in ("card.js", "card-map.js", "amenity-card.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js", "style.css"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)
@@ -152,7 +152,7 @@ def test_phone_markup_and_touch_css_offline():
     assert "var(--sheet-h)" in css_block(mobile, ".mapnote")
     assert "transition: none" in css_block(css_block(css, "@media (prefers-reduced-motion: reduce)"), "#side")
     app = (STATIC / "app.js").read_text()
-    assert app.count('padding: sheet.padding(60)') == 2
+    assert app.count('padding: sheet.padding(60)') == 3
     assert 'sheet.answer();' in app
     assert '#layers [data-mode]' not in app
     assert app.count('.seg [data-mode]') == 2

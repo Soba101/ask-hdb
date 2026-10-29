@@ -302,13 +302,15 @@ $("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($(
 
 // ---------- map ----------
 // Until the map has loaded, calls are remembered and applied when it is ready, so an early answer is not lost.
-const todo = { highlight: [], select: null, fly: null, ring: null, layer: null };
+const todo = { highlight: [], select: null, fly: null, ring: null, layer: null, amenities: [], route: null };
 const mapLayer = {
   ring(rings, fit) { todo.ring = rings.length ? { rings, fit } : null; },
   layer(mode, data, budget) { todo.layer = { mode, data, budget }; },
   highlight(points) { todo.highlight = points; },
   select(point) { todo.select = point; },
   fly(bbox) { todo.fly = bbox; },
+  amenities(items) { todo.amenities = items; },
+  route(line) { todo.route = line; },
 };
 const card = initCard({
   onSelect: sheet.select, onSection: sheet.section,
@@ -375,6 +377,8 @@ async function startMap() {
       map.addSource("highlight", { type: "geojson", data: EMPTY });
       map.addSource("selected", { type: "geojson", data: EMPTY });
       map.addSource("radius", { type: "geojson", data: EMPTY });
+      map.addSource("amenities", { type: "geojson", data: EMPTY });
+      map.addSource("route", { type: "geojson", data: EMPTY });
       map.addLayer({ id: "radius-fill", type: "fill", source: "radius", paint: { "fill-color": "#1d5fd6", "fill-opacity": 0.1 } });
       map.addLayer({ id: "radius-line", type: "line", source: "radius", filter: ["==", ["get", "dash"], true],
         paint: { "line-color": "#1d5fd6", "line-width": 2, "line-dasharray": [2, 2] } });
@@ -389,6 +393,13 @@ async function startMap() {
         "circle-stroke-color": ["match", ["get", "band"], "within 1 km", "#00a152", "1 to 2 km", "#ffb000", "borderline", "#9aa3b5", "#ffb000"],
         "circle-stroke-width": 3,
         "circle-radius": ["case", ["==", ["get", "role"], "origin"], 11, 8] } });
+      // The walking route sits under the place markers; the nearest three places sit above them.
+      map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#ffffff", "line-width": 9 } }, "places");
+      map.addLayer({ id: "route", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#0071e3", "line-width": 5 } }, "places");
+      map.addLayer({ id: "amenities", type: "circle", source: "amenities", paint: { "circle-color": "#8e44ad",
+        "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
       const buildings = initBuildings(map);
@@ -458,6 +469,15 @@ async function startMap() {
         map.setPaintProperty("places", "circle-radius", ["interpolate", ["linear"], ["zoom"], 10, coloured ? 2.5 : 3.5,
           14, coloured ? 4 : 6, 17, coloured ? 7 : 9]);
       };
+      mapLayer.amenities = (items) => map.getSource("amenities").setData({ type: "FeatureCollection", features: items.map((i) => ({
+        type: "Feature", geometry: { type: "Point", coordinates: [i.lng, i.lat] }, properties: { id: i.id, name: i.name } })) });
+      mapLayer.route = (line) => {
+        map.getSource("route").setData(line ? { type: "Feature", geometry: { type: "LineString", coordinates: line }, properties: {} } : EMPTY);
+        if (!line) return;
+        const bounds = new maplibregl.LngLatBounds();
+        line.forEach((c) => bounds.extend(c));
+        map.fitBounds(bounds, { padding: sheet.padding(60), maxZoom: 17, duration: 500 });
+      };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);
       mapLayer.fly = (bbox) => {
@@ -467,6 +487,8 @@ async function startMap() {
       if (todo.layer) mapLayer.layer(todo.layer.mode, todo.layer.data, todo.layer.budget);
       if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);
       mapLayer.highlight(todo.highlight);
+      mapLayer.amenities(todo.amenities);
+      if (todo.route) mapLayer.route(todo.route);
       if (todo.select) mapLayer.select(todo.select);
       if (todo.fly) mapLayer.fly(todo.fly);
     });

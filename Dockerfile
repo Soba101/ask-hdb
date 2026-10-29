@@ -17,7 +17,7 @@ COPY src ./src
 COPY rules ./rules
 COPY data/clean ./data/clean
 # The offline builder must run before building the image; raw outlines stay outside the context.
-RUN --mount=type=cache,target=/root/.cache/uv test -s data/clean/buildings.geojson && uv sync --frozen --no-dev $([ "$TRACING" = 1 ] && echo --extra tracing)
+RUN --mount=type=cache,target=/root/.cache/uv test -s data/clean/buildings.geojson && test -s data/clean/amenities.parquet && uv sync --frozen --no-dev $([ "$TRACING" = 1 ] && echo --extra tracing)
 
 # Not run as root: the app only reads its own files, so make sure local file modes do not lock it out.
 RUN chmod -R a+rX /app/data /app/rules /app/src && useradd --system --no-create-home app

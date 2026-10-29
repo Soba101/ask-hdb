@@ -100,7 +100,21 @@
       </section>
       <section id="card-nearby" class="card-section" hidden>
         <h3>Nearby</h3><ul id="nearby-facts"></ul>
-        <p class="small">Straight-line distances, not walking or travel times.</p>
+        <p class="small">Lists are ranked by straight-line distance; walking times come from OneMap routes.</p>
+        <div id="amenity-pills" class="radius" role="group" aria-label="Show the nearest places of one kind">
+          <button class="secondary" data-type="supermarket" aria-pressed="false">Supermarkets</button>
+          <button class="secondary" data-type="mrt" aria-pressed="false">MRT/LRT</button>
+          <button class="secondary" data-type="bus" aria-pressed="false">Bus stops</button>
+        </div>
+        <p id="amenity-note" class="small" role="status"></p>
+        <ul id="amenity-list"></ul>
+        <div id="route-block" hidden>
+          <h4>Walking directions</h4>
+          <p id="route-summary"></p>
+          <ol id="route-steps"></ol>
+          <p id="route-limits" class="small"></p>
+          <button id="route-clear" class="secondary">Clear route</button>
+        </div>
         <div class="radius" role="group" aria-label="Show a radius around this place">
           <span>Radius:</span>
           <button class="secondary on" data-km="0" aria-pressed="true">Off</button>
