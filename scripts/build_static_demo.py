@@ -47,16 +47,23 @@ def place_bundle(selection):
     return bundle
 
 
+def copy_page():
+    """The page, scripts and styles (not the data), with the demo shim loaded first."""
+    shutil.copytree(STATIC, SITE, dirs_exist_ok=True)
+    shutil.copy(ROOT / "scripts/demo/demo.js", SITE / "demo.js")
+    page = (STATIC / "index.html").read_text()
+    (SITE / "index.html").write_text(page.replace('<script type="module" src="app.js">', '<script src="demo.js"></script>\n<script type="module" src="app.js">'))
+    (SITE / ".nojekyll").write_text("")  # serve every file as it is
+
+
 def main(limit=None):
+    if limit == "assets":  # refresh the page files only, keeping the data already built
+        return copy_page()
     if amenities.osm_router() is None:
         sys.exit("data/clean/walk_graph.npz is missing: run scripts/build_walk_graph.py first")
     if SITE.exists():
         shutil.rmtree(SITE)
-    shutil.copytree(STATIC, SITE)
-    shutil.copy(ROOT / "scripts/demo/demo.js", SITE / "demo.js")
-    page = (SITE / "index.html").read_text()
-    (SITE / "index.html").write_text(page.replace('<script type="module" src="app.js">', '<script src="demo.js"></script>\n<script type="module" src="app.js">'))
-    (SITE / ".nojekyll").write_text("")  # serve every file as it is
+    copy_page()
     data = SITE / "data"
     features = mapdata.features()
     write(data / "features.json", features)
@@ -83,4 +90,5 @@ def main(limit=None):
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else None)
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
+    main(arg if arg == "assets" else int(arg) if arg else None)
