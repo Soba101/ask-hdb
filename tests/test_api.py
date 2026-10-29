@@ -247,3 +247,18 @@ def test_smoke_the_page_wires_the_price_and_lease_layers_to_the_metrics_route():
     assert "/map/metrics?flat_type=" in js and 'data-mode="lease"' in html and 'id="budget"' in html
     assert 'data-mode="mop"' in html and 'id="mop-controls"' in html and "data.mop_limits" in js and 'layerMode === "mop"' in js
     assert 'metricsCache' in js and '"#b8bdc9"' in js  # grey for blocks with too few sales or above the budget
+
+
+def test_a_second_question_waits_its_turn_and_the_queue_is_bounded(client):
+    from threading import Timer
+
+    limits = client.app.state.limits
+    limits.queue_wait = 5
+    assert limits.busy.acquire(blocking=False)
+    Timer(0.3, limits.busy.release).start()
+    assert client.post("/chat", json={"question": "q"}).status_code == 200  # got the slot after the first run ended
+    assert limits.waiting == 0
+    assert limits.busy.acquire(blocking=False)
+    limits.waiting = limits.queue_max  # a full queue refuses at once
+    assert client.post("/chat", json={"question": "q"}).status_code == 503
+    limits.busy.release()

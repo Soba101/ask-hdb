@@ -50,7 +50,7 @@ def _show(key, value):
         return "yes" if value else "no"
     if isinstance(value, (int, float)) and any(word in key for word in MONEY):
         return f"${value:,}"
-    return str(value).replace("_", " ")
+    return str(value)  # enum values stay exactly as the tool takes them, so the model cannot copy a reworded one
 
 
 def _lines(args):

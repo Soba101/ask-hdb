@@ -5,6 +5,7 @@ import json
 import os
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
@@ -62,6 +63,9 @@ class Limits:
         self.busy = Lock()  # held by the model thread itself, so a dropped client cannot free it early
         self.counting = Lock()
         self.window = Lock()  # /route calls allow() from worker threads
+        # A second visitor may wait this many seconds for the model, behind at most `queue_max` others.
+        self.queue_wait = float(os.getenv("API_QUEUE_WAIT", "0"))
+        self.queue_max, self.waiting = 3, 0
 
     def allow(self, visitor, now=None):
         with self.window:
@@ -82,6 +86,20 @@ class Limits:
                 del self.hits[other]
         return True
 
+    async def take_turn(self):
+        """Get the one model slot: at once, or after a short wait in a small queue. False means try again later."""
+        if self.busy.acquire(blocking=False):
+            return True
+        with self.counting:
+            if self.queue_wait <= 0 or self.waiting >= self.queue_max:
+                return False
+            self.waiting += 1
+        try:
+            return await asyncio.to_thread(self.busy.acquire, True, self.queue_wait)
+        finally:
+            with self.counting:
+                self.waiting -= 1
+
     def over_cap(self):
         with self.counting:
             today = time.strftime("%Y-%m-%d")
@@ -98,8 +116,24 @@ def sse(event):
     return f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
 
 
+def warm():
+    """Load the data tables and compress the outlines once, so the first visitor does not wait for them."""
+    try:
+        mapdata.features()
+        mapdata.card(mapdata.resolve({"kind": "block", "id": mapdata.load_blocks().block_id.iloc[0]}))
+        buildings.zipped(), buildings.etag()
+    except (OSError, ValueError, KeyError):  # a missing data file must not stop the app; the endpoints report it themselves
+        return
+
+
+@asynccontextmanager
+async def lifespan(app):
+    Thread(target=warm, daemon=True).start()
+    yield
+
+
 def create_app():
-    app = FastAPI(title="Ask HDB", docs_url=None, redoc_url=None)
+    app = FastAPI(title="Ask HDB", docs_url=None, redoc_url=None, lifespan=lifespan)
     limits = Limits()
     app.state.limits = limits
 
@@ -149,8 +183,8 @@ def create_app():
             raise HTTPException(429, "Too many questions. Please wait a minute.")
         if limits.over_cap():
             raise HTTPException(429, "Today's usage limit has been reached. Please come back tomorrow.")
-        if not limits.busy.acquire(blocking=False):
-            raise HTTPException(503, "Busy with another question. Please try again in a moment.")
+        if not await limits.take_turn():
+            raise HTTPException(503, "Busy with other questions. Please try again in a moment.")
         history = [(HumanMessage if turn.role == "user" else AIMessage)(content=turn.content)
                    for turn in body.history]
         events, left = Queue(), Event()

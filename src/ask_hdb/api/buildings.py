@@ -1,6 +1,7 @@
 """Offline building data, historical storey medians and illustrative solar geometry."""
 
 import gzip
+import hashlib
 import json
 import re
 from datetime import date as Date
@@ -86,10 +87,19 @@ def parse_date(value):
         raise HTTPException(422, "Use a valid date in YYYY-MM-DD format.") from None
 
 
+@lru_cache(maxsize=1)
+def etag():
+    return '"' + hashlib.md5(raw()).hexdigest() + '"'  # not a security use: it only names this version of the file
+
+
 @router.get("/map/buildings")
 def map_buildings(request: Request):
-    headers = {"Cache-Control": "public, max-age=3600", "Vary": "Accept-Encoding"}
+    # The outlines change only when the data is rebuilt and redeployed, so a day in the browser cache saves 3.6 MB per visit.
+    headers = {"Cache-Control": "public, max-age=86400", "Vary": "Accept-Encoding"}
     try:
+        headers["ETag"] = etag()
+        if request.headers.get("if-none-match") == headers["ETag"]:
+            return Response(status_code=304, headers=headers)
         if "gzip" in request.headers.get("accept-encoding", ""):
             return Response(zipped(), media_type="application/json", headers={**headers, "Content-Encoding": "gzip"})
         return Response(raw(), media_type="application/json", headers=headers)

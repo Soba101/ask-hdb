@@ -1,0 +1,19 @@
+# Public test through a free Cloudflare quick tunnel (random trycloudflare.com address, no account).
+# Start:  docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.tunnel.yml up -d tunnel
+# Address: docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.tunnel.yml logs tunnel | grep trycloudflare
+# Stop:   docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.tunnel.yml stop tunnel
+services:
+  app:
+    environment:
+      # Read the real visitor address from the tunnel's X-Forwarded-For so the per-visitor limit is not shared by everyone.
+      FORWARDED_ALLOW_IPS: "*"
+    cap_drop: [ALL]
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://app:8000
+    depends_on: [app]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
