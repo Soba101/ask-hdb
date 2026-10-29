@@ -127,3 +127,9 @@ def test_other_integers_are_not_dates(bad):
     from ask_hdb.sales import _filtered
     with pytest.raises(ValueError, match="Invalid since date"):
         _filtered(pd.DataFrame(), since=bad)
+
+
+def test_bare_year_bounds_cover_the_whole_year(sales):
+    # 2024 must not read as January 1970, and a bare year must not stop at January.
+    assert price_stats(sales, since=2024, until=2024) == price_stats(sales, since="2024-01", until="2024-12")
+    assert price_stats(sales, since="2024", until="2024") == price_stats(sales, since="2024-01", until="2024-12")
