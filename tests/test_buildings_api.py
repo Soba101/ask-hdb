@@ -23,20 +23,23 @@ def client(monkeypatch, tmp_path):
     blocks = pd.DataFrame([{"block_id": "blk_a", "block": "1", "street_name": "A ST",
                             "town": "BEDOK", "lat": 1.3, "lng": 103.8}])
     monkeypatch.setattr(mapdata, "load_blocks", lambda: blocks)
-    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index):
+    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index, buildings.etag):
         cached.cache_clear()
     yield TestClient(api.create_app())
-    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index):
+    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index, buildings.etag):
         cached.cache_clear()
 
 
 def test_buildings_are_gzipped_cached_and_missing_file_is_clear(client):
     response = client.get("/map/buildings", headers={"accept-encoding": "gzip"})
     assert response.status_code == 200 and response.headers["content-encoding"] == "gzip"
-    assert response.headers["cache-control"] == "public, max-age=3600"
+    assert response.headers["cache-control"] == "public, max-age=86400"
+    # A browser that already holds this version gets a 304 with no body.
+    again = client.get("/map/buildings", headers={"if-none-match": response.headers["etag"]})
+    assert again.status_code == 304 and again.content == b""
     buildings.PATH.unlink()
     assert client.get("/map/buildings").status_code == 200  # process cache
-    for cached in (buildings.raw, buildings.zipped):
+    for cached in (buildings.raw, buildings.zipped, buildings.etag):
         cached.cache_clear()
     response = client.get("/map/buildings")
     assert response.status_code == 404 and "build_buildings.py" in response.json()["detail"]
@@ -58,7 +61,7 @@ def test_sun_routes_validate_the_block_and_default_to_singapore_today(client):
     assert data["facades"][0]["bearing"] == 90 and "not measured heat" in data["limits"]
     assert client.get("/sun/block/not-a-block").status_code == 404
     buildings.PATH.unlink()
-    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index):
+    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index, buildings.etag):
         cached.cache_clear()
     assert client.get("/sun/block/blk_a").status_code == 404
 
@@ -84,7 +87,13 @@ def test_card_storey_prices_threshold_window_and_height(client, monkeypatch):
     assert data["storey_prices_as_of"] == "2026-10"
     assert "All flat types pooled" in data["storey_prices_limits"]
     buildings.PATH.unlink()
-    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index):
+    for cached in (buildings.features, buildings.raw, buildings.zipped, buildings.index, buildings.etag):
         cached.cache_clear()
     data = client.get("/card/block/blk_a").json()
     assert data["floors"] is None and data["storey_prices"]
+
+
+def test_a_weakened_or_listed_etag_still_gets_a_304(client):
+    tag = client.get("/map/buildings").headers["etag"]
+    for sent in (f"W/{tag}", f'"other", {tag}'):
+        assert client.get("/map/buildings", headers={"if-none-match": sent}).status_code == 304

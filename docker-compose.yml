@@ -20,6 +20,7 @@ services:
       LOCAL_LLM_URL: ${LOCAL_LLM_URL:-http://host.docker.internal:11434/v1}
       LLM_TIMEOUT: ${LLM_TIMEOUT:-420}
       API_RATE_PER_MINUTE: ${API_RATE_PER_MINUTE:-6}
+      API_QUEUE_WAIT: ${API_QUEUE_WAIT:-30}
       API_DAILY_TOKEN_CAP: ${API_DAILY_TOKEN_CAP:-2000000}
     extra_hosts:
       - "host.docker.internal:host-gateway"

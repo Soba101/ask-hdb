@@ -11,7 +11,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
 
 from ask_hdb import confirm as profile_check
-from ask_hdb import grounding, tracing
+from ask_hdb import grounding, tracing, verdict
 from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
 
@@ -194,7 +194,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
                         emit({"type": "tool_result", "name": call["name"], "args": call["args"], "result": result})
         return answer, messages
 
-    checked, first, kept, needs_confirmation = None, [], False, False
+    checked, first, kept, needs_confirmation, verdict_held = None, [], False, False, False
     try:
         answer, messages = run(messages)
         checked = grounding.check(answer, echo, [c["result"] for c in calls])
@@ -209,6 +209,10 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
             kept = bool(checked["ungrounded"]) and asking and not calls and grounding.is_clarification(answer)
             if (checked["ungrounded"] and not kept) or not answer.strip():
                 answer = grounding.CANNOT_ANSWER
+        # A verdict needs a settled tool result: where a tool said eligible null, code replaces the answer.
+        held = verdict.replacement(answer, [(c["name"], c["result"]) for c in calls])
+        if held:
+            answer, verdict_held = held, True
     except NeedsConfirmation as exc:
         # Code writes the question from the tool arguments; the tool has not run.
         answer, needs_confirmation, checked = profile_check.question_text(exc.args[0]), True, None
@@ -221,6 +225,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
     if checked is not None:
         # Same keys even when the rewrite was stopped by a limit.
         checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
-                   "replaced": answer == grounding.CANNOT_ANSWER, "kept_clarification": kept}
+                   "replaced": answer == grounding.CANNOT_ANSWER, "kept_clarification": kept,
+                   "verdict_held": verdict_held}
     return {"answer": answer, "tool_calls": calls, "tokens": tokens, "stopped_reason": stopped_reason,
             "grounding": checked, "needs_confirmation": needs_confirmation}

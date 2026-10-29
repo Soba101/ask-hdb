@@ -245,8 +245,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   /* The title and close button stay in view while the sections scroll. */
   .card > .close { position: sticky; top: var(--space-2); float: right; z-index: 3; right: auto; margin: var(--space-2) 0 0; }
   #card-summary { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: var(--space-3) 0 var(--space-1); }
-  #card-sections { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  #card-sections button { flex-shrink: 0; }
+  /* Chips wrap and stretch to fill each row, so none hides off to the side. */
+  #card-sections button { flex: 1 1 auto; }
   .maplibregl-ctrl-group { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
   details summary::marker { content: ""; }
   details summary::-webkit-details-marker { display: none; }
@@ -254,6 +254,63 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   details[open] > summary::before { transform: rotate(90deg); }
 }
 
+
+/* Desktop: the same Apple look as the phone (system font, tinted controls, frosted panels, segmented groups). */
+@media (min-width: 801px) {
+  :root {
+    --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+    --ios-blue: #0071e3; --tint: #0071e3; --accent: #0071e3; --accent-text: #0071e3;
+    --text: #1d1d1f; --muted: #636366; --line: rgba(60, 60, 67, .22);
+    --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .82); --floating: var(--material);
+    --card-radius: 14px; --radius: 10px;
+  }
+  body { font-family: var(--font); }
+  button, textarea, input, select { font-family: var(--font); }
+  h1 { font-size: 22px; font-weight: 700; line-height: 1.18; }
+  #side { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border-left: .5px solid var(--line); }
+  .tab { background: var(--fill); border: 0; color: var(--text); font-weight: 600; }
+  .tab.on { background: var(--ios-blue); color: #fff; }
+  button { font-weight: 600; background: var(--ios-blue); border-color: var(--tint); }
+  button.secondary { background: var(--fill); border: 0; color: var(--tint); }
+  button.secondary.on, button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
+  button.close { background: transparent; color: var(--muted); }
+  details summary, a { color: var(--tint); }
+  textarea { background: var(--fill); border: 0; border-radius: var(--radius); padding: 10px 12px; }
+  #form { align-items: flex-end; }
+  #form { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
+  #send { width: 40px; height: 40px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%; font-size: 0; position: relative; }
+  #send::after { content: ""; position: absolute; inset: 0; background: #fff;
+    -webkit-mask: center / 20px 20px no-repeat var(--arrow); mask: center / 20px 20px no-repeat var(--arrow); }
+  .msg { border-radius: 18px; }
+  .msg.user { background: var(--ios-blue); color: #fff; }
+  .msg.bot { background: var(--fill); border: 0; }
+  .selected { background: var(--fill); }
+  .legend, .layers, .card { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: .5px solid var(--line); }
+  .layers, .card { border-radius: var(--card-radius); box-shadow: 0 8px 30px rgba(0, 0, 0, .12); }
+  /* Segmented control: a raised white thumb marks the choice. */
+  .layers .seg { background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; }
+  .layers .seg button.secondary { background: transparent; color: var(--text); border-radius: 8px; }
+  .layers .seg button.secondary.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
+  .headline li { background: var(--fill); border-radius: 10px; }
+  .card-section { border-top: .5px solid var(--line); }
+  .radius, #amenity-pills { background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; flex-wrap: nowrap; }
+  .radius > span { display: none; }
+  .radius button.secondary, #amenity-pills button.secondary { flex: 1; background: transparent; color: var(--text); border-radius: 8px; }
+  .radius button.secondary.on, #amenity-pills button.secondary.on { background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, .22); color: var(--text); }
+  #amenity-list button, #route-clear { border-radius: var(--pill); }
+  .maplibregl-ctrl-group { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+    border: .5px solid var(--line); }
+}
+@media (min-width: 801px) and (prefers-color-scheme: dark) {
+  :root {
+    --text: #f5f5f7; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .82);
+    --tint: #2997ff; --accent: #2997ff; /* text on dark needs the lighter blue; filled buttons keep #0071e3 */
+  }
+  .layers .seg button.secondary.on, .radius button.secondary.on, #amenity-pills button.secondary.on { background: #636366; color: #fff; }
+}
 
 /* Phone only: native iOS / Apple Maps look. Everything below sits inside the phone query, so desktop is untouched. */
 @media (max-width: 800px) {
@@ -343,7 +400,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (max-width: 800px) and (prefers-color-scheme: dark) {
   :root {
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3;
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #2997ff;
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
 }
@@ -363,7 +420,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
 @media (max-width: 800px) {
   /* One control style: tinted fills with blue text, solid blue when selected, and segmented groups. */
-  #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--ios-blue); font-weight: 600; }
+  #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--tint, var(--ios-blue)); font-weight: 600; }
   #side button.secondary.on, #side button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
   .radius, #amenity-pills { display: flex; flex-wrap: nowrap; gap: 2px; padding: 2px; background: var(--fill); border-radius: 10px; }
   .radius > span { display: none; }
