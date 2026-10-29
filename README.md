@@ -7,6 +7,13 @@ and that are **near what matters to you** (MRT, schools, supermarkets, bus stops
 > (phone and desktop) are built. It runs locally on a 9B model and in Docker on one machine. It is not public yet.
 > See [docs/roadmap.md](docs/roadmap.md).
 
+## Live demo
+
+**https://soba101.github.io/ask-hdb/** runs from saved files on GitHub Pages, with no server. The map, layers (type, price, lease, MOP), 3D and sun shadows,
+info cards, nearby places and walking routes work. Chat is paused ("the free model limit has been reached"), and the walking routes there are estimates
+from OpenStreetMap paths. To chat, run the app yourself (below). The demo is built by `scripts/build_static_demo.py` ([hosting plan](docs/hosting-plan.md),
+[routing test](docs/routing-ab.md)).
+
 ## The app
 
 A map of every HDB block, MRT/LRT station, primary school and BTO site, with a chat beside it (a bottom sheet on a phone).
@@ -16,7 +23,7 @@ Click a place and the chat knows what "this block" means. Ask, and the answer sh
   (within, ending this year, past). Upcoming BTO sites show an estimated completion.
 - **Info card:** a short summary with sections you open when you need them: prices, lease, sun and facing, primary schools within 2 km, nearby places.
 - **Nearby and walking:** the three nearest supermarkets, MRT/LRT stations and bus stops, and a walking route with steps and a time
-  ([OneMap](https://www.onemap.gov.sg/) routing, needs your own OneMap login in `.env`).
+  ([OneMap](https://www.onemap.gov.sg/) routing with your own login in `.env`; without it, or when OneMap is down, our own router over OpenStreetMap paths answers).
 - **3D and sun:** building heights, approximate block facing and ground shadows for a chosen date and time
   ([details](docs/week7-3d.md)). The 3D view turns on when you tilt the map.
 - **Phone and desktop:** the same Apple-style look on both. On a phone the chat and the card live in a bottom sheet.
@@ -113,6 +120,8 @@ uv run python scripts/fetch_places.py       # MRT/LRT stations and primary schoo
 uv run python scripts/build_places.py
 uv run python scripts/build_buildings.py    # 3D outlines with floors and facing (needs data/raw/property/hdb_property_information.csv from data.gov.sg)
 uv run python scripts/build_amenities.py    # bus stops and supermarkets from OpenStreetMap (Overpass)
+# optional walking router: download Singapore.osm.gz from download.bbbike.org/osm/bbbike/Singapore/ into data/raw/walk/, then:
+uv run python scripts/build_walk_graph.py
 uv run python scripts/build_bto.py          # and build_bto_history.py
 ```
 
