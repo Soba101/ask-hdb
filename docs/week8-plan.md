@@ -27,7 +27,7 @@ reveals detail only when asked. No change to the agent, tools, prompt or any num
 8. **Mobile:** one scrollable bottom sheet (map stays 42dvh), no horizontal scroll.
 
 ## Contract that must not change
-Ids `card`, `card-close`, `card-title`, `card-facts`, `card-limits`, `card-actions`, `schools`, `schools-list`, `schools-summary`, `schools-limits`, `radius-counts`, `points`, `toggle-3d`, `sun-panel`, `sun-date`, `sun-time`, `sun-time-label`, `sun-position`, `building-error`, `card-buildings`, `card-sun`, `budget`, `flat-type`; `data-mode` on the layer buttons and `data-km` on radius buttons; the `cardRequest` stale guard; no `innerHTML`; the `"#b8bdc9"` grey; every aria label and focus ring.
+Ids `card`, `card-close`, `card-title`, `card-facts`, `card-limits`, `card-actions`, `schools`, `schools-list`, `schools-summary`, `schools-limits`, `radius-counts`, `amenity-pills` (`data-type` on its buttons), `amenity-note`, `route-status`, `amenity-list`, `route-block`, `route-summary`, `route-steps`, `route-limits`, `route-clear`, `points`, `toggle-3d`, `sun-panel`, `sun-date`, `sun-time`, `sun-time-label`, `sun-position`, `building-error`, `card-buildings`, `card-sun`, `budget`, `flat-type`; `data-mode` on the layer buttons and `data-km` on radius buttons; the `cardRequest` stale guard; no `innerHTML`; the `"#b8bdc9"` grey; every aria label and focus ring.
 
 ## Out of scope (later PRs)
 Auto-3D on tilt and real-time sun, amenity routes (supermarket, MRT, bus), MOP and BTO status. No agent, tool, prompt or grounding change.

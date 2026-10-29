@@ -18,7 +18,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
 from ask_hdb import agent
-from ask_hdb.api import buildings, mapdata
+from ask_hdb.api import amenities, buildings, mapdata
 from ask_hdb.api.points import map_actions, map_points
 
 NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "
@@ -53,15 +53,21 @@ class Limits:
     move them to a shared store if the app ever runs more than one worker.
     """
 
-    def __init__(self):
-        self.per_minute = int(os.getenv("API_RATE_PER_MINUTE", "6"))
+    def __init__(self, per_minute=None):
+        # /chat reads its own setting; other routes pass their own number.
+        self.per_minute = per_minute if per_minute is not None else int(os.getenv("API_RATE_PER_MINUTE", "6"))
         self.daily_tokens = int(os.getenv("API_DAILY_TOKEN_CAP", "2000000"))
         self.hits = defaultdict(deque)
         self.day, self.used = time.strftime("%Y-%m-%d"), 0
         self.busy = Lock()  # held by the model thread itself, so a dropped client cannot free it early
         self.counting = Lock()
+        self.window = Lock()  # /route calls allow() from worker threads
 
     def allow(self, visitor, now=None):
+        with self.window:
+            return self._allow(visitor, now)
+
+    def _allow(self, visitor, now):
         now = time.time() if now is None else now
         recent = self.hits[visitor]
         while recent and now - recent[0] > 60:
@@ -99,6 +105,7 @@ def create_app():
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.include_router(buildings.router)
+    app.include_router(amenities.router)
 
     @app.get("/map/features")
     def map_features():

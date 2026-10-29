@@ -318,3 +318,11 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
   #side { transition: height 420ms cubic-bezier(.2, .9, .3, 1.1); }
 }
+
+/* Nearest places and walking directions inside the Nearby section */
+#amenity-list { list-style: none; padding: 0; margin: var(--space-1) 0; }
+#amenity-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) 0; }
+#amenity-list button, #route-clear { min-height: 44px; min-width: 44px; }
+#amenity-pills button { min-height: 44px; }
+#route-steps { padding-left: 1.4em; margin: var(--space-1) 0; }
+#route-steps li { padding: 2px 0; }

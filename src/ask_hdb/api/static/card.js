@@ -1,6 +1,7 @@
 // The summary and every disclosure reuse server facts. No prices or leases are inferred here.
 import { clearBuildingCard, showBuildingFacts, openBuildingSun } from "./building-card.js";
 import { initCardMap } from "./card-map.js";
+import { initAmenityCard } from "./amenity-card.js";
 const $ = (id) => document.getElementById(id);
 const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Sun and facing", "card-facing"],
   ["Schools", "schools"], ["Nearby", "card-nearby"]];
@@ -32,6 +33,7 @@ async function get(path) {
 
 export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSection = () => {} }) {
   const map = initCardMap(mapLayer);
+  const amenities = initAmenityCard({ mapLayer, onRoute: () => onSection() });
   let cardRequest = 0, current = null, facts = null;
   let sectionRequest = 0, renderedMetrics = null;
   function refreshMetrics() {
@@ -107,6 +109,7 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
   }
   async function select(point) {
     reset(); const mine = cardRequest, stamp = map.select(point), sectionMine = sectionRequest;
+    amenities.select(point);
     $("card").hidden = !point;
     onSelect(point);
     $("card").scrollTop = 0; // A new place always opens at its summary, not the previous detail.
