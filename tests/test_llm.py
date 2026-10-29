@@ -49,3 +49,12 @@ def test_unknown_provider(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "unsupported")
     with pytest.raises(ValueError, match="LLM_PROVIDER"):
         llm.get_chat_model()
+
+
+def test_the_anthropic_prompt_is_marked_cacheable_and_other_providers_get_plain_text(monkeypatch):
+    from ask_hdb import agent
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    block = agent._system_prompt().content[0]
+    assert block["text"] == agent.SYSTEM_PROMPT and block["cache_control"] == {"type": "ephemeral"}
+    monkeypatch.setenv("LLM_PROVIDER", "local")
+    assert agent._system_prompt() == agent.SYSTEM_PROMPT
