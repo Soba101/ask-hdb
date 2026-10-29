@@ -52,7 +52,7 @@ export function initSheet({ chat = () => {} } = {}) {
     const note = $("layer-note").parentNode;
     // Snapshot whole child lists, including whitespace, so adjacent moved siblings restore exactly.
     const nodes = [$("form"), $("selected"), $("card"), seg, $("toggle-3d"), $("price-controls"),
-      $("lease-controls"), $("sun-panel"), legend, note, $("building-error"), $("sun-panel-limits"),
+      $("lease-controls"), $("mop-controls"), $("sun-panel"), legend, note, $("building-error"), $("sun-panel-limits"),
       header, $("card-summary"), $("card-close"), ...side.children];
     slots = [...new Set(nodes.map((node) => node.parentNode))].map((parent) => [parent, [...parent.childNodes]]);
     peek = document.createElement("div"); peek.id = "sheet-peek";
@@ -69,7 +69,7 @@ export function initSheet({ chat = () => {} } = {}) {
     $("peek-hint").textContent = "Ask about a flat, a grant or a place";
     move($("form"), $("topbar")); move($("selected"), $("topbar"));
     move(seg, $("chips")); move($("toggle-3d"), $("chips"));
-    move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail"));
+    move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail")); move($("mop-controls"), $("chip-detail"));
     move($("sun-panel"), $("sun-bar"));
     for (const node of [note, $("building-error"), $("sun-panel-limits")]) move(node, $("sheet-notes"));
     cancelDrag = sheetGestures({ handles: [peek], button: handle, active: () => enabled,

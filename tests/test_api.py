@@ -245,4 +245,5 @@ def test_smoke_the_page_wires_the_price_and_lease_layers_to_the_metrics_route():
     js = (Path(api.__file__).parent / "static/app.js").read_text()
     html = (Path(api.__file__).parent / "static/index.html").read_text()
     assert "/map/metrics?flat_type=" in js and 'data-mode="lease"' in html and 'id="budget"' in html
+    assert 'data-mode="mop"' in html and 'id="mop-controls"' in html and "data.mop_limits" in js and 'layerMode === "mop"' in js
     assert 'metricsCache' in js and '"#b8bdc9"' in js  # grey for blocks with too few sales or above the budget

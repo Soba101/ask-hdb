@@ -74,7 +74,7 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
       lrt: "LRT station", primary_school: "Primary school" }[point.kind];
     for (const [index, fact] of data.facts.entries()) {
       if (point.kind !== "block" && index < 2 || fact === town) continue;
-      const target = point.kind !== "block" ? "nearby-facts" : fact.startsWith("Lease started:") ? "lease-facts"
+      const target = point.kind !== "block" ? "nearby-facts" : fact.startsWith("Lease started:") || fact.startsWith("MOP") ? "lease-facts"
         : fact.startsWith("Nearest") ? "nearby-facts" : "price-facts";
       line(target, fact, "li");
     }

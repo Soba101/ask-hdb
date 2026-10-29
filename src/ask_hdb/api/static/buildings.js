@@ -46,13 +46,13 @@ export function initBuildings(map) {
     mode = nextMode; rows = nextRows;
     // Reuse the exact price/lease ramp and budget filtering from the existing point layer.
     const stateExpression = (node) => Array.isArray(node)
-      ? node[0] === "get" && ["price", "lease"].includes(node[1])
+      ? node[0] === "get" && ["price", "lease", "mop"].includes(node[1])
         ? ["coalesce", ["feature-state", node[1]], node[1] === "price" ? 0 : -1]
         : node.map(stateExpression) : node;
     color = stateExpression(expression);
     if (outlines && rows !== written) for (const f of outlines.features) {
       const row = rows[f.id];
-      map.setFeatureState({ source: "buildings", id: f.id }, { price: row && row[0] ? row[0] : 0, lease: row ? row[2] : -1 });
+      map.setFeatureState({ source: "buildings", id: f.id }, { price: row && row[0] ? row[0] : 0, lease: row ? row[2] : -1, mop: row?.[3] ?? -1 });
     }
     if (outlines) written = rows;
     if (nextMode === "type" && enabled) clock.updateTime();

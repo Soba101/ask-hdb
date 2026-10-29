@@ -111,6 +111,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .steps { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; margin-top: var(--space-2); }
 .steps span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: var(--space-2); }
 .steps .l1 { background: #440154; } .steps .l2 { background: #3b528b; } .steps .l3 { background: #21908d; } .steps .l4 { background: #fde725; }
+.steps .m1 { background: #d98200; } .steps .m2 { background: #f7c873; } .steps .m3 { background: #1d5fd6; }
 
 /* The summary stays short; chips reveal one detail section without nested scrolling. */
 .card { width: min(400px, calc(100% - 24px)); overflow-wrap: anywhere; }

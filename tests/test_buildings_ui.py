@@ -117,11 +117,13 @@ def test_phone_markup_and_touch_css_offline():
         assert not by_id[name]["children"], name + " starts empty"
     assert by_id["sun-panel-limits"] != by_id["sun-limits"]
     assert by_id["layers"]["attrs"]["aria-label"] == "Colour the blocks"
-    assert {node["attrs"]["data-mode"] for node in nodes if "data-mode" in node["attrs"]} == {"type", "price", "lease"}
+    assert {node["attrs"]["data-mode"] for node in nodes if "data-mode" in node["attrs"]} == {"type", "price", "lease", "mop"}
     assert {node["attrs"]["data-km"] for node in nodes if "data-km" in node["attrs"]} == {"0", "0.5", "1", "2"}
     viewport = next(node for node in nodes if node["attrs"].get("name") == "viewport")
     assert "viewport-fit=cover" in viewport["attrs"]["content"]
     assert len([node for node in nodes if node["attrs"].get("class") == "legend-item"]) == 4
+    assert "mop-controls" in by_id and "hidden" in by_id["mop-controls"]["attrs"]
+    assert "BTO site (upcoming, approximate)" in (STATIC / "index.html").read_text()
     for control in ("sun-date", "sun-time"):
         assert any(node["tag"] == "label" and by_id[control] in list(walk(node)) for node in nodes)
 

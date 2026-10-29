@@ -15,6 +15,8 @@ from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.distance import haversine_km, nearest_to_point
 from ask_hdb.geo.loaders import load_blocks, load_places
 from ask_hdb.geo.names import pretty_name
+from ask_hdb.rules.bto import BTO_FILE
+from ask_hdb.rules.loader import load_rules
 from ask_hdb.tools import load_sales
 
 KINDS = ("block", "mrt", "lrt", "primary_school", "bto")
@@ -101,10 +103,45 @@ def card(selection):
         return {**base, **_block_facts(selection)}
     if kind == "bto":
         row = load_projects().set_index("project_id").loc[selection["id"]]
-        return {**base, "facts": [f"Category: {row.category}", f"Units: {int(row.units)}",
-                                  f"Waiting time: about {int(row.wait_months)} months"],
+        facts = [f"Category: {row.category}", f"Units: {int(row.units)}", f"Waiting time: about {int(row.wait_months)} months"]
+        done = _bto_completion(row.get("first_launch"), row.get("wait_months"), load_sales().sale_month.max())
+        if done:
+            facts.append(done)
+        return {**base, "facts": facts,
                 "limits": ["BTO sites are approximate; prices are indicative launch ranges, before grants."]}
     return {**base, **_place_facts(selection)}
+
+
+def _bto_completion(first_launch, wait_months, latest):
+    """Launch month plus HDB's stated waiting time, as an estimate. None when either input is missing or unreadable."""
+    if not (isinstance(first_launch, str) and _ok(wait_months)):
+        return None
+    try:
+        done = pd.Period(first_launch, "M") + int(wait_months)
+    except ValueError:
+        return None
+    if done < latest.to_period("M"):
+        return "Estimated completion has passed; check HDB for the actual date."
+    return f"Estimated completion: about {done} (launch month plus stated waiting time; approximate)"
+
+
+def _mop_years():
+    """MOP length in years for standard flats, from the rules file (one seam so tests can change it)."""
+    return load_rules(BTO_FILE).get("mop.standard_years")
+
+
+def _mop_code(start, data_year, years):
+    """0 = within MOP, 1 = MOP ends around the data's latest year, 2 = past MOP. Lease start year stands in for key collection."""
+    end = int(start) + years
+    return 0 if end > data_year else 1 if end == data_year else 2
+
+
+def _mop_limits(years):
+    plus_prime = load_rules(BTO_FILE).get("mop.plus_prime_years")
+    return (f"MOP is {years} years from key collection for standard flats. We only know each block's lease start year, so this status is approximate "
+            "(a block can reach MOP months earlier or later). "
+            f"Plus and Prime flats have a {plus_prime}-year MOP; the data cannot identify them, and none has been resold yet. "
+            "Blocks with no resale yet are not shown. Check HDB for a specific flat.")
 
 
 def _block_facts(selection):
@@ -118,6 +155,9 @@ def _block_facts(selection):
         recent = mine[mine.sale_month > latest - pd.DateOffset(years=1)]
         start = int(mine.sort_values("sale_month").lease_commence_year.iloc[-1])
         facts.append(f"Lease started: {start}")
+        years = _mop_years()
+        code = _mop_code(start, latest.year, years)
+        facts.append("MOP (estimated, approximate): " + (f"within the {years}-year MOP", f"MOP ends around {latest.year}", "past MOP")[code])
         if len(recent):
             facts.append(f"Sales in the 12 months to {latest:%Y-%m}: {len(recent)}")
             for flat_type, group in recent.groupby("flat_type"):
@@ -130,6 +170,7 @@ def _block_facts(selection):
             facts.append(f"No sales in the 12 months to {latest:%Y-%m}")
         limits.append("Resale data from data.gov.sg (HDB), Jan 2017 to " + f"{sales.sale_month.max():%Y-%m}"
                       + "; the newest month may be incomplete. Not a valuation.")
+        limits.append(_mop_limits(years))
     else:
         facts.append("No resale sales recorded for this block since 2017.")
     school = _nearest(selection["lat"], selection["lng"], "primary_school")
@@ -225,7 +266,7 @@ LEASE_YEARS = 99
 def metrics(flat_type):
     """Per block: median resale price of one flat type over the last 24 months (when at least 3 sales) and remaining lease.
 
-    Remaining lease is the lease left at the block's newest sale, less the months since then, in whole years (rounded down).
+    Each row's 4th element is the MOP code (see _mop_code). Remaining lease is the lease left at the block's newest sale, less the months since then, in whole years (rounded down).
     Blocks with fewer sales have no price and are drawn grey. Descriptive only: not a valuation or a forecast.
     """
     if flat_type not in METRIC_FLAT_TYPES:
@@ -235,18 +276,20 @@ def metrics(flat_type):
     recent = sales[(sales.flat_type == flat_type) & (sales.sale_month > latest - pd.DateOffset(months=METRIC_MONTHS))]
     grouped = recent.groupby("block_id").resale_price.agg(["median", "count"])
     newest = sales.sort_values("sale_month").groupby("block_id").last()
+    years = _mop_years()
     blocks = {}
     for block_id, sale in newest.iterrows():
         # Months left at the data's latest month: the lease left at that block's newest sale, less the months since it.
         since = (latest.year - sale.sale_month.year) * 12 + latest.month - sale.sale_month.month
-        row = [None, 0, max(0, int(sale.lease_left_months - since) // 12)]
+        row = [None, 0, max(0, int(sale.lease_left_months - since) // 12), _mop_code(sale.lease_commence_year, latest.year, years)]
         if block_id in grouped.index:
             row[1] = int(grouped.loc[block_id, "count"])
             if row[1] >= METRIC_MIN_SALES:
                 row[0] = int(grouped.loc[block_id, "median"])
         blocks[block_id] = row
     return {"flat_type": flat_type, "window_months": METRIC_MONTHS, "min_sales": METRIC_MIN_SALES,
-            "as_of": f"{latest:%Y-%m}", "blocks": blocks,
+            "as_of": f"{latest:%Y-%m}", "blocks": blocks, "mop_years": years,
+            "mop_rule": load_rules(BTO_FILE).cite("mop.standard_years"), "mop_limits": _mop_limits(years),
             "limits": [(f"Median of the last {METRIC_MONTHS} months of recorded resales (data.gov.sg, to {latest:%Y-%m}) for one flat type, "
                         f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
                        "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
