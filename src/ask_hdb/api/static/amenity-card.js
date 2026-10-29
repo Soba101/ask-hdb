@@ -4,6 +4,8 @@ const $ = (id) => document.getElementById(id);
 const TYPES = { supermarket: "Supermarkets", mrt: "MRT/LRT", bus: "Bus stops" };
 
 function km(value) { return value < 1 ? Math.round(value * 1000) + " m" : value.toFixed(2) + " km"; }
+// OneMap writes "Make A Slight Right"; read it as a sentence, keeping the street names.
+function sentence(text) { return text.replace(/(?<=\s)(A|An|The|To|On|Onto|Into|At|And|Of)(?=\s)/g, (w) => w.toLowerCase()); }
 function minutes(seconds) { return Math.max(1, Math.round(seconds / 60)) + " min"; }
 
 export function initAmenityCard({ mapLayer, onRoute }) {
@@ -36,7 +38,7 @@ export function initAmenityCard({ mapLayer, onRoute }) {
         km(data.distance_m / 1000) + " walking (estimate from OneMap).";
       $("route-steps").replaceChildren(...data.steps.map((s) => {
         const li = document.createElement("li");
-        li.textContent = s.text + (s.distance_m ? " (" + s.distance_m + " m)" : "");
+        li.textContent = sentence(s.text) + (s.distance_m ? " (" + s.distance_m + " m)" : "");
         return li;
       }));
       $("route-limits").textContent = data.limits.join(" ") + " " + data.source + ".";

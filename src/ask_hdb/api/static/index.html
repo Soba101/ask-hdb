@@ -37,7 +37,7 @@
       <p id="building-error" class="small" role="status"></p>
       <div id="sun-panel" hidden>
         <label>Sun date <input id="sun-date" type="date" required></label>
-        <label>Time <b id="sun-time-label">12:00 (+08:00)</b>
+        <label>Time <b id="sun-time-label" class="value">12:00 (+08:00)</b>
           <input id="sun-time" type="range" min="360" max="1170" step="15" value="720" disabled>
         </label>
         <div class="sun-actions" role="group" aria-label="Sun playback">
@@ -56,7 +56,7 @@
       <div id="price-controls" hidden>
         <label>Flat type
           <select id="flat-type">
-            <option>3 ROOM</option><option selected>4 ROOM</option><option>5 ROOM</option><option>EXECUTIVE</option>
+            <option value="3 ROOM">3-room</option><option value="4 ROOM" selected>4-room</option><option value="5 ROOM">5-room</option><option value="EXECUTIVE">Executive</option>
           </select>
         </label>
         <label>Budget up to <b id="budget-label"></b>
@@ -100,7 +100,6 @@
       </section>
       <section id="card-nearby" class="card-section" hidden>
         <h3>Nearby</h3><ul id="nearby-facts"></ul>
-        <p class="small">Lists are ranked by straight-line distance; walking times come from OneMap routes.</p>
         <div id="amenity-pills" class="radius" role="group" aria-label="Show the nearest places of one kind">
           <button class="secondary" data-type="supermarket" aria-pressed="false">Supermarkets</button>
           <button class="secondary" data-type="mrt" aria-pressed="false">MRT/LRT</button>

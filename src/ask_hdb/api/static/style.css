@@ -222,6 +222,38 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   button { touch-action: manipulation; }
 }
 
+/* ---- Polish pass ---- */
+.value { margin-left: var(--space-1); font-weight: 600; }
+/* The section chips name the section, so its own heading is for screen readers only. */
+#card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; }
+.layers .seg button { white-space: nowrap; overflow-wrap: normal; word-break: normal; padding: var(--space-1) var(--space-2); }
+.maplibregl-ctrl-attrib-button { background-repeat: no-repeat; background-position: center; }
+@media (pointer: coarse) { .maplibregl-ctrl-attrib-button { min-height: 32px; min-width: 32px; } }
+@media (prefers-color-scheme: dark) {
+  .maplibregl-ctrl-group, .maplibregl-ctrl-attrib { background: var(--floating); }
+  .maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib a { color: var(--muted); }
+  .maplibregl-ctrl-group button + button { border-top-color: var(--line); }
+  .maplibregl-ctrl-attrib-button { filter: invert(1); }
+}
+@media (min-width: 801px) and (prefers-color-scheme: dark) { .maplibregl-ctrl-icon { filter: invert(1); } }
+#amenity-list li { border-bottom: .5px solid var(--line); }
+#amenity-list li:last-child { border-bottom: 0; }
+
+@media (min-width: 801px) {
+  .card { box-shadow: 0 8px 30px rgba(0, 0, 0, .14); padding-top: 0; }
+  /* The title and close button stay in view while the sections scroll. */
+  .card > .close { position: sticky; top: var(--space-2); float: right; z-index: 3; right: auto; margin: var(--space-2) 0 0; }
+  #card-summary { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: var(--space-3) 0 var(--space-1); }
+  #card-sections { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #card-sections button { flex-shrink: 0; }
+  .maplibregl-ctrl-group { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+  details summary::marker { content: ""; }
+  details summary::before { content: "›"; display: inline-block; width: 1em; transition: transform 120ms ease; }
+  details[open] > summary::before { transform: rotate(90deg); }
+}
+
+
 /* Phone only: native iOS / Apple Maps look. Everything below sits inside the phone query, so desktop is untouched. */
 @media (max-width: 800px) {
   :root {
@@ -326,3 +358,27 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 #amenity-pills button { min-height: 44px; }
 #route-steps { padding-left: 1.4em; margin: var(--space-1) 0; }
 #route-steps li { padding: 2px 0; }
+
+
+@media (max-width: 800px) {
+  /* One control style: tinted fills with blue text, solid blue when selected, and segmented groups. */
+  #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--ios-blue); font-weight: 600; }
+  #side button.secondary.on, #side button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
+  .radius, #amenity-pills { display: flex; flex-wrap: nowrap; gap: 2px; padding: 2px; background: var(--fill); border-radius: 10px; }
+  .radius > span { display: none; }
+  .radius button.secondary, #amenity-pills button.secondary { flex: 1; min-width: 0; background: transparent; border-radius: 8px; padding: 0 4px; font-size: var(--t-foot); }
+  .radius button.secondary.on, #amenity-pills button.secondary.on { background: var(--ios-blue); color: #fff; }
+  #amenity-list button, #route-clear { border-radius: var(--pill); padding: 0 var(--space-4); }
+  #sheet-peek .legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: var(--t-cap); }
+  #sheet-peek .legend::-webkit-scrollbar { display: none; }
+  /* A selected place replaces the legend. */
+  #side:has(#card-summary:not([hidden])) #sheet-peek .legend { display: none; }
+  /* A 44px grab area, drawn around the 36px grabber without making the sheet taller. */
+  #sheet-handle { position: relative; }
+  #sheet-handle::before { content: ""; position: absolute; inset: -12px -28px; }
+  .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: calc(var(--sheet-h) + var(--kb) + var(--sun-h, 0px)); }
+  #sheet-notes { padding-bottom: var(--space-5); }
+}
+@media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
+  .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { transition: bottom 420ms cubic-bezier(.2, .9, .3, 1.1); }
+}

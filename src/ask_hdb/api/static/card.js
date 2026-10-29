@@ -31,9 +31,9 @@ async function get(path) {
   return response.json();
 }
 
-export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSection = () => {} }) {
+export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSection = () => {}, onRoute = onSection }) {
   const map = initCardMap(mapLayer);
-  const amenities = initAmenityCard({ mapLayer, onRoute: () => onSection() });
+  const amenities = initAmenityCard({ mapLayer, onRoute: () => onRoute() });
   let cardRequest = 0, current = null, facts = null;
   let sectionRequest = 0, renderedMetrics = null;
   function refreshMetrics() {
@@ -46,7 +46,7 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     $("metrics-limits").replaceChildren();
     $("metric-prices").replaceChildren(); $("metric-lease").replaceChildren();
     if (current.kind !== "block") {
-      const source = current.kind === "bto" ? "BTO project data · approximate site" : "Place data · straight-line counts";
+      const source = current.kind === "bto" ? "BTO project data" : "Place data · straight-line counts";
       facts.facts.slice(0, 2).forEach((fact) => headline(fact, source));
       return;
     }
