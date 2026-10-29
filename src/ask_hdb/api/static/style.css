@@ -267,8 +267,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   body { font-family: var(--font); }
   button, textarea, input, select { font-family: var(--font); }
   h1 { font-size: 22px; font-weight: 700; line-height: 1.18; }
-  #side { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-    border-left: .5px solid var(--line); }
+  /* The side panel does not sit over the map, so a blur there only costs frames: keep it solid. */
+  #side { background: var(--panel); border-left: .5px solid var(--line); }
   .tab { background: var(--fill); border: 0; color: var(--text); font-weight: 600; }
   .tab.on { background: var(--ios-blue); color: #fff; }
   button { font-weight: 600; background: var(--ios-blue); border-color: var(--tint); }
@@ -295,6 +295,14 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .layers .seg button.secondary.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
   .headline li { background: var(--fill); border-radius: 10px; }
   .card-section { border-top: .5px solid var(--line); }
+  /* Motion like the phone sheet: the card, the route block and chat bubbles ease in; nothing moves for reduced-motion users. */
+  @media (prefers-reduced-motion: no-preference) {
+    .card:not([hidden]) { animation: rise 320ms cubic-bezier(.2, .9, .3, 1.1); }
+    #route-block:not([hidden]), .msg { animation: fade 220ms ease-out; }
+    #card-sections button, .layers .seg button, .tab, #send { transition: background-color 160ms ease, color 160ms ease, transform 120ms ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
   .radius, #amenity-pills { background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; flex-wrap: nowrap; }
   .radius > span { display: none; }
   .radius button.secondary, #amenity-pills button.secondary { flex: 1; background: transparent; color: var(--text); border-radius: 8px; }
