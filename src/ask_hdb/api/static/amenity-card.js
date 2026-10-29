@@ -9,7 +9,7 @@ function minutes(seconds) { return Math.max(1, Math.round(seconds / 60)) + " min
 export function initAmenityCard({ mapLayer, onRoute }) {
   let point = null, type = null, listRequest = 0, routeRequest = 0;
   const buttons = document.querySelectorAll("#amenity-pills button");
-  function say(text) { $("amenity-note").textContent = text; }
+  function say(text) { $("route-status").textContent = text; } // route messages never replace the data attribution
   function clearRoute() {
     routeRequest++;
     $("route-block").hidden = true;
@@ -19,7 +19,7 @@ export function initAmenityCard({ mapLayer, onRoute }) {
   function clear() {
     listRequest++; type = null; point = null;
     buttons.forEach((b) => { b.setAttribute("aria-pressed", "false"); b.classList.toggle("on", false); });
-    $("amenity-list").replaceChildren(); say("");
+    $("amenity-list").replaceChildren(); say(""); $("amenity-note").textContent = "";
     mapLayer.amenities([]); clearRoute();
   }
   async function walk(item, button) {
@@ -57,14 +57,14 @@ export function initAmenityCard({ mapLayer, onRoute }) {
       const on = b.dataset.type === type;
       b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on);
     });
-    $("amenity-list").replaceChildren(); mapLayer.amenities([]); say("Loading…");
+    $("amenity-list").replaceChildren(); mapLayer.amenities([]); $("amenity-note").textContent = "Loading…"; say("");
     try {
       const response = await fetch("/nearby/" + encodeURIComponent(from.kind) + "/" + encodeURIComponent(from.id) +
         "?type=" + encodeURIComponent(next) + "&n=3");
       if (!response.ok) throw new Error("no list");
       const data = await response.json();
       if (mine !== listRequest || from !== point) return;
-      say(data.limits.join(" ") + " " + data.source + ", as of " + data.as_of + ".");
+      $("amenity-note").textContent = data.limits.join(" ") + " " + data.source + ", as of " + data.as_of + ".";
       mapLayer.amenities(data.items);
       $("amenity-list").replaceChildren(...data.items.map((item, i) => {
         const li = document.createElement("li"), button = document.createElement("button");
@@ -76,7 +76,7 @@ export function initAmenityCard({ mapLayer, onRoute }) {
         return li;
       }));
     } catch (error) {
-      if (mine === listRequest) say("Nearby places could not be loaded.");
+      if (mine === listRequest) $("amenity-note").textContent = "Nearby places could not be loaded.";
     }
   }
   buttons.forEach((b) => {

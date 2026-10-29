@@ -175,3 +175,15 @@ def test_build_parses_dedupes_and_checks_the_answer():
     assert set(frame.kind) == {"supermarket", "bus_stop", "mrt_exit"}
     with pytest.raises(ValueError, match="expected at least"):
         build_amenities.build({"supermarket": overpass([shop]), "bus_stop": overpass([node])}, exits, "2026-10-29")
+
+
+def test_limits_allow_survives_concurrent_threads():
+    from concurrent.futures import ThreadPoolExecutor
+
+    from ask_hdb.api import Limits
+    limits = Limits(per_minute=5)
+    with ThreadPoolExecutor(20) as pool:
+        answers = list(pool.map(lambda i: limits.allow("same", now=100.0), range(40)))
+    assert answers.count(True) == 5
+    with ThreadPoolExecutor(20) as pool:  # an idle visitor is forgotten while others arrive
+        list(pool.map(lambda i: limits.allow(f"v{i}", now=500.0), range(40)))

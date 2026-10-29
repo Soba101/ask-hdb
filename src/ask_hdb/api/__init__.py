@@ -61,8 +61,13 @@ class Limits:
         self.day, self.used = time.strftime("%Y-%m-%d"), 0
         self.busy = Lock()  # held by the model thread itself, so a dropped client cannot free it early
         self.counting = Lock()
+        self.window = Lock()  # /route calls allow() from worker threads
 
     def allow(self, visitor, now=None):
+        with self.window:
+            return self._allow(visitor, now)
+
+    def _allow(self, visitor, now):
         now = time.time() if now is None else now
         recent = self.hits[visitor]
         while recent and now - recent[0] > 60:

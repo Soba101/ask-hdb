@@ -42,7 +42,8 @@ assert.equal(get("route-block").hidden, true); assert.equal(map.line, null);
 // An error shows its plain message and draws nothing.
 routeReply = { error: "no_credentials", message: "Walking directions need OneMap credentials in .env." };
 await walk.onclick(); await tick();
-assert.equal(get("amenity-note").textContent, routeReply.message); assert.equal(get("route-block").hidden, true);
+assert.equal(get("route-status").textContent, routeReply.message);
+assert.ok(get("amenity-note").textContent.includes("OpenStreetMap"), "the data attribution stays"); assert.equal(get("route-block").hidden, true);
 // A late route answer cannot draw over a newer selection.
 const late = deferred();
 routeReply = { ...routeReply, error: undefined };
