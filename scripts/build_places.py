@@ -24,19 +24,29 @@ def unique_id(prefix, name, used):
     return candidate
 
 
-def build_places(exits, schools):
+def stations(exits):
+    """Group exit points by station and give each station its stable id (build_amenities.py reuses this)."""
     groups = {}
     for feature in exits["features"]:
         name = feature["properties"]["STATION_NA"].strip()
         # GeoJSON puts longitude first, unlike the distance helpers.
         lng, lat = feature["geometry"]["coordinates"][:2]
         groups.setdefault(name, []).append((lat, lng))
-    rows, used = [], set()
+    found, used = [], set()
     for source_name, coordinates in sorted(groups.items()):
         # LRT (light rail: Punggol, Sengkang, Bukit Panjang) is a different service; keep it apart from MRT.
         kind = "lrt" if re.search(r" LRT STATION$", source_name, re.IGNORECASE) else "mrt"
         name = re.sub(r" (?:MRT|LRT) STATION$", "", source_name, flags=re.IGNORECASE)
-        rows.append({"place_id": unique_id(kind, name, used), "kind": kind, "name": name,
+        found.append({"place_id": unique_id(kind, name, used), "kind": kind, "name": name, "coordinates": coordinates})
+    return found, used
+
+
+def build_places(exits, schools):
+    found, used = stations(exits)
+    rows = []
+    for station in found:
+        coordinates = station["coordinates"]
+        rows.append({"place_id": station["place_id"], "kind": station["kind"], "name": station["name"],
                      "lat": sum(p[0] for p in coordinates) / len(coordinates),
                      "lng": sum(p[1] for p in coordinates) / len(coordinates),
                      "exit_count": len(coordinates), "postal_code": None})

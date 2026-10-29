@@ -23,3 +23,9 @@ def load_blocks():
 @lru_cache(maxsize=1)
 def load_places():
     return _load("places")
+
+
+@lru_cache(maxsize=1)
+def load_amenities():
+    # Bus stops, supermarkets and MRT exits; built by scripts/build_amenities.py.
+    return _load("amenities")
