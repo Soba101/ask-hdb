@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ask HDB</title>
+<link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="mapwrap">
+    <div id="map" role="region" aria-label="Map of HDB blocks, MRT stations, primary schools and BTO sites"></div>
+    <p id="mapnote" class="mapnote" hidden></p>
+    <div id="topbar"></div>
+    <div id="chips"></div>
+    <div id="chip-detail"></div>
+    <div id="sun-bar"></div>
+    <div id="map-controls">
+    <p class="legend">
+      <span class="legend-item"><span class="dot block"></span>Block</span>
+      <span class="legend-item"><span class="dot mrt"></span>MRT/LRT</span>
+      <span class="legend-item"><span class="dot school"></span>School</span>
+      <span class="legend-item"><span class="dot bto"></span>BTO site (upcoming, approximate)</span>
+    </p>
+    <div id="layers" class="layers" role="group" aria-label="Colour the blocks">
+      <div class="seg">
+        <span class="seg-label">Colour blocks by</span>
+        <button class="secondary on" data-mode="type" aria-pressed="true">Type</button>
+        <button class="secondary" data-mode="price" aria-pressed="false">Price</button>
+        <button class="secondary" data-mode="lease" aria-pressed="false">Lease</button>
+        <button class="secondary" data-mode="mop" aria-pressed="false">MOP</button>
+      </div>
+      <details class="view-options">
+        <summary>View</summary>
+        <button id="toggle-3d" class="secondary" aria-pressed="false" disabled>3D</button>
+      <p id="building-error" class="small" role="status"></p>
+      <div id="sun-panel" hidden>
+        <label>Sun date <input id="sun-date" type="date" required></label>
+        <label>Time <b id="sun-time-label" class="value">12:00 (+08:00)</b>
+          <input id="sun-time" type="range" min="360" max="1170" step="15" value="720" disabled>
+        </label>
+        <div class="sun-actions" role="group" aria-label="Sun playback">
+          <button id="sun-now" class="secondary" type="button">Now</button>
+          <button id="sun-play" class="secondary" type="button" aria-pressed="false">Play</button>
+        </div>
+        <p id="sun-position" class="small" role="status"></p>
+        <p id="sun-panel-limits" class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat.
+          The 3D light shades each wall by its direction but does not cast shadows onto other buildings.
+          Shadows drawn on the ground are illustrative (ground shadows only), using the convex hull of each footprint;
+          this overestimates L-shaped and courtyard blocks. No trees or clouds; overlaps may look darker.
+          Shadows appear at zoom 15 or closer, for up to 600 buildings in view (dense areas may miss some), with lengths capped at 300 m and hidden below 10° sun altitude.
+          Exposure colours and direct-sun hours ignore shade from other blocks. In Type mode, grey to yellow shows increasing exposure on the sunnier long facade. Facing is approximate per block, not per unit.</p>
+      </div>
+      </details>
+      <div id="price-controls" hidden>
+        <label>Flat type
+          <select id="flat-type">
+            <option value="3 ROOM">3-room</option><option value="4 ROOM" selected>4-room</option><option value="5 ROOM">5-room</option><option value="EXECUTIVE">Executive</option>
+          </select>
+        </label>
+        <label>Budget up to <b id="budget-label"></b>
+          <input id="budget" type="range" step="10000">
+        </label>
+        <div class="ramp"><span id="ramp-low">cheaper</span><i></i><span id="ramp-high">dearer</span></div>
+        <p class="small">Colours compare blocks by their median for this flat type (10th to 90th percentile); grey: no median or above your budget.</p>
+      </div>
+      <div id="lease-controls" hidden>
+        <div class="steps"><span class="l1"></span>under 60 yrs <span class="l2"></span>60-75 <span class="l3"></span>75-90 <span class="l4"></span>90+ left</div>
+        <p class="small">Whether a short lease limits CPF use, HDB loans or grants depends on your age and the years left (for example, the lease should cover the youngest buyer to age 95). Check HDB's rules.</p>
+      </div>
+      <div id="mop-controls" hidden>
+        <div class="steps"><span class="m1"></span>within MOP <span class="m2"></span><b id="mop-end-label">MOP ends this year</b> <span class="m3"></span>past MOP</div>
+        <p class="small">Approximate, from each block's lease start year. Blocks with no resale yet are not shown.</p>
+      </div>
+      <details class="small"><summary>About this layer</summary><p id="layer-note" class="small"></p></details>
+    </div>
+    </div>
+    <div id="card" class="card" hidden>
+      <button id="card-close" class="close" aria-label="Close the info card">&times;</button>
+      <div id="card-summary" aria-live="polite">
+        <h2 id="card-title"></h2>
+        <p id="card-subtitle" class="small"></p>
+        <ul id="card-facts" class="headline"></ul>
+      </div>
+      <div id="card-sections" class="choices" role="group" aria-label="Place details"></div>
+      <section id="card-prices" class="card-section" hidden>
+        <p class="small">Recorded resale medians, not a valuation.</p>
+        <h3>Prices</h3><ul id="price-facts"></ul><div id="metric-prices"></div><div id="storey-prices"></div>
+      </section>
+      <section id="card-lease" class="card-section" hidden><h3>Lease</h3><ul id="lease-facts"></ul><div id="metric-lease"></div></section>
+      <section id="card-facing" class="card-section" hidden>
+        <h3>Sun and facing</h3><div id="card-buildings"></div><div id="card-sun"></div>
+      </section>
+      <section id="schools" class="schools card-section" hidden>
+        <h3 id="schools-summary">Primary schools within 2 km</h3>
+        <p class="small">Approximate, straight-line distances; not MOE's measurement.</p>
+        <ul id="schools-list"></ul>
+        <p class="small">Solid ring: 1 km. Dashed ring: 2 km. Schools are ringed green (within 1 km), amber (1 to 2 km) or grey (borderline).</p>
+      </section>
+      <section id="card-nearby" class="card-section" hidden>
+        <h3>Nearby</h3><ul id="nearby-facts"></ul>
+        <div id="amenity-pills" class="radius" role="group" aria-label="Show the nearest places of one kind">
+          <button class="secondary" data-type="supermarket" aria-pressed="false">Supermarkets</button>
+          <button class="secondary" data-type="mrt" aria-pressed="false">MRT/LRT</button>
+          <button class="secondary" data-type="bus" aria-pressed="false">Bus stops</button>
+        </div>
+        <p id="amenity-note" class="small"></p>
+        <p id="route-status" class="small" role="status"></p>
+        <ul id="amenity-list"></ul>
+        <div id="route-block" hidden>
+          <h4>Walking directions</h4>
+          <p id="route-summary"></p>
+          <ol id="route-steps"></ol>
+          <p id="route-limits" class="small"></p>
+          <button id="route-clear" class="secondary">Clear route</button>
+        </div>
+        <div class="radius" role="group" aria-label="Show a radius around this place">
+          <span>Radius:</span>
+          <button class="secondary on" data-km="0" aria-pressed="true">Off</button>
+          <button class="secondary" data-km="0.5" aria-pressed="false">500 m</button>
+          <button class="secondary" data-km="1" aria-pressed="false">1 km</button>
+          <button class="secondary" data-km="2" aria-pressed="false">2 km</button>
+        </div>
+        <button id="radius-fit" class="secondary">Fit map to radius</button>
+        <p id="radius-counts" class="small"></p>
+      </section>
+      <div id="card-actions" class="choices"></div>
+      <details id="card-about">
+        <summary>About these numbers</summary>
+        <div id="card-limits" class="small"></div>
+        <div id="metrics-limits" class="small"></div>
+        <div id="building-limits" class="small"></div>
+        <p id="sun-limits" class="small"></p>
+        <p id="schools-limits" class="small"></p>
+        <p id="radius-limits" class="small"></p>
+      </details>
+    </div>
+  </div>
+  <aside id="side">
+    <header>
+      <h1>Ask HDB</h1>
+      <p id="peek-hint"></p>
+      <p>Click a block, school or station, then ask about it. Every number comes from a tool.</p>
+    </header>
+    <div id="sheet-notes"></div>
+    <nav class="tabs" aria-label="Panels">
+      <button id="tab-chat" class="tab on" aria-pressed="true">Chat</button>
+      <button id="tab-evidence" class="tab" aria-pressed="false">Evidence <span id="evidence-count"></span></button>
+    </nav>
+    <section id="chat" aria-label="Chat">
+      <div id="log" role="log" aria-live="polite"></div>
+      <div id="selected" class="selected" hidden>
+        <span>Asking about: <b id="selected-label"></b></span>
+        <button id="selected-clear" class="close" aria-label="Stop asking about this place">&times;</button>
+      </div>
+      <form id="form">
+        <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or a place" required></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+      <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. The map tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
+      <p class="notice">Data: HDB resale and property information and LTA MRT exits (data.gov.sg, Singapore Open Data Licence v1.0); addresses and walking routes from OneMap (Singapore Land Authority); map, bus stops and supermarkets from OpenStreetMap contributors (ODbL).</p>
+    </section>
+    <section id="evidence" aria-label="Tool results and sources" hidden>
+      <p id="empty" class="muted">Tool calls, results and sources for your question appear here.</p>
+      <div id="tools"></div>
+      <div id="sources"></div>
+      <ul id="points" class="points" aria-label="Places highlighted on the map"></ul>
+    </section>
+  </aside>
+</div>
+<script src="demo.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
