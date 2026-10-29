@@ -313,7 +313,7 @@ const mapLayer = {
   route(line) { todo.route = line; },
 };
 const card = initCard({
-  onSelect: sheet.select, onSection: sheet.section,
+  onSelect: sheet.select, onSection: sheet.section, onRoute: sheet.route,
   mapLayer,
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
   ask: (question) => { tab("chat"); ask(question); },
@@ -395,13 +395,15 @@ async function startMap() {
         "circle-radius": ["case", ["==", ["get", "role"], "origin"], 11, 8] } });
       // The walking route sits under the place markers; the nearest three places sit above them.
       map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 9 } }, "places");
+        paint: { "line-color": "#ffffff", "line-width": 11 } }, "places");
       map.addLayer({ id: "route", type: "line", source: "route", layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#0071e3", "line-width": 5 } }, "places");
+        paint: { "line-color": "#0a84ff", "line-width": 6 } }, "places");
       map.addLayer({ id: "amenities", type: "circle", source: "amenities", paint: { "circle-color": "#8e44ad",
         "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
+      document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
+      document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
       for (const layer of ["places", "blocks", "highlight"]) {
@@ -476,7 +478,11 @@ async function startMap() {
         if (!line) return;
         const bounds = new maplibregl.LngLatBounds();
         line.forEach((c) => bounds.extend(c));
-        map.fitBounds(bounds, { padding: sheet.padding(60), maxZoom: 17, duration: 500 });
+        const gap = sheet.padding(60), card = $("card");
+        // On desktop the info card floats over the map's left side, so frame the route to its right.
+        const room = map.getContainer().clientWidth - 2 * gap - 40; // a narrow desktop map cannot spare the card's full width
+        const left = !card.hidden && getComputedStyle(card).position === "absolute" ? Math.min(card.offsetWidth + 36, Math.max(gap, room)) : gap;
+        map.fitBounds(bounds, { padding: { top: gap, right: gap, bottom: gap, left }, maxZoom: 17, duration: 500 });
       };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);

@@ -152,7 +152,8 @@ def test_phone_markup_and_touch_css_offline():
     assert "var(--sheet-h)" in css_block(mobile, ".mapnote")
     assert "transition: none" in css_block(css_block(css, "@media (prefers-reduced-motion: reduce)"), "#side")
     app = (STATIC / "app.js").read_text()
-    assert app.count('padding: sheet.padding(60)') == 3
+    assert app.count('padding: sheet.padding(60)') == 2
+    assert "const gap = sheet.padding(60)" in app  # the route fit uses the same plain gap and adds the desktop card's width
     assert 'sheet.answer();' in app
     assert '#layers [data-mode]' not in app
     assert app.count('.seg [data-mode]') == 2

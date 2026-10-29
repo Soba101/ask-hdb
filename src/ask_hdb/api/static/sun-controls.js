@@ -26,7 +26,7 @@ export function initSunControls(render, clear) {
     slider.setAttribute("aria-valuetext", time + " Singapore time");
     const sun = samples[minute / 15];
     if (!sun) return;
-    $("sun-position").textContent = "Azimuth " + sun.azimuth.toFixed(1) + "° · altitude " + sun.altitude.toFixed(1) + "°";
+    $("sun-position").textContent = "Sun " + Math.round(sun.altitude) + "° above the horizon, bearing " + Math.round(sun.azimuth) + "°";
     render(sun);
   }
   async function loadDay(minute = null, down = false) {

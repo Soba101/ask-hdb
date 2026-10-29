@@ -31,8 +31,8 @@ export function initSheet({ chat = () => {} } = {}) {
     if (state === 0) content.scrollTop = 0; // a place opens at its summary, not wherever the last scroll left the sheet
     handle.setAttribute("aria-label", "Results, " + ["peek", "half height", "full height"][state] +
       (state === 2 ? ". Press to collapse." : ". Press to expand."));
-    map?.setPadding({ top: 0, left: 0, right: 0, bottom: pixels });
-    if (focus && state > 0) $("tab-chat").focus();
+    map?.setPadding({ top: enabled ? Math.round($("chips").getBoundingClientRect?.().bottom || 0) + 8 : 0, left: 0, right: 0, bottom: pixels });
+    if (focus && state > 0) $("tab-chat").focus({ preventScroll: true }); // a place keeps its card in view
   }
   function move(node, parent) { parent.append(node); }
   function select(point) {
@@ -63,8 +63,9 @@ export function initSheet({ chat = () => {} } = {}) {
     // The summary stays above the inert fold; all disclosures share one scrolling content area.
     move(handle, peek); move(header, peek); move($("card-close"), peek);
     move($("card-summary"), peek); move(legend, peek);
-    move($("card"), content); move($("sheet-notes"), content);
-    for (const node of [...side.children]) if (node !== content) move(node, content);
+    move($("card"), content);
+    for (const node of [...side.children]) if (node !== content && node !== $("sheet-notes")) move(node, content);
+    move($("sheet-notes"), content); // the long notes come last, below the chat and the card
     side.append(peek, content);
     $("peek-hint").textContent = "Ask about a flat, a grant or a place";
     move($("form"), $("topbar")); move($("selected"), $("topbar"));
@@ -78,8 +79,10 @@ export function initSheet({ chat = () => {} } = {}) {
     observer = new ResizeObserver(() => {
       app.style.setProperty("--topbar-bottom", $("topbar").getBoundingClientRect().bottom + "px");
       app.style.setProperty("--chip-detail-h", $("chip-detail").getBoundingClientRect().height + "px");
+      // The map credit sits above the sun bar when it is open.
+      app.style.setProperty("--sun-h", ($("sun-panel").hidden ? 0 : $("sun-bar").getBoundingClientRect().height + 8) + "px");
     });
-    observer.observe($("topbar")); observer.observe($("chip-detail"));
+    observer.observe($("topbar")); observer.observe($("chip-detail")); observer.observe($("sun-bar"));
     app.style.setProperty("--kb", keyboard() + "px");
     select(selected);
   }
@@ -93,7 +96,7 @@ export function initSheet({ chat = () => {} } = {}) {
     header.removeAttribute("id");
     side.removeAttribute("role"); side.removeAttribute("aria-label");
     delete side.dataset.snap; delete side.dataset.dragging;
-    for (const name of ["--sheet-h", "--kb", "--topbar-bottom", "--chip-detail-h"]) app.style.removeProperty(name);
+    for (const name of ["--sheet-h", "--kb", "--topbar-bottom", "--chip-detail-h", "--sun-h"]) app.style.removeProperty(name);
     map?.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
   }
   function layout() { if (mobile.matches && !enabled) enter(); else if (!mobile.matches && enabled) leave(); }
@@ -132,6 +135,8 @@ export function initSheet({ chat = () => {} } = {}) {
   return {
     select,
     section: () => { if (enabled && state < 1) snap(1); },
+    // A route needs the map: show it above a half-height sheet, not behind a full one.
+    route: () => { if (enabled && state !== 1) snap(1); },
     answer: () => { if (enabled) { chat(); snap(1); } },
     setMap(value) { map = value; if (enabled) snap(state); },
     // setPadding in snap() already clears the sheet, so fitBounds needs only the plain gap.
