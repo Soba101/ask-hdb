@@ -31,10 +31,13 @@ def model_settings():
 
     load_dotenv()
     # Do not persist credentials or endpoint URLs.
-    return {'provider': os.getenv('LLM_PROVIDER', 'local'),
-            'model': os.getenv('LLM_MODEL', 'qwen3.5-9b-16k'),
-            'reasoning_effort': os.getenv('LLM_REASONING_EFFORT', 'none'),
-            'tools': os.getenv('TOOL_SOURCE', 'direct')}
+    settings = {'provider': os.getenv('LLM_PROVIDER', 'local'),
+                'model': os.getenv('LLM_MODEL', 'qwen3.5-9b-16k'),
+                'reasoning_effort': os.getenv('LLM_REASONING_EFFORT', 'none'),
+                'tools': os.getenv('TOOL_SOURCE', 'direct')}
+    if os.getenv('LLM_CHAIN'):  # provider names only, never keys; older reports have no such key
+        settings['chain'] = os.getenv('LLM_CHAIN')
+    return settings
 
 
 def run(condition='agent', *, only=None, verbose=False, heldout=False, limit=None,
