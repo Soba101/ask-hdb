@@ -33,7 +33,7 @@ def round_line(route):
 def place_bundle(selection):
     """Everything the page asks about one place, so the demo needs one file per click."""
     bundle = {"card": mapdata.card(selection), "schools": mapdata.schools_nearby(selection),
-              "around": {str(km): mapdata.around(selection, km) for km in RADII}, "nearby": {}, "routes": {}}
+              "around": {f"{km:g}": mapdata.around(selection, km) for km in RADII}, "nearby": {}, "routes": {}}
     for kind in TYPES:
         listing = amenities.nearby(selection["kind"], selection["id"], kind, 3)
         bundle["nearby"][kind] = listing

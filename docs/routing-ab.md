@@ -16,10 +16,10 @@ OneMap needs a login that cannot live in a static page, has a quota, and can be 
 
 | Measure | Result |
 |---|---|
-| Both routed | 60 of 60 (before keeping the main network, ours failed on 3) |
+| Both routed | 60 of 60. Before keeping only the main network, ours failed on 3; those pairs now get a route, but a long one, so this is not a clean gain |
 | Ours / OneMap distance, median | 1.13 (ours is 13% longer) |
 | Within 10% of OneMap | 40% |
-| Within 25% of OneMap | 61% |
+| Within 25% of OneMap | 62% |
 | Detour (route / straight line), median | ours 1.67, OneMap 1.39 |
 | Median gap between the two lines | 20 m (90th percentile 111 m) |
 | Time per route | ours 2 ms |
@@ -37,8 +37,17 @@ has two small pockets of paths with a 71 m gap between them. Relaxing the access
 - **OneMap is more accurate**, especially for short trips. Use it when it is available.
 - **Ours is good enough as a backup and for the static demo:** it matches OneMap well on longer trips (MRT median 1.04), works with no login, no quota
   and no network, and answers in 2 ms.
-- To avoid showing a clearly wrong route, a route longer than 3 times the straight line plus 150 m is dropped, and the page says no route was found.
+- A route longer than 2 times the straight line plus 100 m is dropped and the page says no route was found. On the 60 test pairs this removes 10 routes:
+  6 of the 9 that were more than 1.5 times OneMap's distance and 4 that were fine. It leaves 3 bad ones. The cut was tuned on the same 60 pairs,
+  so the real gain is probably smaller. (A first cut of 3 times plus 150 m dropped only 4 pairs.)
 - In the live app, OneMap stays first. Our router answers only when OneMap has no login, hits its quota or is down. That answer is labelled "OpenStreetMap paths".
+
+## Limits of the test
+- One random seed, 60 pairs: about 20 per trip type or distance band, so the per-type numbers (for example MRT 1.04) have a wide error margin.
+- The line gap is measured one way only (our line to OneMap's line).
+- OneMap is the reference for distance, not for truth. Both routers snap the endpoints to a path, and the comparison uses the same endpoints for both.
+- The static demo contains block coordinates that came from OneMap geocoding. OneMap's terms say its datasets fall under the Singapore Open Data Licence,
+  and the demo credits OneMap and the licence, but I did not find a sentence on republishing geocoded coordinates, so this is unverified.
 
 ## Not done
 - Linking the pockets (for example by joining paths that lie within a few metres across an open area) could cut the short-trip errors.

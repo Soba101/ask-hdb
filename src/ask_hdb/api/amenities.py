@@ -60,10 +60,11 @@ def osm_router():
 
 def osm_route(start, end):
     """A route from our own graph when OneMap cannot answer. None when there is no graph, no path, or a path so much longer
-    than the straight line that it more likely shows a gap in the map than a real detour."""
+    than the straight line that it more likely shows a gap in the map than a real detour (2 times plus 100 m; tuned on the
+    60 pairs of docs/routing-ab.md, so the real gain is probably a little smaller)."""
     router = osm_router()
     found = router.route(start, end) if router else None
-    if found is None or found["distance_m"] > 3 * walk.metres(*start, *end) + 150:
+    if found is None or found["distance_m"] > 2 * walk.metres(*start, *end) + 100:
         return None
     return {key: found[key] for key in ("distance_m", "duration_s", "steps", "line")}
 

@@ -6,11 +6,10 @@ import pytest
 from ask_hdb.api import amenities
 from ask_hdb.geo import walk
 
-# A square of footpaths with one road across the middle and a gap-free link to a far dead end:
-#   0 --- 1 --- 2
-#   |     |     |
-#   3 --- 4 --- 5      (way 0: footpath on the top row, way 1: the left side, way 2: the bottom row, way 3: a service road)
-# Node spacing is about 0.0009 degrees, roughly 100 m.
+# A small block of paths (node spacing about 0.0009 degrees, roughly 100 m; node 6 is far off and has no edges):
+#   0 --- 1 --- 2      way 0: footpath "Top Walk" along the top
+#   |     |     |      way 1: the unnamed footpath down the left side
+#   3 --- 4 --- 5      way 2: the service road "Back Lane" along the bottom; way 3: steps (1-4 and 2-5)
 LAT = np.array([1.3009, 1.3009, 1.3009, 1.3000, 1.3000, 1.3000, 1.3050])
 LNG = np.array([103.8000, 103.8009, 103.8018, 103.8000, 103.8009, 103.8018, 103.8100])
 
@@ -34,11 +33,17 @@ def test_route_follows_the_cheapest_path_and_reports_steps(router):
     assert route["line"][0] == [103.8000, 1.3009] and route["line"][-1] == [103.8018, 1.3009]
 
 
-def test_stairs_cost_more_so_a_longer_footpath_wins(router):
-    # From node 1 to node 4 the direct link is steps (cost x1.5, about 100 m); the way round through 0, 3 is about 300 m,
-    # so the stairs still win here, but the step text says so.
+def test_stairs_cost_more_so_an_equal_length_road_wins(router):
+    # Node 0 to node 5: along the top and down the stairs at 2-5 costs 350; down the left side and along the lane costs 330.
+    route = router.route((1.3009, 103.8000), (1.3000, 103.8018))
+    assert [s["text"] for s in route["steps"]] == ["Head south on the footpath", "Turn left onto Back Lane"]
+    assert not any("stairs" in step["text"] for step in route["steps"])
+
+
+def test_the_stairs_are_taken_when_nothing_cheaper_exists(router):
+    # Node 1 to node 4: the stairs are about 100 m (cost 150); round the other way is about 330.
     route = router.route((1.3009, 103.8009), (1.3000, 103.8009))
-    assert route["steps"][0]["text"] == "Take the stairs" or "stairs" in route["steps"][0]["text"]
+    assert route["steps"][0]["text"] == "Take the stairs" and route["distance_m"] == pytest.approx(100, abs=10)
 
 
 def test_nothing_nearby_gives_none_and_turn_words(router):

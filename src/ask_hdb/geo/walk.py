@@ -147,7 +147,7 @@ class Router:
         """The graph node closest to a point, or None if none is within `reach` metres."""
         cx, cy = int(lat * 1000), int(lng * 1000)
         best, best_d = None, reach
-        for ring in (1, 2, 3):
+        for ring in (2, 3):  # two rings so a corner hit in a near cell cannot beat a closer node one cell further
             for dx in range(-ring, ring + 1):
                 for dy in range(-ring, ring + 1):
                     for node in self._cell(cx + dx, cy + dy):
@@ -192,10 +192,9 @@ class Router:
         return self.describe(nodes, start, end)
 
     def edge(self, u, v):
-        for i in range(self.start[u], self.start[u + 1]):
-            if self.dst[i] == v:
-                return i
-        return None
+        """The cheapest edge from u to v (two ways can run between the same nodes)."""
+        found = [i for i in range(self.start[u], self.start[u + 1]) if self.dst[i] == v]
+        return min(found, key=lambda i: self.cost[i]) if found else None
 
     def describe(self, nodes, start, end):
         line = [[float(self.lng[n]), float(self.lat[n])] for n in nodes]
@@ -206,8 +205,9 @@ class Router:
             way, metre = int(self.way[i]), float(self.length[i])
             if pieces and pieces[-1][0] == way:
                 pieces[-1][1] += metre
+                pieces[-1][4], pieces[-1][5] = u, v  # the last edge of this run
             else:
-                pieces.append([way, metre, u, v])
+                pieces.append([way, metre, u, v, u, v])
         total = sum(p[1] for p in pieces) + metres(*start, self.lat[nodes[0]], self.lng[nodes[0]]) + metres(
             self.lat[nodes[-1]], self.lng[nodes[-1]], *end)
         return {"distance_m": round(total), "duration_s": round(total / SPEED_MS), "line": line,
@@ -215,14 +215,16 @@ class Router:
 
     def steps(self, pieces, nodes):
         out = []
-        for i, (way, metre, u, v) in enumerate(pieces):
+        for i, (way, metre, u, v, *_rest) in enumerate(pieces):
             name = str(self.name[way]) or {"steps": "the stairs", "footway": "the footpath", "path": "the path",
                                            "pedestrian": "the walkway", "service": "the service road"}.get(str(self.kind[way]), "the path")
-            if i == 0:
+            if str(self.kind[way]) == "steps":
+                text = "Take the stairs"
+            elif i == 0:
                 text = f"Head {self.compass(self.bearing(u, v))} on {name}"
             else:
-                turn = (self.bearing(u, v) - self.bearing(pieces[i - 1][2], pieces[i - 1][3])) % 360
-                text = f"{self.turn_word(turn)} onto {name}" if str(self.kind[way]) != "steps" else f"Take {name}"
+                turn = (self.bearing(u, v) - self.bearing(pieces[i - 1][4], pieces[i - 1][5])) % 360
+                text = f"{self.turn_word(turn)} onto {name}"
             out.append({"text": text, "road": str(self.name[way]), "distance_m": round(metre)})
         return out
 

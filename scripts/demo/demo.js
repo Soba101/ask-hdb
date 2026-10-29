@@ -7,9 +7,14 @@
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
   const bundle = (kind, id) => {
     const key = kind + "__" + id;
-    if (!bundles.has(key)) bundles.set(key, real(base + "data/place/" + encodeURIComponent(key) + ".json").then((r) => (r.ok ? r.json() : null)));
+    if (!bundles.has(key)) {
+      const loading = real(base + "data/place/" + encodeURIComponent(key) + ".json").then((r) => (r.ok ? r.json() : null));
+      loading.catch(() => bundles.delete(key)); // a failed load can be tried again
+      bundles.set(key, loading);
+    }
     return bundles.get(key);
   };
+  const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" }); // YYYY-MM-DD in Singapore
   window.DEMO = true;
   window.fetch = async (input, init) => {
     const url = new URL(typeof input === "string" ? input : input.url, location.href);
@@ -22,13 +27,13 @@
     if (path === "/map/buildings") return real(base + "data/buildings.json");
     if (path === "/map/metrics") return real(base + "data/metrics/" + encodeURIComponent(url.searchParams.get("flat_type")) + ".json");
     if (path === "/sun") {
-      const date = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
+      const date = url.searchParams.get("date") || today();
       const day = date.slice(5) === "02-29" ? "02-28" : date.slice(5); // the sun's path barely changes between years
       const data = await real(base + "data/sun/" + day + ".json").then((r) => r.json());
       return json({ ...data, date });
     }
     if (head === "sun" && kind === "block") {
-      const date = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
+      const date = url.searchParams.get("date") || today();
       return json({ date, facades: [], limits: "Direct-sun hours for each block are not in the demo; the 3D sun and shadows are." });
     }
     if (["card", "schools", "around", "nearby", "route"].includes(head)) {
@@ -36,7 +41,7 @@
       if (!data) return json({ detail: "Unknown place." }, 404);
       if (head === "card") return json(data.card);
       if (head === "schools") return json(data.schools);
-      if (head === "around") return json(data.around[String(Number(url.searchParams.get("km")))] || { counts: {}, limits: [] });
+      if (head === "around") return json(data.around[String(Number(url.searchParams.get("km")))] || { km: 0, counts: {}, limits: [] });
       if (head === "nearby") return json(data.nearby[url.searchParams.get("type")] || { items: [], limits: [], source: "", as_of: "" });
       const route = data.routes[url.searchParams.get("to")];
       return route ? json(route) : json({ error: "no_route", message: "No walking route was found for this pair in the demo." }, 404);
@@ -50,5 +55,12 @@
     if (form) form.before(note);
     const question = document.getElementById("question");
     if (question) question.placeholder = "Chat is paused in this demo";
+    // The page's own notice describes the live app; in the demo nothing is sent to a model and routes are not from OneMap.
+    const own = document.getElementById("notice");
+    const credits = [...document.querySelectorAll(".notice")].find((n) => n.textContent.startsWith("Data:"));
+    if (credits) credits.textContent = "Data: HDB resale and property information and LTA MRT exits from data.gov.sg (Singapore Open Data Licence v1.0); " +
+      "walking routes, map tiles, bus stops and supermarkets from OpenStreetMap contributors (ODbL).";
+    if (own) own.textContent = "Information only, not financial advice. This demo runs from saved files: nothing you do here is sent to a model " +
+      "or stored. The map tiles load from OpenStreetMap, which sees your IP address and the area you view.";
   });
 })();
