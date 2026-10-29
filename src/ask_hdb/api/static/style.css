@@ -245,8 +245,12 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   /* The title and close button stay in view while the sections scroll. */
   .card > .close { position: sticky; top: var(--space-2); float: right; z-index: 3; right: auto; margin: var(--space-2) 0 0; }
   #card-summary { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: var(--space-3) 0 var(--space-1); }
-  /* Chips wrap and stretch to fill each row, so none hides off to the side. */
-  #card-sections button { flex: 1 1 auto; }
+  /* Chips sit in a tidy three-column grid, so none hides off to the side or stretches alone across a row. */
+  #card-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #card-sections button { padding-left: var(--space-2); padding-right: var(--space-2); }
+  /* One solid surface: the sticky title and the scrolling sections must be the same colour, which a frosted card cannot give. */
+  .card { background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  details > summary { list-style: none; }
   .maplibregl-ctrl-group { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
   details summary::marker { content: ""; }
   details summary::-webkit-details-marker { display: none; }
