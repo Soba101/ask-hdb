@@ -47,7 +47,7 @@ assert.match(handle.getAttribute("aria-label"), /half height/);
 key("Escape"); drag(8); assert.equal(state(), "peek");
 drag(140); assert.equal(state(), "peek", "nearest point below the midpoint");
 drag(150); assert.equal(state(), "half"); assert.equal(sheetHeight(), 400);
-drag(169); assert.equal(state(), "full"); assert.equal(sheetHeight(), 736);
+drag(169); assert.equal(state(), "full"); assert.equal(sheetHeight(), 720, "full stops below the search bar (bottom 72) so the chat input stays visible");
 assert.match(handle.getAttribute("aria-label"), /full height.*collapse/);
 drag(-150); assert.equal(state(), "full", "distance determines snap, with no velocity bias");
 drag(-180); assert.equal(state(), "half");

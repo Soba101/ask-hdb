@@ -8,8 +8,11 @@ export function initSheet({ chat = () => {} } = {}) {
   let slots = [], content, peek, handle, observer, cancelDrag = () => {};
   const points = () => {
     const available = Math.max(0, window.innerHeight - keyboard());
+    // The search bar is the chat input on a phone, so the full sheet stops below it instead of covering it.
+    const bar = $("topbar").getBoundingClientRect?.().bottom || 0;
+    const room = bar ? window.innerHeight - bar - 8 : Infinity;
     return [Math.min(112, available), Math.min(window.innerHeight * .5, available),
-      Math.min(window.innerHeight * .92, available)];
+      Math.min(window.innerHeight * .92, available, room)];
   };
   function keyboard() {
     const viewport = window.visualViewport;
