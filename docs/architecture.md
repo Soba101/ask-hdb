@@ -109,6 +109,9 @@ src/ask_hdb/
   mcp/            MCP server and client around the same tools
   evalrun/        eval runner, scoring, conditions (llm-only, agent, full), reports
   llm.py          chat model from settings
+  tracing.py      optional Langfuse tracing, one trace per question with scores (TRACING=1)
+  sun.py          sun position for the 3D map shadows and facing
+  api/            FastAPI app: /chat stream, map data, cards, nearby places and walking routes; static/ holds the page
   __init__.py     main() has the `ask-hdb` subcommands (chat, ask, mcp, routing, eval); cli.py is the chat loop
   tool_check.py, check_cases.py   the `routing` command: tool-call check and its hand-written prompts
 rules/            dated YAML rule files with sources (resale, bto/, plans/)
@@ -117,4 +120,4 @@ eval/             questions.yaml and reports
 tests/
 docs/
 ```
-Planned, not built: `app/` (FastAPI and web front end, week 6), supervisor and worker graph, RAG over policy pages.
+Planned, not built: a public deployment, supervisor and worker graph, RAG over policy pages.
