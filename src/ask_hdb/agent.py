@@ -4,7 +4,13 @@ import json
 import os
 
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage, convert_to_messages
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+    convert_to_messages,
+)
 from langchain_core.runnables import RunnableLambda
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.errors import GraphRecursionError
@@ -63,6 +69,13 @@ class LimitReached(Exception):
 
 class NeedsConfirmation(Exception):
     """Leave the graph before a profile tool runs on a profile the user has not confirmed."""
+
+
+def _system_prompt():
+    """With Anthropic, mark the prompt as cacheable: the tool schemas and this text repeat on every call and are most of the input."""
+    if os.getenv("LLM_PROVIDER", "local").lower() == "anthropic":
+        return SystemMessage(content=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}])
+    return SYSTEM_PROMPT
 
 
 def _strip_titles(node):
@@ -154,7 +167,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
         # A dynamic model lets the budget guard run before every API request.
         return RunnableLambda(run_model)
 
-    graph = create_react_agent(select_model, tools, prompt=SYSTEM_PROMPT, version="v1")
+    graph = create_react_agent(select_model, tools, prompt=_system_prompt(), version="v1")
     # Only dialogue belongs in history; past tool evidence must be recomputed.
     messages = [message for message in convert_to_messages(history or [])
                 if isinstance(message, (HumanMessage, AIMessage))
