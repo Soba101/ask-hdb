@@ -9,9 +9,10 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from ask_hdb.api import mapdata
+from ask_hdb.geo import walk
 from ask_hdb.geo.client import OneMap, load_credentials
 from ask_hdb.geo.distance import haversine_km
-from ask_hdb.geo.loaders import load_amenities, load_places
+from ask_hdb.geo.loaders import ROOT, load_amenities, load_places
 from ask_hdb.geo.names import pretty_name
 from ask_hdb.geo.route import RouteError
 
@@ -48,6 +49,24 @@ def caps():
 @lru_cache(maxsize=1)
 def onemap():
     return OneMap(httpx.Client(), load_credentials())
+
+
+@lru_cache(maxsize=1)
+def osm_router():
+    """Our own walking router over OpenStreetMap paths (scripts/build_walk_graph.py), or None when its file is missing."""
+    path = ROOT / "data/clean/walk_graph.npz"
+    return walk.Router(path) if path.exists() else None
+
+
+def osm_route(start, end):
+    """A route from our own graph when OneMap cannot answer. None when there is no graph, no path, or a path so much longer
+    than the straight line that it more likely shows a gap in the map than a real detour (2 times plus 100 m; tuned on the
+    60 pairs of docs/routing-ab.md, so the real gain is probably a little smaller)."""
+    router = osm_router()
+    found = router.route(start, end) if router else None
+    if found is None or found["distance_m"] > 2 * walk.metres(*start, *end) + 100:
+        return None
+    return {key: found[key] for key in ("distance_m", "duration_s", "steps", "line")}
 
 
 def _rank(selection, rows, n):
@@ -122,6 +141,11 @@ def route(kind: str, key: str, to: str, request: Request):
     except RouteError as error:
         if error.code == "no_route":
             _remember(cache_key, "no_route")
+        elif (backup := osm_route((selection["lat"], selection["lng"]), goal[:2])):
+            # OneMap is out of reach (no login, quota or outage): answer from OpenStreetMap paths, and do not cache it.
+            return {**backup, "to": goal[2], "source": "Route: OpenStreetMap paths, walking estimate",
+                    "limits": [("Walking time and distance are estimates from OpenStreetMap paths. They can miss void decks and "
+                                "covered links, so a real walk may be shorter.")]}
         return _reply(error.code)
     body = {**found, "to": goal[2], "source": "Route: OneMap (SLA), walking estimate",
             "limits": ["Walking time and distance are estimates from OneMap and can differ from a real walk."]}
