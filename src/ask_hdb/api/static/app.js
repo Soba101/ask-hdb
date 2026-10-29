@@ -480,7 +480,8 @@ async function startMap() {
         line.forEach((c) => bounds.extend(c));
         const gap = sheet.padding(60), card = $("card");
         // On desktop the info card floats over the map's left side, so frame the route to its right.
-        const left = !card.hidden && getComputedStyle(card).position === "absolute" ? card.offsetWidth + 36 : gap;
+        const room = map.getContainer().clientWidth - 2 * gap - 40; // a narrow desktop map cannot spare the card's full width
+        const left = !card.hidden && getComputedStyle(card).position === "absolute" ? Math.min(card.offsetWidth + 36, Math.max(gap, room)) : gap;
         map.fitBounds(bounds, { padding: { top: gap, right: gap, bottom: gap, left }, maxZoom: 17, duration: 500 });
       };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));

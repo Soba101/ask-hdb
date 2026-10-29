@@ -249,6 +249,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #card-sections button { flex-shrink: 0; }
   .maplibregl-ctrl-group { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
   details summary::marker { content: ""; }
+  details summary::-webkit-details-marker { display: none; }
   details summary::before { content: "›"; display: inline-block; width: 1em; transition: transform 120ms ease; }
   details[open] > summary::before { transform: rotate(90deg); }
 }

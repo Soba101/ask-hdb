@@ -5,7 +5,7 @@ const TYPES = { supermarket: "Supermarkets", mrt: "MRT/LRT", bus: "Bus stops" };
 
 function km(value) { return value < 1 ? Math.round(value * 1000) + " m" : value.toFixed(2) + " km"; }
 // OneMap writes "Make A Slight Right"; read it as a sentence, keeping the street names.
-function sentence(text) { return text.replace(/(?<=\s)(A|An|The|To|On|Onto|Into|At|And|Of)(?=\s)/g, (w) => w.toLowerCase()); }
+function sentence(text) { return text.replace(/(\s)(A|An|The|To|On|Onto|Into|At|And|Of)(?=\s)/g, (m, space, word) => space + word.toLowerCase()); }
 function minutes(seconds) { return Math.max(1, Math.round(seconds / 60)) + " min"; }
 
 export function initAmenityCard({ mapLayer, onRoute }) {
