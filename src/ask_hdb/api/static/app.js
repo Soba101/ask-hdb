@@ -362,7 +362,7 @@ async function startMap() {
     const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
     maplibregl = lib.default || lib;
     // Dark mode dims the light OpenStreetMap tiles so the map is not a bright block next to dark panels.
-    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.55 : 1, "raster-saturation": dark ? -0.3 : 0 });
+    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.8 : 1, "raster-saturation": dark ? -0.15 : 0 });
     const dark = matchMedia("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
       container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
