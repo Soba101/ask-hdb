@@ -35,7 +35,8 @@ export function initAmenityCard({ mapLayer, onRoute }) {
       if (!response.ok || data.error) { say(data.message || "Walking directions could not be loaded."); return; }
       say("");
       $("route-summary").textContent = "To " + data.to + ": about " + minutes(data.duration_s) + ", " +
-        km(data.distance_m / 1000) + " walking (estimate from OneMap).";
+        km(data.distance_m / 1000) + " walking (estimate from " +
+        (/OpenStreetMap/.test(data.source) ? "OpenStreetMap paths" : "OneMap") + ").";
       $("route-steps").replaceChildren(...data.steps.map((s) => {
         const li = document.createElement("li");
         li.textContent = sentence(s.text) + (s.distance_m ? " (" + s.distance_m + " m)" : "");

@@ -126,9 +126,25 @@ def warm():
         return
 
 
+def prewarm(limits):
+    """Send one tiny question through the real agent so a local model loads and caches the tool schemas and system prompt.
+    The first visitor then skips minutes of reading the prompt. Hosted providers need no warm-up."""
+    if os.getenv("PREWARM_MODEL", "1") != "1" or os.getenv("LLM_CHAIN") or os.getenv("LLM_PROVIDER", "local") != "local":
+        return
+    if not limits.busy.acquire(blocking=False):
+        return
+    try:
+        agent.ask("Hello")
+    except Exception as error:  # noqa: BLE001 - the model may be down; a visitor will see that error themselves
+        print(f"[prewarm skipped: {type(error).__name__}]")
+    finally:
+        limits.busy.release()
+
+
 @asynccontextmanager
 async def lifespan(app):
     Thread(target=warm, daemon=True).start()
+    Thread(target=prewarm, args=(app.state.limits,), daemon=True).start()
     yield
 
 
@@ -171,6 +187,10 @@ def create_app():
         if selection is None:
             raise HTTPException(404, "Unknown place.")
         return mapdata.card(selection)
+
+    @app.get("/about")
+    def about():
+        return {"data": mapdata.data_freshness()}
 
     @app.get("/health")
     def health():
@@ -255,16 +275,24 @@ def work(question, history, limits, events, left, context=None):
 DONE = object()
 
 
+PING_SECONDS = 15  # a proxy such as a tunnel closes a connection that stays silent for about 100 s
+
+
 async def stream(events, left):
+    last = time.monotonic()
     try:
         while True:
             try:
                 event = events.get_nowait()
             except Empty:
+                if time.monotonic() - last >= PING_SECONDS:
+                    last = time.monotonic()
+                    yield ": ping\n\n"  # an SSE comment: keeps the connection alive, and the page ignores it
                 await asyncio.sleep(0.05)
                 continue
             if event is DONE:
                 return
+            last = time.monotonic()
             yield sse(event)
     finally:
         left.set()  # a visitor who leaves stops the run at its next model or tool step

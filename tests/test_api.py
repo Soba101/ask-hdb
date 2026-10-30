@@ -137,7 +137,7 @@ def test_security_and_cache_headers(client):
 def test_the_page_keeps_the_history_within_the_server_limits():
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
-    assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'aria-live", "off"' in js
+    assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'tick.setAttribute("aria-hidden", "true")' in js
 
 
 def test_points_events_follow_their_tool_result(monkeypatch):
@@ -262,3 +262,46 @@ def test_a_second_question_waits_its_turn_and_the_queue_is_bounded(client):
     limits.waiting = limits.queue_max  # a full queue refuses at once
     assert client.post("/chat", json={"question": "q"}).status_code == 503
     limits.busy.release()
+
+
+def test_about_lists_when_each_part_of_the_data_was_built(client):
+    data = client.get("/about").json()["data"]
+    labels = [row["label"] for row in data]
+    assert {"Resale prices", "HDB rules and grants", "Bus stops and supermarkets", "Walking paths", "Map tiles"} <= set(labels)
+    assert all(row["as_of"] and row["source"] for row in data)
+    assert any("sales to 20" in row["as_of"] for row in data)
+
+
+def test_a_quiet_stream_sends_pings_so_a_proxy_does_not_close_it(monkeypatch):
+    import asyncio
+    from queue import Queue
+
+    monkeypatch.setattr(api, "PING_SECONDS", 0.05)
+
+    async def run():
+        events, left = Queue(), api.Event()
+        got = []
+        async def collect():
+            async for chunk in api.stream(events, left):
+                got.append(chunk)
+        task = asyncio.create_task(collect())
+        await asyncio.sleep(0.3)
+        events.put({"type": "answer", "answer": "x"}); events.put(api.DONE)
+        await task
+        return got
+    got = asyncio.run(run())
+    assert got[0] == ": ping\n\n" and any('"answer"' in chunk for chunk in got) and got.count(": ping\n\n") >= 2
+
+
+def test_prewarm_runs_one_question_only_for_a_local_model_and_frees_the_slot(monkeypatch):
+    asked = []
+    monkeypatch.setattr(api.agent, "ask", lambda question, *a, **k: asked.append(question))
+    limits = api.Limits()
+    monkeypatch.delenv("LLM_CHAIN", raising=False); monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    api.prewarm(limits)
+    assert asked == ["Hello"] and not limits.busy.locked()
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic"); api.prewarm(limits)
+    monkeypatch.setenv("LLM_PROVIDER", "local"); monkeypatch.setenv("PREWARM_MODEL", "0"); api.prewarm(limits)
+    assert asked == ["Hello"]  # a hosted model and the off switch both skip it
+    monkeypatch.setenv("PREWARM_MODEL", "1"); assert limits.busy.acquire(blocking=False); api.prewarm(limits)
+    assert asked == ["Hello"]  # a visitor's question already holds the slot

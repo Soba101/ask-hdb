@@ -15,7 +15,7 @@ export function initCardMap(mapLayer) {
   let selected = null, radiusKm = 0, radiusChosen = false, schoolRings = false;
   let revision = 0, radiusRequest = 0, counts = null;
   let schoolSelection = 0, schoolRevision = 0, schoolData = null;
-  const buttons = document.querySelectorAll(".radius button");
+  const buttons = document.querySelectorAll(".radius [data-km]"); // not the Nearby type pills, which share the group style
   function showSchools() {
     schoolRings = true; // 1 km solid ring, 2 km dashed ring; schools are ringed by band.
     mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolData.map((s) => ({ ...s, role: "result" }))]);
@@ -48,7 +48,7 @@ export function initCardMap(mapLayer) {
         if (mine !== radiusRequest) return; // the radius or the place changed meanwhile
         const c = data.counts;
         $("radius-counts").textContent = "Within " + (km < 1 ? km * 1000 + " m" : km + " km") + " (straight-line): " +
-          c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites.";
+          c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites" + (c.bto_upcoming ? " (+" + c.bto_upcoming + " upcoming)" : "") + ".";
         $("radius-limits").textContent = data.limits.join(" ");
       } catch (error) {
         if (mine === radiusRequest) $("radius-counts").textContent = "Counts could not be loaded.";

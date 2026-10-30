@@ -52,7 +52,9 @@ def map_points(args, result):
     def project(key, role):
         if key in projects.index:
             row = projects.loc[key]
-            add("bto", key, f"{row['name']} (BTO)", row.lat, row.lng, role, "approximate site")
+            upcoming = row.get("status") == "upcoming"
+            add("bto", key, f"{row['name']} (upcoming BTO, not on sale yet)" if upcoming else f"{row['name']} (BTO)", row.lat, row.lng, role,
+                "approximate site")
 
     if isinstance(args.get("block_id"), str):
         block(args["block_id"], "origin")

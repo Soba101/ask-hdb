@@ -23,6 +23,7 @@ function add(kind, text) {
   });
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
+  div.scrollIntoView?.({ block: "nearest" }); // on a phone the log sits inside the scrolling sheet
   return div;
 }
 
@@ -119,21 +120,27 @@ async function ask(question) {
   add("user", question);
   clearEvidence();
   send.disabled = true;
-  const status = document.createElement("div"); // outside the live region: a ticking timer must not be read out every second
+  const status = document.createElement("div"); // the ticking timer is hidden from screen readers; one polite note says what is happening
   status.className = "msg status";
-  status.textContent = "Working on it… 0s";
-  status.setAttribute("role", "status");
-  status.setAttribute("aria-live", "off");
+  const tick = document.createElement("span"), cancel = document.createElement("button");
+  tick.textContent = "Working on it… 0s"; tick.setAttribute("aria-hidden", "true");
+  const announce = document.createElement("span");
+  announce.className = "sr"; announce.setAttribute("role", "status");
+  setTimeout(() => { announce.textContent = "Working on your answer. This can take up to a minute."; }, 100); // a live region speaks text added after it exists
+  cancel.type = "button"; cancel.className = "secondary"; cancel.textContent = "Cancel";
+  status.append(tick, " ", cancel, announce);
   log.after(status);
+  const abort = new AbortController();
+  cancel.onclick = () => abort.abort();
   const started = Date.now();
-  const timer = setInterval(() => { status.textContent = "Working on it… " + Math.round((Date.now() - started) / 1000) + "s"; }, 1000);
+  const timer = setInterval(() => { tick.textContent = "Working on it… " + Math.round((Date.now() - started) / 1000) + "s"; }, 1000);
   const cards = [];
   let answered = false;
   pendingChoices = null;
   try {
     const context = selected ? { selected: { kind: selected.kind, id: selected.id } } : {};
     const response = await fetch("/chat", {
-      method: "POST", headers: { "content-type": "application/json" },
+      method: "POST", headers: { "content-type": "application/json" }, signal: abort.signal,
       body: JSON.stringify({ question, history: history.slice(-MAX_TURNS), context }),
     });
     if (!response.ok) {
@@ -150,7 +157,11 @@ async function ask(question) {
     }
     if (!answered) throw new Error("The answer was cut off. Please try again.");
   } catch (error) {
-    add("error", error.message);
+    // A failed or stopped question comes back into the box, so nothing has to be typed again.
+    if (!answered && !box.value) box.value = question;
+    add("error", error.name === "AbortError" ? "Stopped. Your question is back in the box."
+      : /Load failed|Failed to fetch|NetworkError/i.test(error.message) ? "Could not reach the server. Check your connection and try again."
+      : error.message);
   } finally {
     clearInterval(timer);
     status.remove();
@@ -350,11 +361,17 @@ async function startMap() {
   try {
     const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
     maplibregl = lib.default || lib;
+    // Dark mode dims the light OpenStreetMap tiles so the map is not a bright block next to dark panels.
+    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.55 : 1, "raster-saturation": dark ? -0.3 : 0 });
+    const dark = matchMedia("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
       container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
       style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
-        layers: [{ id: "osm", type: "raster", source: "osm" }] },
+        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(dark.matches) }] },
+    });
+    dark.addEventListener("change", () => {
+      for (const [name, value] of Object.entries(tint(dark.matches))) map.setPaintProperty("osm", name, value);
     });
     sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -386,8 +403,10 @@ async function startMap() {
         paint: { "line-color": "#1d5fd6", "line-width": 2.5 } });
       map.addLayer({ id: "blocks", type: "circle", source: "blocks", paint: { "circle-color": COLORS, "circle-opacity": 0.6,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.5, 14, 4, 17, 8] } });
-      map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": COLORS,
-        "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5,
+      // An upcoming BTO is a hollow orange ring: it is not on sale yet and its site is HDB's indicative point.
+      const UPCOMING = ["==", ["get", "status"], "upcoming"];
+      map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": ["case", UPCOMING, "#ffffff", COLORS],
+        "circle-stroke-color": ["case", UPCOMING, "#e08a00", "#ffffff"], "circle-stroke-width": ["case", UPCOMING, 2.5, 1.5],
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 6, 17, 9] } });
       map.addLayer({ id: "highlight", type: "circle", source: "highlight", paint: { "circle-color": COLORS,
         "circle-stroke-color": ["match", ["get", "band"], "within 1 km", "#00a152", "1 to 2 km", "#ffb000", "borderline", "#9aa3b5", "#ffb000"],
@@ -411,7 +430,8 @@ async function startMap() {
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
       map.on("click", (e) => {
-        const box = [[e.point.x - 7, e.point.y - 7], [e.point.x + 7, e.point.y + 7]];
+        const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
+        const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
         const layers = ["places", "highlight", "blocks"];
         if (map.getLayer("buildings")) layers.push("buildings");
         const hits = map.queryRenderedFeatures(box, { layers });
@@ -428,7 +448,7 @@ async function startMap() {
         if (rings.length && fit) {
           const bounds = new maplibregl.LngLatBounds();
           rings.forEach((r) => r.ring.forEach((c) => bounds.extend(c)));
-          map.fitBounds(bounds, { padding: sheet.padding(60), duration: 500 });
+          map.fitBounds(bounds, { padding: sheet.padding(60), duration: 500, essential: false });
         }
       };
       let lastMetrics = null, lastMode = null;
@@ -482,13 +502,13 @@ async function startMap() {
         // On desktop the info card floats over the map's left side, so frame the route to its right.
         const room = map.getContainer().clientWidth - 2 * gap - 40; // a narrow desktop map cannot spare the card's full width
         const left = !card.hidden && getComputedStyle(card).position === "absolute" ? Math.min(card.offsetWidth + 36, Math.max(gap, room)) : gap;
-        map.fitBounds(bounds, { padding: { top: gap, right: gap, bottom: gap, left }, maxZoom: 17, duration: 500 });
+        map.fitBounds(bounds, { padding: { top: gap, right: gap, bottom: gap, left }, maxZoom: 17, duration: 500, essential: false });
       };
       mapLayer.highlight = (points) => map.getSource("highlight").setData(asFeatures(points));
       mapLayer.select = (p) => map.getSource("selected").setData(p ? asFeatures([p]) : EMPTY);
       mapLayer.fly = (bbox) => {
-        if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15 });
-        else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: sheet.padding(60), maxZoom: 16, duration: 600 });
+        if (bbox[0] === bbox[2] && bbox[1] === bbox[3]) map.flyTo({ center: [bbox[0], bbox[1]], zoom: 15, essential: false });
+        else map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: sheet.padding(60), maxZoom: 16, duration: 600, essential: false });
       };
       if (todo.layer) mapLayer.layer(todo.layer.mode, todo.layer.data, todo.layer.budget);
       if (todo.ring) mapLayer.ring(todo.ring.rings, todo.ring.fit);
@@ -503,6 +523,15 @@ async function startMap() {
     note.textContent = "The map could not load in this browser. You can still use the chat.";
   }
 }
+
+// When each part of the data was built, so a reader can judge how current an answer is.
+fetch("/about").then((r) => (r.ok ? r.json() : null)).then((about) => {
+  for (const item of about?.data || []) {
+    const li = document.createElement("li");
+    li.textContent = item.label + ": " + item.as_of + " (" + item.source + ")";
+    $("freshness-list").appendChild(li);
+  }
+}).catch(() => {}); // the footer is an extra; the page works without it
 
 add("bot", "Hi! Click a block, school or station on the map, or just ask me about HDB resale prices, BTO launches, grants or eligibility. I'll show the tool results behind every number.");
 startMap();

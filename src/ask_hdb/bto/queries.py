@@ -48,7 +48,7 @@ def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, c
         if mine.empty:
             continue
         out.append({"project_id": project.project_id, "name": project.name, "town": project.town if isinstance(project.town, str) else "unknown (site not found)",
-                    "category": project.category, "wait_months": int(project.wait_months),
+                    "category": project.category, "wait_months": int(project.wait_months) if pd.notna(project.wait_months) else None,
                     "launches": sorted(set(mine.launch)),
                     "flats": [{"flat_type": r.flat_type, "units": int(r.units), "price_low": int(r.price_low),
                                "price_high": int(r.price_high)} for r in mine.itertuples()]})
@@ -62,8 +62,10 @@ def bto_nearby(project_id, kind, n=3):
     site = row.iloc[0]
     if pd.isna(site.lat):
         raise ValueError(f"No site coordinates for {project_id} (OneMap does not list it yet)")
-    return {"project": site["name"], "places": nearest_to_point(site.lat, site.lng, load_places(), kind, n),
-            "note": "Straight-line distance from an approximate site (a BTO site has no block number)."}
+    note = "Straight-line distance from an approximate site (a BTO site has no block number)."
+    if site.get("status") == "upcoming":
+        note += " This project is not on sale yet: HDB lists it as upcoming and publishes no price, waiting time or completion date."
+    return {"project": site["name"], "places": nearest_to_point(site.lat, site.lng, load_places(), kind, n), "note": note}
 
 
 HISTORY_LIMITS = [

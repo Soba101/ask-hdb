@@ -5,6 +5,8 @@ Ids from the browser are never trusted: a selection is only used when the id exi
 """
 
 import math
+import re
+from datetime import date
 from functools import lru_cache
 from string import capwords
 
@@ -13,10 +15,10 @@ import pandas as pd
 from ask_hdb.api import buildings
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.distance import haversine_km, nearest_to_point
-from ask_hdb.geo.loaders import load_blocks, load_places
+from ask_hdb.geo.loaders import ROOT, load_amenities, load_blocks, load_places
 from ask_hdb.geo.names import pretty_name
 from ask_hdb.rules.bto import BTO_FILE
-from ask_hdb.rules.loader import load_rules
+from ask_hdb.rules.loader import RULES_DIR, load_rules
 from ask_hdb.tools import load_sales
 
 KINDS = ("block", "mrt", "lrt", "primary_school", "bto")
@@ -45,8 +47,9 @@ def features():
     for row in load_projects().itertuples():
         if not (_ok(row.lat) and _ok(row.lng)):
             continue  # a BTO project whose site was not found has no point
-        out.append(_feature("bto", row.project_id, f"{row.name} (BTO, approximate site)", row.lat, row.lng,
-                            town=row.town if isinstance(row.town, str) else ""))
+        status = getattr(row, "status", "launched")
+        label = f"{row.name}, not on sale yet" if status == "upcoming" else f"{row.name} (BTO, approximate site)"
+        out.append(_feature("bto", row.project_id, label, row.lat, row.lng, town=row.town if isinstance(row.town, str) else "", status=status))
     return {"type": "FeatureCollection", "features": out}
 
 
@@ -103,7 +106,19 @@ def card(selection):
         return {**base, **_block_facts(selection)}
     if kind == "bto":
         row = load_projects().set_index("project_id").loc[selection["id"]]
-        facts = [f"Category: {row.category}", f"Units: {int(row.units)}", f"Waiting time: about {int(row.wait_months)} months"]
+        if row.get("status") == "upcoming":
+            return {**base, "facts": ["Not on sale yet: HDB lists this as an upcoming project. Its next sales exercise is in November 2026.", f"Units: {int(row.units)}",
+                                      f"Flat types: {row.flat_types}",
+                                      "No prices, waiting time or completion date are published yet."],
+                    "limits": ["HDB marks upcoming projects as preliminary and subject to change; the site is HDB's indicative point.",
+                               "Source: HDB Flat Portal, upcoming BTO projects (read 2026-10-30)."]}
+        facts = [f"Units: {int(row.units)}"]
+        if isinstance(row.category, str):
+            facts.insert(0, f"Category: {row.category}")
+        elif isinstance(row.get("first_launch"), str):
+            facts.insert(0, f"Launched: {row.first_launch} (an earlier exercise; its prices are not shown here)")
+        if _ok(row.wait_months):
+            facts.append(f"Waiting time: about {int(row.wait_months)} months")
         done = _bto_completion(row.get("first_launch"), row.get("wait_months"), load_sales().sale_month.max())
         if done:
             facts.append(done)
@@ -205,6 +220,11 @@ def _place_facts(selection):
 RADII_KM = (0.5, 1.0, 2.0)
 
 
+def _upcoming(projects):
+    """True for projects HDB lists as upcoming (not on sale yet); older tables have no status column."""
+    return projects["status"].eq("upcoming") if "status" in projects else pd.Series(False, index=projects.index)
+
+
 def around(selection, km):
     """Counts of blocks, stations, schools and BTO sites within km (inclusive, straight-line) of the selection."""
     if km not in RADII_KM:
@@ -220,7 +240,8 @@ def around(selection, km):
     counts = {"blocks": count(load_blocks()[lambda d: d.block_id != own]),
               "mrt_lrt": count(places[places.kind.isin(["mrt", "lrt"]) & (places.place_id != own)]),
               "primary_schools": count(places[(places.kind == "primary_school") & (places.place_id != own)]),
-              "bto_sites": count(load_projects()[lambda d: d.project_id != own])}
+              "bto_sites": count(load_projects()[lambda d: d.project_id.ne(own) & ~_upcoming(d)]),
+              "bto_upcoming": count(load_projects()[lambda d: d.project_id.ne(own) & _upcoming(d)])}
     limits = ["Straight-line circle around the selected place; blocks are those with a resale since 2017."]
     if km in (1.0, 2.0):
         limits.append("MOE's 1 km / 2 km school priority distances are measured by MOE with OneMap, not by this circle.")
@@ -294,3 +315,32 @@ def metrics(flat_type):
                         f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
                        "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
                        "Remaining lease is in whole years (rounded down), from the lease left at each block's newest recorded sale."]}
+
+
+def _built(name):
+    """The day a data file was built, from its modification time (kept by the image build)."""
+    return date.fromtimestamp((ROOT / "data/clean" / name).stat().st_mtime).isoformat()
+
+
+def _rules_date(path):
+    found = re.findall(r"as_of: (\d{4}-\d{2}-\d{2})", path.read_text())
+    return max(found) if found else None
+
+
+def data_freshness():
+    """What each part of the page is built from and how recent it is, for the page footer."""
+    sales = load_sales()
+    latest = sales.sale_month.max()
+    return [
+        {"label": "Resale prices", "as_of": f"sales to {latest:%Y-%m}, data built {_built('resale.parquet')}",
+         "source": "HDB via data.gov.sg"},
+        {"label": "HDB rules and grants", "as_of": f"rules dated {_rules_date(RULES_DIR / '2026-10.yaml')}",
+         "source": "hdb.gov.sg, each rule with its own date"},
+        {"label": "BTO launches", "as_of": f"rules dated {_rules_date(RULES_DIR / 'bto' / '2026-10.yaml')}, data built {_built('bto_projects.parquet')}",
+         "source": "HDB launch pages"},
+        {"label": "Block locations", "as_of": f"built {_built('blocks.parquet')}", "source": "OneMap geocoding"},
+        {"label": "3D outlines and floors", "as_of": f"built {_built('buildings.geojson')}", "source": "HDB building outlines and property information"},
+        {"label": "Bus stops and supermarkets", "as_of": f"downloaded {load_amenities().as_of.iloc[0]}", "source": "OpenStreetMap"},
+        {"label": "Walking paths", "as_of": f"built {_built('walk_graph.npz')}", "source": "OpenStreetMap extract of 25 Oct 2026"},
+        {"label": "Map tiles", "as_of": "live", "source": "OpenStreetMap"},
+    ]

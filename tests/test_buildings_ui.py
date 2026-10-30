@@ -121,14 +121,15 @@ def test_phone_markup_and_touch_css_offline():
     assert {node["attrs"]["data-km"] for node in nodes if "data-km" in node["attrs"]} == {"0", "0.5", "1", "2"}
     viewport = next(node for node in nodes if node["attrs"].get("name") == "viewport")
     assert "viewport-fit=cover" in viewport["attrs"]["content"]
-    assert len([node for node in nodes if node["attrs"].get("class") == "legend-item"]) == 4
+    assert len([node for node in nodes if node["attrs"].get("class") == "legend-item"]) == 5
     assert "mop-controls" in by_id and "hidden" in by_id["mop-controls"]["attrs"]
-    assert "BTO site (upcoming, approximate)" in (STATIC / "index.html").read_text()
+    assert "BTO launched (approximate site)" in (STATIC / "index.html").read_text()
+    assert "Upcoming BTO (not on sale yet)" in (STATIC / "index.html").read_text()
     for control in ("sun-date", "sun-time"):
         assert any(node["tag"] == "label" and by_id[control] in list(walk(node)) for node in nodes)
 
     css = (STATIC / "style.css").read_text()
-    mobile = css_block(css, "@media (max-width: 800px)")
+    mobile = css_block(css, "@media (min-width: 0px)")  # the sheet look; a wide screen overrides it in the last block
     coarse = css_block(css, "@media (pointer: coarse)")
     assert "flex-wrap: wrap" in css_block(css, ".legend")
     assert "white-space: nowrap" in css_block(css, ".legend-item")
@@ -143,7 +144,7 @@ def test_phone_markup_and_touch_css_offline():
     assert "transform" not in sheet
     assert "overscroll-behavior: contain" in css_block(mobile, "#sheet-content")
     assert "touch-action: none" in css_block(mobile, "#sheet-handle")
-    assert mobile.count("touch-action: none") == 1
+    assert mobile.count("touch-action: none") == 2  # the grabber and the whole header area drag the sheet
     assert "position: relative" in css_block(mobile, "#sheet-content .card")
     assert "max-height: none" in css_block(mobile, "#sheet-content .card")
     assert "display: none" in css_block(mobile, "#sun-bar:has(#sun-panel[hidden])")

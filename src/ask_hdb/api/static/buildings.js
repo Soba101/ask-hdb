@@ -95,11 +95,11 @@ export function initBuildings(map) {
       if (enabled) {
         // getLight can omit defaults; setLight({}) would leave our sun light in place.
         oldLight = { anchor: "viewport", position: [1.15, 210, 30], color: "#ffffff", intensity: 0.5, ...map.getLight() };
-        if (ease) { oldPitch = map.getPitch(); map.easeTo({ pitch: 60 }); }
+        if (ease) { oldPitch = map.getPitch(); map.easeTo({ pitch: 60, essential: false }); }
         await clock.loadDay();
         refreshFacade();
       } else {
-        if (ease) map.easeTo({ pitch: oldPitch });
+        if (ease) map.easeTo({ pitch: oldPitch, essential: false });
         map.setLight(oldLight);
       }
       $("building-error").textContent = "";
