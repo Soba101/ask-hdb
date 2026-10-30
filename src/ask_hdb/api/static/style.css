@@ -197,6 +197,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-content .card { position: relative; inset: auto; width: 100%; max-height: none; overflow: visible;
     border: 0; border-radius: 0; margin: 0; padding: 8px 12px; }
   #sheet-notes { display: block; padding: 0 17px; }
+  /* The sun note belongs to the sun panel; the sheet moves it out, so it shows only while that panel is open. */
+  #sun-panel-limits { display: none; }
+  #app:has(#sun-panel:not([hidden])) #sun-panel-limits { display: block; }
   #chat, #evidence { min-height: auto; }
   #log { overflow: visible; }
   #side, .selected { overflow-wrap: anywhere; }
