@@ -433,12 +433,15 @@ async function startMap() {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
-      let tapTimer = 0;
-      map.on("dblclick", () => clearTimeout(tapTimer)); // a double-tap zooms; it is not a selection
+      // A tap selects at once, with no wait. A double-tap zooms, so its first tap's selection is undone.
+      let lastTap = 0, before = null;
       map.on("click", (e) => {
-        clearTimeout(tapTimer);
-        tapTimer = setTimeout(() => pick(e), 250);
+        const now = performance.now();
+        if (now - lastTap > 400) before = selected;
+        lastTap = now;
+        pick(e);
       });
+      map.on("dblclick", () => { if (selected !== before) setSelected(before); });
       const pick = (e) => {
         const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
         const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
