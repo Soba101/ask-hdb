@@ -167,7 +167,7 @@ nearest_places = _tool("nearest_places", "Find nearest places by straight-line d
 calculate = _tool("calculate", "Add, subtract, multiply or divide numbers taken from tool results. Use it for ALL arithmetic.",
                   CalcArgs, lambda expression: calc.calculate(expression))
 
-list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HDB launches with units and indicative launch prices (excluding grants).",
+list_bto_projects = _tool("list_bto_projects", "List BTO projects from recent HDB launches with units and indicative launch prices (excluding grants). Projects HDB lists as upcoming (not on sale yet, no price) come back under upcoming_projects.",
                           BtoListArgs, bto.list_bto_projects)
 bto_nearby = _tool("bto_nearby", "Nearest MRT stations or primary schools to a BTO project's approximate site.",
                    BtoNearbyArgs, bto.bto_nearby)
