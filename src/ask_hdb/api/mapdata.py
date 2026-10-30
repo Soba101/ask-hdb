@@ -281,13 +281,14 @@ METRIC_FLAT_TYPES = ("3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE")
 METRIC_MONTHS = 24
 METRIC_MIN_SALES = 3
 LEASE_YEARS = 99
+SQFT_PER_SQM = 10.7639104
 
 
 @lru_cache(maxsize=8)
 def metrics(flat_type):
     """Per block: median resale price of one flat type over the last 24 months (when at least 3 sales) and remaining lease.
 
-    Each row's 4th element is the MOP code (see _mop_code). Remaining lease is the lease left at the block's newest sale, less the months since then, in whole years (rounded down).
+    Each row is [median price, sales, lease years, MOP code (see _mop_code), median price per sqm, median price per sq ft]. Remaining lease is the lease left at the block's newest sale, less the months since then, in whole years (rounded down).
     Blocks with fewer sales have no price and are drawn grey. Descriptive only: not a valuation or a forecast.
     """
     if flat_type not in METRIC_FLAT_TYPES:
@@ -296,23 +297,27 @@ def metrics(flat_type):
     latest = sales.sale_month.max()
     recent = sales[(sales.flat_type == flat_type) & (sales.sale_month > latest - pd.DateOffset(months=METRIC_MONTHS))]
     grouped = recent.groupby("block_id").resale_price.agg(["median", "count"])
+    per_sqm = (recent.resale_price / recent.floor_area_sqm).groupby(recent.block_id).median()
     newest = sales.sort_values("sale_month").groupby("block_id").last()
     years = _mop_years()
     blocks = {}
     for block_id, sale in newest.iterrows():
         # Months left at the data's latest month: the lease left at that block's newest sale, less the months since it.
         since = (latest.year - sale.sale_month.year) * 12 + latest.month - sale.sale_month.month
-        row = [None, 0, max(0, int(sale.lease_left_months - since) // 12), _mop_code(sale.lease_commence_year, latest.year, years)]
+        row = [None, 0, max(0, int(sale.lease_left_months - since) // 12), _mop_code(sale.lease_commence_year, latest.year, years), None, None]
         if block_id in grouped.index:
             row[1] = int(grouped.loc[block_id, "count"])
             if row[1] >= METRIC_MIN_SALES:
                 row[0] = int(grouped.loc[block_id, "median"])
+                row[4] = int(round(per_sqm.loc[block_id]))  # median price per sqm
+                row[5] = int(round(per_sqm.loc[block_id] / SQFT_PER_SQM))  # the same median per sq ft
         blocks[block_id] = row
     return {"flat_type": flat_type, "window_months": METRIC_MONTHS, "min_sales": METRIC_MIN_SALES,
             "as_of": f"{latest:%Y-%m}", "blocks": blocks, "mop_years": years,
             "mop_rule": load_rules(BTO_FILE).cite("mop.standard_years"), "mop_limits": _mop_limits(years),
             "limits": [(f"Median of the last {METRIC_MONTHS} months of recorded resales (data.gov.sg, to {latest:%Y-%m}) for one flat type, "
                         f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
+                       "Per sqm and per sq ft: the median of each sale's price divided by its recorded floor area (1 sqm = 10.7639 sq ft).",
                        "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
                        "Remaining lease is in whole years (rounded down), from the lease left at each block's newest recorded sale."]}
 
