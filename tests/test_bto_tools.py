@@ -69,3 +69,21 @@ def test_resale_flat_type_accepts_bto_style_names():
     compare = CompareArgs(block_id="x", price=1, flat_type="4-room", storey_mid=None, lease_left_months=None,
                           floor_area_sqm=None, as_of="latest")
     assert compare.flat_type == "4 ROOM"
+
+
+def test_upcoming_projects_are_listed_apart_and_never_with_a_price(monkeypatch):
+    projects = pd.DataFrame([
+        {"project_id": "bto_a", "name": "A Vista", "category": "Standard", "wait_months": 40, "town": "TAMPINES", "status": "launched",
+         "flat_types": None, "units": 100, "lat": 1.3, "lng": 103.9, "first_launch": "2026-06"},
+        {"project_id": "bto_up_x", "name": "Tengah upcoming BTO (HDB code X)", "category": None, "wait_months": float("nan"), "town": "TENGAH",
+         "status": "upcoming", "flat_types": "2-room Flexi, 4-room", "units": 710, "lat": 1.35, "lng": 103.73, "first_launch": "2026-11"}])
+    flats = pd.DataFrame([{"project_id": "bto_a", "launch": "2026-06", "flat_type": "4-room", "units": 100, "price_low": 400000, "price_high": 500000}])
+    monkeypatch.setattr(queries, "load_projects", lambda: projects)
+    monkeypatch.setattr(queries, "load_flats", lambda: flats)
+    result = queries.list_bto_projects(town="TENGAH")
+    assert result["n_projects"] == 0  # nothing launched in the annex data for Tengah
+    assert [p["units"] for p in result["upcoming_projects"]] == [710]
+    assert result["upcoming_projects"][0]["status"] == "not on sale yet" and "price" in result["upcoming_projects"][0]["note"]
+    assert "upcoming_projects" not in queries.list_bto_projects(town="TAMPINES")
+    assert "upcoming_projects" not in queries.list_bto_projects(town="TENGAH", launch_month="2026-06")  # launched-only filters leave them out
+    assert "upcoming_projects" not in queries.list_bto_projects(town="TENGAH", flat_type="CCA")  # no such flat type there

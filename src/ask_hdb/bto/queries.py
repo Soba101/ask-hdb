@@ -52,7 +52,29 @@ def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, c
                     "launches": sorted(set(mine.launch)),
                     "flats": [{"flat_type": r.flat_type, "units": int(r.units), "price_low": int(r.price_low),
                                "price_high": int(r.price_high)} for r in mine.itertuples()]})
-    return {"n_projects": len(out), "projects": out[:limit], "note": PRICE_NOTE}
+    result = {"n_projects": len(out), "projects": out[:limit], "note": PRICE_NOTE}
+    coming = _upcoming(name, town, flat_type, launch_month, category, max_price)
+    if coming:
+        result["upcoming_projects"] = coming
+    return result
+
+
+def _upcoming(name, town, flat_type, launch_month, category, max_price):
+    """Projects HDB lists as upcoming that match the name, town and flat type. They are not on sale yet and have no price.
+    A filter that only applies to launched flats (launch month, category, price) leaves them out."""
+    projects = load_projects()
+    if "status" not in projects or launch_month or category or max_price is not None:
+        return []
+    projects = projects[projects.status.eq("upcoming")]
+    if name:
+        projects = projects[projects.name.str.upper().str.contains(name.upper(), regex=False)]
+    if town:
+        projects = projects[projects.town.fillna("").str.upper().eq(town.upper())]
+    if flat_type:
+        projects = projects[projects.flat_types.fillna("").str.upper().str.contains(flat_type.upper(), regex=False)]
+    return [{"project_id": p.project_id, "name": p.name, "town": p.town, "units": int(p.units), "flat_types": p.flat_types,
+             "status": "not on sale yet", "note": "HDB lists this as upcoming (next exercise November 2026). No price, waiting time or completion date is published."}
+            for p in projects.itertuples()]
 
 
 def bto_nearby(project_id, kind, n=3):
