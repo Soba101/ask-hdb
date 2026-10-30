@@ -107,7 +107,7 @@ def card(selection):
     if kind == "bto":
         row = load_projects().set_index("project_id").loc[selection["id"]]
         if row.get("status") == "upcoming":
-            return {**base, "facts": ["Not on sale yet: HDB lists this project for its November 2026 exercise.", f"Units: {int(row.units)}",
+            return {**base, "facts": ["Not on sale yet: HDB lists this as an upcoming project. Its next sales exercise is in November 2026.", f"Units: {int(row.units)}",
                                       f"Flat types: {row.flat_types}",
                                       "No prices, waiting time or completion date are published yet."],
                     "limits": ["HDB marks upcoming projects as preliminary and subject to change; the site is HDB's indicative point.",
@@ -116,7 +116,7 @@ def card(selection):
         if isinstance(row.category, str):
             facts.insert(0, f"Category: {row.category}")
         elif isinstance(row.get("first_launch"), str):
-            facts.insert(0, f"Launched: {row.first_launch} (an earlier exercise; prices are not in this list)")
+            facts.insert(0, f"Launched: {row.first_launch} (an earlier exercise; its prices are not shown here)")
         if _ok(row.wait_months):
             facts.append(f"Waiting time: about {int(row.wait_months)} months")
         done = _bto_completion(row.get("first_launch"), row.get("wait_months"), load_sales().sale_month.max())

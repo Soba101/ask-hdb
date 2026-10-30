@@ -73,7 +73,9 @@ def _named_candidates(tokens):
         for r in projects[projects.lat.notna() & projects.lng.notna()].itertuples():
             name = _core(normalize_street(r.name).split())
             if name == core or set(core) <= set(name):
-                item = _candidate("bto", r.project_id, f"{r.name} (BTO, approximate site)", r.lat, r.lng)
+                upcoming = getattr(r, "status", "launched") == "upcoming"
+                item = _candidate("bto", r.project_id, f"{r.name} (upcoming BTO, not on sale yet)" if upcoming
+                                  else f"{r.name} (BTO, approximate site)", r.lat, r.lng)
                 (exact if name == core else found).append(item)
     return exact or found
 

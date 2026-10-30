@@ -2,7 +2,7 @@
 
 Run after scripts/build_bto.py (which rewrites the file). It is safe to run again: it replaces its own rows.
 - status "launched": the Tengah projects of 2021 to 2023 from bto_flats_history.parquet, located with OneMap by name.
-- status "upcoming": the 7 projects HDB lists for the November 2026 exercise (data/raw/bto_upcoming/upcoming_2026-11.csv).
+- status "upcoming": the 7 projects HDB lists for the November 2026 exercise (data_sources/bto_upcoming/upcoming_2026-11.csv, tracked in Git: HDB's server refuses scripts, so it cannot be downloaded again).
   They have no name, price, wait time or category yet, so none is invented.
 """
 
@@ -45,7 +45,7 @@ def history_rows(api, cache):
 
 
 def upcoming_rows():
-    table = pd.read_csv(ROOT / "data/raw/bto_upcoming/upcoming_2026-11.csv")
+    table = pd.read_csv(ROOT / "data_sources/bto_upcoming/upcoming_2026-11.csv")
     return [{"project_id": "bto_up_" + row.code.lower(), "name": f"{row.town.title()} upcoming BTO (HDB code {row.code})", "category": None,
              "first_launch": "2026-11", "wait_months": np.nan, "units": int(row.units), "lat": row.lat, "lng": row.lng, "road_name": None,
              "town": row.town, "site": "hdb_indicative", "status": "upcoming", "flat_types": row.flat_types.replace("|", ", ")}

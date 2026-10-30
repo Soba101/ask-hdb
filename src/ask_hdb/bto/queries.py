@@ -62,8 +62,10 @@ def bto_nearby(project_id, kind, n=3):
     site = row.iloc[0]
     if pd.isna(site.lat):
         raise ValueError(f"No site coordinates for {project_id} (OneMap does not list it yet)")
-    return {"project": site["name"], "places": nearest_to_point(site.lat, site.lng, load_places(), kind, n),
-            "note": "Straight-line distance from an approximate site (a BTO site has no block number)."}
+    note = "Straight-line distance from an approximate site (a BTO site has no block number)."
+    if site.get("status") == "upcoming":
+        note += " This project is not on sale yet: HDB lists it as upcoming and publishes no price, waiting time or completion date."
+    return {"project": site["name"], "places": nearest_to_point(site.lat, site.lng, load_places(), kind, n), "note": note}
 
 
 HISTORY_LIMITS = [
