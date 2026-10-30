@@ -3,7 +3,7 @@ import { clearBuildingCard, showBuildingFacts, openBuildingSun } from "./buildin
 import { initCardMap } from "./card-map.js";
 import { initAmenityCard } from "./amenity-card.js";
 const $ = (id) => document.getElementById(id);
-const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Sun and facing", "card-facing"],
+const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
   ["Schools", "schools"], ["Nearby", "card-nearby"]];
 const QUESTIONS = {
   block: [["Ask about schools", "What are the 3 nearest primary schools to this block?"],
@@ -69,6 +69,29 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     }
     if (facts.facing_label) headline(facts.facing_label, "Building footprint · approximate, per block; not per unit");
   }
+  function list(items) { return Object.entries(items).map(([label, count]) => label + " " + count.toLocaleString("en-SG")).join(", "); }
+  function range(low, high, unit) { return low === high ? low.toLocaleString("en-SG") + " " + unit : low.toLocaleString("en-SG") + "–" + high.toLocaleString("en-SG") + " " + unit; }
+  // Block facts are HDB's own; recorded flat models and sizes come from resales. Text only, from the server's numbers.
+  function renderMore(info) {
+    if (!info) { line("more-facts", "No further block information is available.", "li"); return; }
+    const o = info.official;
+    if (o) {
+      if (o.completed) line("more-facts", "Completed: " + o.completed, "li");
+      if (o.top_floor) line("more-facts", "Top floor: " + o.top_floor, "li");
+      if (o.dwellings != null) line("more-facts", "Dwellings in the block: " + o.dwellings.toLocaleString("en-SG"), "li");
+      if (Object.keys(o.sold).length) line("more-facts", "Sold flats: " + list(o.sold), "li");
+      if (Object.keys(o.rental).length) line("more-facts", "Rental flats: " + list(o.rental), "li");
+      if (o.also.length) line("more-facts", "Also in the block: " + o.also.join(", "), "li");
+    }
+    $("more-observed-title").hidden = !info.observed.length;
+    if (info.observed_period) $("more-observed-title").textContent = "Recorded flat models and sizes (resales " + info.observed_period + ")";
+    for (const item of info.observed) {
+      line("more-observed", item.flat_type + " · " + item.flat_model + ": " + item.sales + " sale" + (item.sales === 1 ? "" : "s") + ", "
+        + range(item.area_sqm[0], item.area_sqm[1], "sqm") + " (" + range(item.area_sqft[0], item.area_sqft[1], "sq ft") + ")", "li");
+    }
+    info.limits.forEach((text) => line("more-limits", text));
+    line("more-limits", "Source: " + info.source);
+  }
   function render(data, point) {
     facts = data;
     const town = point.kind === "block" && data.facts.find((fact) => fact.startsWith("Town:"));
@@ -81,6 +104,7 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
       line(target, fact, "li");
     }
     data.limits.forEach((text) => line("card-limits", text)); metadata("card-limits", data);
+    if (point.kind === "block") renderMore(data.more_info);
     if (point.kind === "block") facts.facing_label = showBuildingFacts(data, point);
     refreshMetrics();
   }
@@ -102,7 +126,8 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     cardRequest++; sectionRequest++; clearBuildingCard(); current = null; facts = null;
     renderedMetrics = null; // A new selection needs its own summary even with cached metrics.
     for (const id of ["card-facts", "card-actions", "card-limits", "card-sections", "price-facts", "lease-facts",
-      "nearby-facts", "metric-prices", "metric-lease", "metrics-limits", "schools-list", "schools-limits"]) $(id).replaceChildren();
+      "nearby-facts", "metric-prices", "metric-lease", "metrics-limits", "schools-list", "schools-limits", "more-facts", "more-observed", "more-limits"]) $(id).replaceChildren();
+    $("more-observed-title").hidden = true;
     SECTIONS.forEach(([, id]) => { $(id).hidden = true; });
     $("schools-summary").textContent = "Primary schools within 2 km";
     $("card-about").open = false;

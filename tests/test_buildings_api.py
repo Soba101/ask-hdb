@@ -69,7 +69,7 @@ def test_sun_routes_validate_the_block_and_default_to_singapore_today(client):
 def test_card_storey_prices_threshold_window_and_height(client, monkeypatch):
     sales = pd.DataFrame([
         *[{"block_id": "blk_a", "sale_month": pd.Timestamp(month), "storey_low": low,
-           "storey_high": high, "resale_price": price, "flat_type": "4 ROOM", "lease_commence_year": 1990}
+           "storey_high": high, "resale_price": price, "flat_type": "4 ROOM", "lease_commence_year": 1990, "flat_model": "Model A", "floor_area_sqm": 90}
           for month, low, high, price in [
               *[("2026-09-01", 1, 3, 400000 + i * 1000) for i in range(4)],
               ("2024-11-01", 1, 3, 100000),  # fifth sale, inside the data's last 24 months

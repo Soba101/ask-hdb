@@ -10,6 +10,9 @@ const data = { facts, floors: 12, height_source: "property_info", facing_label: 
   limits: ["Straight-line distances, not walking or travel times.", "Not a valuation. Check MOE with OneMap."],
   storey_prices: [{ label: "01–03", median_price: 401000, sales: 7 }],
   storey_prices_as_of: "2026-10", storey_prices_limits: "All flat types pooled. No unit-level price or facing; not a forecast.",
+  more_info: { official: { completed: 1978, top_floor: 14, dwellings: 206, sold: { "3-room": 178, "4-room": 26 }, rental: {}, also: ["commercial units"] },
+    observed: [{ flat_type: "4 Room", flat_model: "Model A", sales: 3, area_sqm: [90, 93], area_sqft: [969, 1001] }],
+    observed_period: "2017-04 to 2026-08", source: "HDB Property Information (data.gov.sg)", limits: ["Not a floor plan."] },
   source: "https://example.test/resales", as_of: "2026-10-01" };
 const schoolData = { schools: [{ id: "school_a", label: "A <script>School</script>", kind: "primary_school",
   km: 0.12, band: "within 1 km", lat: 1.301, lng: 103.8 },
@@ -70,7 +73,11 @@ const stableMetrics = () => {
 stableMetrics();
 await chip("Prices").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, false);
 await chip("Lease").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, true);
-await chip("Lease").onclick(); assert.equal(openCount(), 0);
+await chip("More information").onclick(); assert.equal(get("card-more").hidden, false);
+assert.ok(get("more-facts").children.some((node) => node.textContent === "Sold flats: 3-room 178, 4-room 26"), "official block facts are listed");
+assert.ok(get("more-observed").children.some((node) => node.textContent.startsWith("4 Room · Model A: 3 sales, 90–93 sqm (969–1,001 sq ft)")), "recorded models and sizes");
+assert.equal(get("more-observed-title").hidden, false);
+await chip("More information").onclick(); assert.equal(openCount(), 0);
 await chip("Schools").onclick(); await chip("Schools").onclick(); await chip("Schools").onclick();
 assert.equal(count("/schools/"), 1, "default rings and first-open list share one request");
 assert.match(get("schools-summary").textContent, /2 km: 1 \(\+1 borderline\)/);
