@@ -134,7 +134,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .sun-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .view-options > button { margin-top: var(--space-2); }
 
-@media (max-width: 800px) {
+@media (min-width: 0px) {
   #app { display: block; height: 100dvh; --sheet-h: 112px; --kb: 0px; }
   #mapwrap { width: 100%; height: 100%; }
   /* Empty desktop hosts remain in place, without trapping controls in closed details. */
@@ -177,7 +177,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     border-radius: var(--card-radius) var(--card-radius) 0 0; overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom); transition: height 180ms ease; }
   #side[data-dragging] { transition: none; }
-  #sheet-peek { position: relative; flex-shrink: 0; padding: 0 12px 4px; }
+  /* The whole header area drags the sheet, so the browser must not claim a vertical touch there as a scroll. */
+  #sheet-peek { position: relative; flex-shrink: 0; padding: 0 12px 4px; touch-action: none; }
   #sheet-handle { display: block; width: 48px; min-height: 20px; padding: 0; margin: 0 auto;
     background: transparent; border: 0; border-radius: var(--pill); touch-action: none; }
   #sheet-handle::after { content: ""; display: block; width: 32px; height: 4px; margin: auto;
@@ -229,108 +230,22 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   clip-path: inset(50%); white-space: nowrap; }
 .layers .seg button { white-space: nowrap; overflow-wrap: normal; word-break: normal; padding: var(--space-1) var(--space-2); }
 .maplibregl-ctrl-attrib-button { background-repeat: no-repeat; background-position: center; }
-@media (pointer: coarse) { .maplibregl-ctrl-attrib-button { min-height: 32px; min-width: 32px; } }
 @media (prefers-color-scheme: dark) {
   .maplibregl-ctrl-group, .maplibregl-ctrl-attrib { background: var(--floating); }
   .maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib a { color: var(--muted); }
   .maplibregl-ctrl-group button + button { border-top-color: var(--line); }
   .maplibregl-ctrl-attrib-button { filter: invert(1); }
 }
-@media (min-width: 801px) and (prefers-color-scheme: dark) { .maplibregl-ctrl-icon { filter: invert(1); } }
 #amenity-list li { border-bottom: .5px solid var(--line); }
 #amenity-list li:last-child { border-bottom: 0; }
 
-@media (min-width: 801px) {
-  .card { box-shadow: 0 8px 30px rgba(0, 0, 0, .14); padding-top: 0; }
-  /* The title and close button stay in view while the sections scroll. */
-  .card > .close { position: sticky; top: var(--space-2); float: right; z-index: 3; right: auto; margin: var(--space-2) 0 0; }
-  #card-summary { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: var(--space-3) 0 var(--space-1); }
-  /* Chips sit in a tidy three-column grid, so none hides off to the side or stretches alone across a row. */
-  #card-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  #card-sections button { padding-left: var(--space-2); padding-right: var(--space-2); }
-  /* One solid surface: the sticky title and the scrolling sections must be the same colour, which a frosted card cannot give. */
-  .card { background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  details > summary { list-style: none; }
-  .maplibregl-ctrl-group { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
-  details summary::marker { content: ""; }
-  details summary::-webkit-details-marker { display: none; }
-  details summary::before { content: "›"; display: inline-block; width: 1em; transition: transform 120ms ease; }
-  details[open] > summary::before { transform: rotate(90deg); }
-}
-
-
-/* Desktop: the same Apple look as the phone (system font, tinted controls, frosted panels, segmented groups). */
-@media (min-width: 801px) {
-  :root {
-    --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
-    --ios-blue: #0071e3; --tint: #0071e3; --accent: #0071e3; --accent-text: #0071e3;
-    --text: #1d1d1f; --muted: #636366; --line: rgba(60, 60, 67, .22);
-    --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .82); --floating: var(--material);
-    --card-radius: 14px; --radius: 10px;
-  }
-  body { font-family: var(--font); }
-  button, textarea, input, select { font-family: var(--font); }
-  h1 { font-size: 22px; font-weight: 700; line-height: 1.18; }
-  /* The side panel does not sit over the map, so a blur there only costs frames: keep it solid. */
-  #side { background: var(--panel); border-left: .5px solid var(--line); }
-  .tab { background: var(--fill); border: 0; color: var(--text); font-weight: 600; }
-  .tab.on { background: var(--ios-blue); color: #fff; }
-  button { font-weight: 600; background: var(--ios-blue); border-color: var(--tint); }
-  button.secondary { background: var(--fill); border: 0; color: var(--tint); }
-  button.secondary.on, button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
-  button.close { background: transparent; color: var(--muted); }
-  details summary, a { color: var(--tint); }
-  textarea { background: var(--fill); border: 0; border-radius: var(--radius); padding: 10px 12px; }
-  #form { align-items: flex-end; }
-  #form { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
-  #send { width: 40px; height: 40px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%; font-size: 0; position: relative; }
-  #send::after { content: ""; position: absolute; inset: 0; background: #fff;
-    -webkit-mask: center / 20px 20px no-repeat var(--arrow); mask: center / 20px 20px no-repeat var(--arrow); }
-  .msg { border-radius: 18px; }
-  .msg.user { background: var(--ios-blue); color: #fff; }
-  .msg.bot { background: var(--fill); border: 0; }
-  .selected { background: var(--fill); }
-  .legend, .layers, .card { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-    border: .5px solid var(--line); }
-  .layers, .card { border-radius: var(--card-radius); box-shadow: 0 8px 30px rgba(0, 0, 0, .12); }
-  /* Segmented control: a raised white thumb marks the choice. */
-  .layers .seg { background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; }
-  .layers .seg button.secondary { background: transparent; color: var(--text); border-radius: 8px; }
-  .layers .seg button.secondary.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
-  .headline li { background: var(--fill); border-radius: 10px; }
-  .card-section { border-top: .5px solid var(--line); }
-  /* Motion like the phone sheet: the card, the route block and chat bubbles ease in; nothing moves for reduced-motion users. */
-  @media (prefers-reduced-motion: no-preference) {
-    .card:not([hidden]) { animation: rise 320ms cubic-bezier(.2, .9, .3, 1.1); }
-    #route-block:not([hidden]), .msg { animation: fade 220ms ease-out; }
-    #card-sections button, .layers .seg button, .tab, #send { transition: background-color 160ms ease, color 160ms ease, transform 120ms ease; }
-    @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
-    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  }
-  .radius, #amenity-pills { background: var(--fill); border-radius: 10px; padding: 2px; gap: 2px; flex-wrap: nowrap; }
-  .radius > span { display: none; }
-  .radius button.secondary, #amenity-pills button.secondary { flex: 1; background: transparent; color: var(--text); border-radius: 8px; }
-  .radius button.secondary.on, #amenity-pills button.secondary.on { background: var(--panel); box-shadow: 0 1px 3px rgba(0, 0, 0, .22); color: var(--text); }
-  #amenity-list button, #route-clear { border-radius: var(--pill); }
-  .maplibregl-ctrl-group { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-    border: .5px solid var(--line); }
-}
-@media (min-width: 801px) and (prefers-color-scheme: dark) {
-  :root {
-    --text: #f5f5f7; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .82);
-    --tint: #2997ff; --accent: #2997ff; /* text on dark needs the lighter blue; filled buttons keep #0071e3 */
-  }
-  .layers .seg button.secondary.on, .radius button.secondary.on, #amenity-pills button.secondary.on { background: #636366; color: #fff; }
-}
-
-/* Phone only: native iOS / Apple Maps look. Everything below sits inside the phone query, so desktop is untouched. */
-@media (max-width: 800px) {
+/* The Apple Maps look: a bottom sheet on a phone, the same panel docked on the left on a wide screen (see the last block). */
+@media (min-width: 0px) {
   :root {
     --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
     --text: #000; --muted: #636366; --line: rgba(60, 60, 67, .29);
     --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .9); --floating: var(--material);
-    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3;
+    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3; --tint: #0062c9;
     --t-title: 22px; --t-body: 17px; --t-sub: 15px; --t-foot: 13px; --t-cap: 12px;
   }
   body { font-family: var(--font); color: var(--text); }
@@ -409,15 +324,15 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     color: var(--text); font-size: 15px; font-weight: 600; }
   #sun-panel .sun-actions button[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
 }
-@media (max-width: 800px) and (prefers-color-scheme: dark) {
+@media (min-width: 0px) and (prefers-color-scheme: dark) {
   :root {
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #2997ff;
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #64b5ff;
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
 }
 /* Spring-like settle for the sheet, only when motion is welcome; the drag state keeps its own no-transition rule. */
-@media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
+@media (min-width: 0px) and (prefers-reduced-motion: no-preference) {
   #side { transition: height 420ms cubic-bezier(.2, .9, .3, 1.1); }
 }
 
@@ -430,7 +345,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 #route-steps li { padding: 2px 0; }
 
 
-@media (max-width: 800px) {
+@media (min-width: 0px) {
   /* One control style: tinted fills with blue text, solid blue when selected, and segmented groups. */
   #side button.secondary, #side .tab:not(.on) { background: var(--fill); border: 0; color: var(--tint, var(--ios-blue)); font-weight: 600; }
   #side button.secondary.on, #side button.secondary[aria-pressed="true"] { background: var(--ios-blue); color: #fff; }
@@ -449,6 +364,48 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: calc(var(--sheet-h) + var(--kb) + var(--sun-h, 0px)); }
   #sheet-notes { padding-bottom: var(--space-5); }
 }
-@media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
+@media (min-width: 0px) and (prefers-reduced-motion: no-preference) {
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { transition: bottom 420ms cubic-bezier(.2, .9, .3, 1.1); }
+}
+
+/* ---- Phone polish from the design review ---- */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.msg.status button { min-height: 32px; margin-left: var(--space-2); }
+@media (max-width: 800px) {
+  /* A full sheet leaves room only for the search bar: the sun bar and the layer details would sit on top of it. */
+  #app:has(#side[data-snap=full]) #sun-bar, #app:has(#side[data-snap=full]) #chip-detail { display: none; }
+}
+@media (min-width: 0px) {
+  /* Section rows are plain list rows with a chevron, not blue buttons. */
+  #side #card-sections > button.secondary, #side #card-sections > button.secondary.on { color: var(--text); background: transparent; }
+  /* Segmented controls: one grey track and a raised thumb for the choice. */
+  #side .radius button.secondary, #side #amenity-pills button.secondary { background: transparent; color: var(--text); }
+  #side .radius button.secondary.on, #side #amenity-pills button.secondary.on { background: var(--panel); color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
+  /* Source captions on the fact tiles wait for the full sheet; they pushed the content too far down. */
+  #side:not([data-snap=full]) .headline small { display: none; }
+  /* An empty search bar does not offer a Send. */
+  #topbar:has(#question:placeholder-shown) #send { background: var(--fill); }
+  #topbar:has(#question:placeholder-shown) #send::after { background: var(--muted); }
+}
+
+/* ---- Wide screens: the sheet becomes a panel docked on the left, always open ---- */
+@media (min-width: 801px) {
+  #app { --side-w: clamp(360px, 30vw, 420px); }
+  #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
+    border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
+    /* room for the search bar and the chips, which float over the top of the panel */
+    padding-top: calc(var(--topbar-bottom, 74px) + 56px + var(--chip-detail-h, 0px) - 12px); }
+  #sheet-handle { display: none; }
+  #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
+  #topbar, #chips, #chip-detail { left: 24px; right: auto; width: calc(var(--side-w) - 24px); z-index: 5; }
+  #topbar, #chip-detail > div { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; }
+  #chips button { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #sun-bar { left: calc(var(--side-w) + 36px); right: auto; width: min(480px, calc(100% - var(--side-w) - 60px)); bottom: 24px; }
+  .maplibregl-ctrl-top-right { top: 12px; }
+  .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: 0; }
+  .mapnote { top: 12px; bottom: auto; left: calc(var(--side-w) + 36px); right: 60px; }
+  #amenity-pills button, #card-sections > button { white-space: nowrap; }
+  #sheet-content .card { padding: 8px 16px; }
+  button.secondary:hover, #card-sections > button:hover { filter: brightness(.96); }
 }
