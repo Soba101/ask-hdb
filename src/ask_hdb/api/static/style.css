@@ -401,6 +401,10 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     padding-top: calc(var(--topbar-bottom, 74px) + 56px + var(--chip-detail-h, 0px) - 12px); }
   #sheet-handle { display: none; }
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
+  /* The notices and data text sit at the bottom of the panel, below the messages, instead of right under the first message. */
+  #sheet-content { display: flex; flex-direction: column; }
+  #chat:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
+  #chat > #log { flex: 1; }
   #sheet-peek .legend { flex-wrap: wrap; overflow: visible; } /* both BTO entries stay visible in the wide panel */
   #topbar, #chips, #chip-detail { left: 24px; right: auto; width: calc(var(--side-w) - 24px); z-index: 5; }
   #topbar, #chip-detail > div { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; }
