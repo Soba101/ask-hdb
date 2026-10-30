@@ -256,6 +256,9 @@ $("selected-clear").onclick = () => setSelected(null);
 let layerMode = "type";
 const metricsCache = {};
 let layerRequest = 0;
+// Which number of a metrics row colours the price layer: 0 total price, 4 per sqm, 5 per sq ft (the budget always compares the total).
+let shadeColumn = 0;
+const UNITS = { total: [0, ""], sqm: [4, " / sqm"], sqft: [5, " / sq ft"] };
 
 function fmtMoney(n) { return "$" + Math.round(n).toLocaleString("en-SG"); }
 
@@ -288,6 +291,9 @@ async function applyLayer() {
   card.refreshMetrics();
   const data = metricsCache[flat];
   const prices = Object.values(data.blocks).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
+  const [column, suffix] = UNITS[$("price-unit").value];
+  shadeColumn = column;
+  const shades = Object.values(data.blocks).map((r) => r[column]).filter(Boolean).sort((a, b) => a - b);
   const slider = $("budget");
   if (layerMode === "price" && prices.length) {
     if (slider.dataset.flat !== flat) { // a new flat type resets the budget to the top of its range
@@ -298,21 +304,22 @@ async function applyLayer() {
     }
     $("budget-label").textContent = fmtMoney(Number(slider.value));
     slider.setAttribute("aria-valuetext", fmtMoney(Number(slider.value)));
-    const at = (q) => prices[Math.min(prices.length - 1, Math.floor(prices.length * q))];
-    $("ramp-low").textContent = fmtMoney(at(0.1));
-    $("ramp-high").textContent = fmtMoney(at(0.9));
+    const at = (q) => shades[Math.min(shades.length - 1, Math.floor(shades.length * q))];
+    $("ramp-low").textContent = fmtMoney(at(0.1)) + suffix;
+    $("ramp-high").textContent = fmtMoney(at(0.9)) + suffix;
   }
   mapLayer.layer(layerMode, data, Number(slider.value || 0));
   const year = data.as_of.slice(0, 4);
   $("mop-end-label").textContent = "MOP ends around " + year;
   $("layer-note").textContent = layerMode === "price"
-    ? "Grey: fewer than " + data.min_sales + " sales, or above your budget. " + data.limits.join(" ")
+    ? "Grey: fewer than " + data.min_sales + " sales, or above your budget (a total price). " + data.limits.join(" ")
     : layerMode === "mop"
     ? "Amber: within MOP. Light amber: MOP ends around " + year + ". Blue: past MOP. Grey: no data. " + data.mop_limits
-    : data.limits[2] + " Based on the lease start year of each block.";
+    : data.limits[3] + " Based on the lease start year of each block.";
 }
 document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
 $("flat-type").onchange = applyLayer;
+$("price-unit").onchange = applyLayer;
 $("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); $("budget").setAttribute("aria-valuetext", fmtMoney(Number($("budget").value))); if (metricsCache[$("flat-type").value]) applyLayer(); };
 
 // ---------- map ----------
@@ -470,7 +477,8 @@ async function startMap() {
         const rows = metricsData ? metricsData.blocks : {};
         for (const f of blockFeatures) {
           const row = rows[f.properties.id];
-          f.properties.price = row && row[0] ? row[0] : 0;
+          f.properties.price = row && row[0] ? row[0] : 0; // the budget compares this
+          f.properties.shade = row && row[shadeColumn] ? row[shadeColumn] : 0; // the colour ramp reads this
           f.properties.lease = row ? row[2] : -1; // -1: no lease known, drawn grey
           f.properties.mop = row?.[3] ?? -1;
         }
@@ -480,10 +488,10 @@ async function startMap() {
         }
         let color = COLORS, opacity = 0.6;
         if (mode === "price" && metricsData) {
-          const prices = Object.values(rows).map((r) => r[0]).filter(Boolean).sort((a, b) => a - b);
-          const at = (q) => prices[Math.min(prices.length - 1, Math.floor(prices.length * q))] || 1;
-          color = ["case", ["==", ["get", "price"], 0], "#b8bdc9", [">", ["get", "price"], budget], "#b8bdc9",
-            ["interpolate", ["linear"], ["get", "price"], at(0.1), "#fde725", at(0.5), "#21908d", at(0.9), "#440154"]];
+          const shades = Object.values(rows).map((r) => r[shadeColumn]).filter(Boolean).sort((a, b) => a - b);
+          const at = (q) => shades[Math.min(shades.length - 1, Math.floor(shades.length * q))] || 1;
+          color = ["case", ["==", ["get", "shade"], 0], "#b8bdc9", [">", ["get", "price"], budget], "#b8bdc9",
+            ["interpolate", ["linear"], ["get", "shade"], at(0.1), "#fde725", at(0.5), "#21908d", at(0.9), "#440154"]];
           opacity = 0.9;
         } else if (mode === "lease" && metricsData) {
           color = ["case", ["<", ["get", "lease"], 0], "#b8bdc9", ["step", ["get", "lease"], "#440154", 60, "#3b528b", 75, "#21908d", 90, "#fde725"]];
@@ -493,7 +501,7 @@ async function startMap() {
           opacity = 0.9;
         }
         map.setPaintProperty("blocks", "circle-color", color);
-        buildings.setMetrics(mode, rows, color);
+        buildings.setMetrics(mode, rows, color, shadeColumn);
         map.setPaintProperty("blocks", "circle-opacity", opacity);
         // In a price or lease view the blocks carry the meaning, so draw them larger and the places quieter.
         const coloured = mode !== "type";

@@ -135,6 +135,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .card-section { border-top: 1px solid var(--line); margin-top: var(--space-3); padding-top: var(--space-2); }
 .card-section h3 { font-size: var(--small); font-weight: 600; margin: 0; }
 .card-section p { margin: var(--space-2) 0; }
+.card-section h4 { font-size: var(--small); font-weight: 600; margin: var(--space-3) 0 0; }
 .schools ul { max-height: none; overflow: visible; }
 #card-actions { border-top: 1px solid var(--line); padding-top: var(--space-2); }
 #card-actions button { font-size: var(--caption); text-align: left; max-width: 100%; }
@@ -415,6 +416,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     padding-top: calc(var(--topbar-bottom, 74px) + 68px + var(--chip-detail-h, 0px) - 12px); }
   #sheet-handle { display: none; }
   #sheet-peek > .close { top: 0; } /* no grab bar on a wide screen */
+  /* With a place open the page title stays for screen readers only; the place's own title leads the panel. */
+  #side:has(#card-summary:not([hidden])) #sheet-header { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
   /* The notices and data text sit at the bottom of the panel, below the messages, instead of right under the first message. */
   #sheet-content { display: flex; flex-direction: column; }

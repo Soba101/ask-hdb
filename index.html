@@ -60,11 +60,16 @@
             <option value="3 ROOM">3-room</option><option value="4 ROOM" selected>4-room</option><option value="5 ROOM">5-room</option><option value="EXECUTIVE">Executive</option>
           </select>
         </label>
+        <label>Show
+          <select id="price-unit">
+            <option value="total" selected>Total price</option><option value="sqm">Per sqm</option><option value="sqft">Per sq ft</option>
+          </select>
+        </label>
         <label>Budget up to <b id="budget-label"></b>
           <input id="budget" type="range" step="10000">
         </label>
         <div class="ramp"><span id="ramp-low">cheaper</span><i></i><span id="ramp-high">dearer</span></div>
-        <p class="small">Colours compare blocks by their median for this flat type (10th to 90th percentile); grey: no median or above your budget.</p>
+        <p class="small">Colours compare blocks by their median for this flat type (10th to 90th percentile), as a total or per sqm or sq ft; grey: no median or above your total-price budget.</p>
       </div>
       <div id="lease-controls" hidden>
         <div class="steps"><em class="key"><span class="l1"></span>under 60 yrs</em> <em class="key"><span class="l2"></span>60-75</em> <em class="key"><span class="l3"></span>75-90</em> <em class="key"><span class="l4"></span>90+ left</em></div>
@@ -90,6 +95,13 @@
         <h3>Prices</h3><ul id="price-facts"></ul><div id="metric-prices"></div><div id="storey-prices"></div>
       </section>
       <section id="card-lease" class="card-section" hidden><h3>Lease</h3><ul id="lease-facts"></ul><div id="metric-lease"></div></section>
+      <section id="card-more" class="card-section" hidden>
+        <h3>More information</h3>
+        <ul id="more-facts"></ul>
+        <h4 id="more-observed-title" hidden>Recorded flat models and sizes</h4>
+        <ul id="more-observed"></ul>
+        <div id="more-limits" class="small"></div>
+      </section>
       <section id="card-facing" class="card-section" hidden>
         <h3>Sun and facing</h3><div id="card-buildings"></div><div id="card-sun"></div>
       </section>
