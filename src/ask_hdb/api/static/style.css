@@ -135,6 +135,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .card-section { border-top: 1px solid var(--line); margin-top: var(--space-3); padding-top: var(--space-2); }
 .card-section h3 { font-size: var(--small); font-weight: 600; margin: 0; }
 .card-section p { margin: var(--space-2) 0; }
+.card-section h4 { font-size: var(--small); font-weight: 600; margin: var(--space-3) 0 0; }
 .schools ul { max-height: none; overflow: visible; }
 #card-actions { border-top: 1px solid var(--line); padding-top: var(--space-2); }
 #card-actions button { font-size: var(--caption); text-align: left; max-width: 100%; }

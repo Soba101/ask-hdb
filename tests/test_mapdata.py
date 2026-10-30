@@ -24,13 +24,13 @@ def tables(monkeypatch):
                               "category": "Standard", "units": 1, "wait_months": 1, "town": float("nan")}])
     sales = pd.DataFrame([
         *[{"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-09-01"), "flat_type": "4 ROOM",
-          "lease_commence_year": 1980, "lease_left_months": 636, "resale_price": 400000 + i * 1000, "floor_area_sqm": 100} for i in range(5)],
+          "lease_commence_year": 1980, "lease_left_months": 636, "resale_price": 400000 + i * 1000, "floor_area_sqm": 100, "flat_model": "Model A"} for i in range(5)],
         {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2026-08-01"), "flat_type": "3 ROOM",
-         "lease_commence_year": 1980, "lease_left_months": 637, "resale_price": 300000, "floor_area_sqm": 100},
+         "lease_commence_year": 1980, "lease_left_months": 637, "resale_price": 300000, "floor_area_sqm": 100, "flat_model": "Model A"},
         {"block_id": "blk_1_a-st", "sale_month": pd.Timestamp("2025-01-01"), "flat_type": "4 ROOM",
-         "lease_commence_year": 1980, "lease_left_months": 660, "resale_price": 250000, "floor_area_sqm": 100},
+         "lease_commence_year": 1980, "lease_left_months": 660, "resale_price": 250000, "floor_area_sqm": 100, "flat_model": "Model A"},
         {"block_id": "other", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM",
-         "lease_commence_year": 1990, "lease_left_months": 700, "resale_price": 500000, "floor_area_sqm": 100}])
+         "lease_commence_year": 1990, "lease_left_months": 700, "resale_price": 500000, "floor_area_sqm": 100, "flat_model": "Model A"}])
     for module, name, value in ((mapdata, "load_blocks", blocks), (mapdata, "load_places", places),
                                 (mapdata, "load_projects", projects), (mapdata, "load_sales", sales)):
         monkeypatch.setattr(module, name, lambda value=value: value)
@@ -172,17 +172,17 @@ def test_metrics_route_accepts_only_the_offered_flat_types():
 def test_metrics_boundaries_for_the_window_and_the_minimum_sales(monkeypatch):
     sales = pd.DataFrame([
         {"block_id": "edge", "sale_month": pd.Timestamp("2024-11-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
-         "lease_left_months": 700, "resale_price": 500000, "floor_area_sqm": 100},   # exactly 24 months before 2026-10: inside
+         "lease_left_months": 700, "resale_price": 500000, "floor_area_sqm": 100, "flat_model": "Model A"},   # exactly 24 months before 2026-10: inside
         {"block_id": "edge", "sale_month": pd.Timestamp("2024-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
-         "lease_left_months": 701, "resale_price": 900000, "floor_area_sqm": 100},   # one month earlier: outside
+         "lease_left_months": 701, "resale_price": 900000, "floor_area_sqm": 100, "flat_model": "Model A"},   # one month earlier: outside
         {"block_id": "edge", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 1990,
-         "lease_left_months": 670, "resale_price": 520000, "floor_area_sqm": 100},
+         "lease_left_months": 670, "resale_price": 520000, "floor_area_sqm": 100, "flat_model": "Model A"},
         {"block_id": "three", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
-         "lease_left_months": 900, "resale_price": 600000, "floor_area_sqm": 100},
+         "lease_left_months": 900, "resale_price": 600000, "floor_area_sqm": 100, "flat_model": "Model A"},
         {"block_id": "three", "sale_month": pd.Timestamp("2026-09-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
-         "lease_left_months": 899, "resale_price": 610000, "floor_area_sqm": 100},
+         "lease_left_months": 899, "resale_price": 610000, "floor_area_sqm": 100, "flat_model": "Model A"},
         {"block_id": "three", "sale_month": pd.Timestamp("2026-08-01"), "flat_type": "4 ROOM", "lease_commence_year": 2000,
-         "lease_left_months": 898, "resale_price": 620000, "floor_area_sqm": 100}])
+         "lease_left_months": 898, "resale_price": 620000, "floor_area_sqm": 100, "flat_model": "Model A"}])
     monkeypatch.setattr(mapdata, "load_sales", lambda: sales)
     mapdata.metrics.cache_clear()
     got = mapdata.metrics("4 ROOM")["blocks"]
@@ -194,7 +194,7 @@ def test_metrics_boundaries_for_the_window_and_the_minimum_sales(monkeypatch):
 def _sales_with_lease_starts(starts):
     return pd.DataFrame([
         {"block_id": f"b{y}", "sale_month": pd.Timestamp("2026-10-01"), "flat_type": "4 ROOM", "lease_commence_year": y,
-         "lease_left_months": 900, "resale_price": 500000, "floor_area_sqm": 100} for y in starts])
+         "lease_left_months": 900, "resale_price": 500000, "floor_area_sqm": 100, "flat_model": "Model A"} for y in starts])
 
 
 def test_mop_codes_at_the_edge_years(monkeypatch):

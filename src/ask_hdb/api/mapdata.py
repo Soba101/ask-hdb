@@ -12,7 +12,7 @@ from string import capwords
 
 import pandas as pd
 
-from ask_hdb.api import buildings
+from ask_hdb.api import blockinfo, buildings
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.distance import haversine_km, nearest_to_point
 from ask_hdb.geo.loaders import ROOT, load_amenities, load_blocks, load_places
@@ -195,7 +195,7 @@ def _block_facts(selection):
         limits.append("School registration distance (1 km / 2 km) is measured by MOE with OneMap, not by us; check it there.")
     if station:
         facts.append(f"Nearest MRT: {station['name']}, {station['km']:.2f} km")
-    return {"facts": facts, "limits": limits,
+    return {"facts": facts, "limits": limits, "more_info": blockinfo.block_info(selection["id"], mine),
             **buildings.card_facts(selection["id"], sales, MIN_FOR_MEDIAN)}
 
 

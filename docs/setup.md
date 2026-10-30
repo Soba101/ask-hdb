@@ -57,6 +57,7 @@ uv run python scripts/geocode_blocks.py     # block addresses via OneMap, cached
 uv run python scripts/fetch_places.py       # MRT/LRT stations and primary schools
 uv run python scripts/build_places.py
 uv run python scripts/build_buildings.py    # 3D outlines with floors and facing (needs data/raw/property/hdb_property_information.csv from data.gov.sg)
+uv run python scripts/build_block_info.py     # block facts (year, floors, units by flat type) from HDB Property Information
 uv run python scripts/build_amenities.py    # bus stops and supermarkets from OpenStreetMap (Overpass)
 # optional walking router: download Singapore.osm.gz from download.bbbike.org/osm/bbbike/Singapore/ into data/raw/walk/, then:
 uv run python scripts/build_walk_graph.py
