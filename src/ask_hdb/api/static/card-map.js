@@ -48,7 +48,7 @@ export function initCardMap(mapLayer) {
         if (mine !== radiusRequest) return; // the radius or the place changed meanwhile
         const c = data.counts;
         $("radius-counts").textContent = "Within " + (km < 1 ? km * 1000 + " m" : km + " km") + " (straight-line): " +
-          c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites.";
+          c.blocks + " blocks, " + c.mrt_lrt + " MRT/LRT, " + c.primary_schools + " primary schools, " + c.bto_sites + " BTO sites" + (c.bto_upcoming ? " (+" + c.bto_upcoming + " upcoming)" : "") + ".";
         $("radius-limits").textContent = data.limits.join(" ");
       } catch (error) {
         if (mine === radiusRequest) $("radius-counts").textContent = "Counts could not be loaded.";

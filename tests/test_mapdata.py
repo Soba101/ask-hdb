@@ -101,7 +101,7 @@ def test_place_cards_count_blocks_by_straight_line_and_keep_the_school_caveat():
 def test_radius_counts_are_inclusive_straight_line_and_leave_out_the_place_itself():
     mine = mapdata.resolve({"kind": "block", "id": "blk_1_a-st"})
     got = mapdata.around(mine, 0.5)
-    assert got["counts"] == {"blocks": 0, "mrt_lrt": 0, "primary_schools": 1, "bto_sites": 0}  # the school is ~140 m away
+    assert got["counts"] == {"blocks": 0, "mrt_lrt": 0, "primary_schools": 1, "bto_sites": 0, "bto_upcoming": 0}  # the school is ~140 m away
     far = mapdata.around(mine, 2.0)
     assert far["counts"]["mrt_lrt"] == 1 and far["counts"]["bto_sites"] == 0
     assert any("MOE" in text for text in far["limits"]) and not any("MOE" in t for t in got["limits"])
@@ -238,3 +238,21 @@ def test_bto_estimated_completion(monkeypatch):
     assert any(f.startswith("Estimated completion: about 2029-01") and "approximate" in f for f in facts["p1"])
     assert not any("Estimated" in f for f in facts["p2"] + facts["p4"])
     assert "Estimated completion has passed; check HDB for the actual date." in facts["p3"]
+
+
+def test_upcoming_bto_sites_are_labelled_not_on_sale_and_counted_apart(monkeypatch):
+    projects = pd.DataFrame([
+        {"project_id": "bto_z", "name": "Z Vista", "lat": 1.33, "lng": 103.83, "category": "Plus", "units": 100, "wait_months": 40,
+         "town": "BEDOK", "status": "launched", "flat_types": None, "first_launch": "2026-02"},
+        {"project_id": "bto_up_x", "name": "Tengah upcoming BTO (HDB code X)", "lat": 1.331, "lng": 103.831, "category": None, "units": 710,
+         "wait_months": float("nan"), "town": "TENGAH", "status": "upcoming", "flat_types": "2-room Flexi, 4-room", "first_launch": "2026-11"}])
+    monkeypatch.setattr(mapdata, "load_projects", lambda: projects)
+    mapdata.features.cache_clear()
+    props = {f["properties"]["id"]: f["properties"] for f in mapdata.features()["features"] if f["properties"]["kind"] == "bto"}
+    assert props["bto_up_x"]["status"] == "upcoming" and "not on sale yet" in props["bto_up_x"]["label"]
+    assert props["bto_z"]["status"] == "launched" and "not on sale" not in props["bto_z"]["label"]
+    text = " ".join(mapdata.card(mapdata.resolve({"kind": "bto", "id": "bto_up_x"}))["facts"])
+    assert "Not on sale yet" in text and "November 2026" in text and "Units: 710" in text and "2-room Flexi" in text
+    assert "Waiting time" not in text and "Estimated completion" not in text and "No prices" in text
+    counts = mapdata.around(mapdata.resolve({"kind": "bto", "id": "bto_z"}), 2.0)["counts"]
+    assert counts["bto_upcoming"] == 1 and counts["bto_sites"] == 0  # the place itself is left out, the upcoming one is counted apart

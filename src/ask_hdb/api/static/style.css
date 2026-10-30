@@ -37,7 +37,7 @@ h1, h2, b, strong { font-weight: 600; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 var(--space-1) 0 var(--space-2); vertical-align: middle; }
 .dot:first-child { margin-left: 0; }
 /* Legend colours match the map data, independently of the interface accent. */
-.dot.block { background: #1d5fd6; } .dot.mrt { background: #d62d2d; } .dot.school { background: #1f9d55; } .dot.bto { background: #e08a00; }
+.dot.block { background: #1d5fd6; } .dot.mrt { background: #d62d2d; } .dot.school { background: #1f9d55; } .dot.bto { background: #e08a00; } .dot.bto-up { background: #fff; border: 2px solid #e08a00; width: 10px; height: 10px; }
 #side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-left: 1px solid var(--line); font-size: var(--body); }
 header { padding: var(--space-3) var(--space-4) 0; }
 h1 { margin: 0; font-size: 20px; }
