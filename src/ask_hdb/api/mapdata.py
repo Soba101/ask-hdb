@@ -5,6 +5,8 @@ Ids from the browser are never trusted: a selection is only used when the id exi
 """
 
 import math
+import re
+from datetime import date
 from functools import lru_cache
 from string import capwords
 
@@ -13,10 +15,10 @@ import pandas as pd
 from ask_hdb.api import buildings
 from ask_hdb.bto.queries import load_projects
 from ask_hdb.geo.distance import haversine_km, nearest_to_point
-from ask_hdb.geo.loaders import load_blocks, load_places
+from ask_hdb.geo.loaders import ROOT, load_amenities, load_blocks, load_places
 from ask_hdb.geo.names import pretty_name
 from ask_hdb.rules.bto import BTO_FILE
-from ask_hdb.rules.loader import load_rules
+from ask_hdb.rules.loader import RULES_DIR, load_rules
 from ask_hdb.tools import load_sales
 
 KINDS = ("block", "mrt", "lrt", "primary_school", "bto")
@@ -294,3 +296,32 @@ def metrics(flat_type):
                         f"only where a block has at least {METRIC_MIN_SALES} sales; other blocks are grey."),
                        "Flat size, floor and renovation differ within a block, so this is not a valuation or a forecast.",
                        "Remaining lease is in whole years (rounded down), from the lease left at each block's newest recorded sale."]}
+
+
+def _built(name):
+    """The day a data file was built, from its modification time (kept by the image build)."""
+    return date.fromtimestamp((ROOT / "data/clean" / name).stat().st_mtime).isoformat()
+
+
+def _rules_date(path):
+    found = re.findall(r"as_of: (\d{4}-\d{2}-\d{2})", path.read_text())
+    return max(found) if found else None
+
+
+def data_freshness():
+    """What each part of the page is built from and how recent it is, for the page footer."""
+    sales = load_sales()
+    latest = sales.sale_month.max()
+    return [
+        {"label": "Resale prices", "as_of": f"sales to {latest:%Y-%m}, data built {_built('resale.parquet')}",
+         "source": "HDB via data.gov.sg"},
+        {"label": "HDB rules and grants", "as_of": f"rules dated {_rules_date(RULES_DIR / '2026-10.yaml')}",
+         "source": "hdb.gov.sg, each rule with its own date"},
+        {"label": "BTO launches", "as_of": f"rules dated {_rules_date(RULES_DIR / 'bto' / '2026-10.yaml')}, data built {_built('bto_projects.parquet')}",
+         "source": "HDB launch pages"},
+        {"label": "Block locations", "as_of": f"built {_built('blocks.parquet')}", "source": "OneMap geocoding"},
+        {"label": "3D outlines and floors", "as_of": f"built {_built('buildings.geojson')}", "source": "HDB building outlines and property information"},
+        {"label": "Bus stops and supermarkets", "as_of": f"downloaded {load_amenities().as_of.iloc[0]}", "source": "OpenStreetMap"},
+        {"label": "Walking paths", "as_of": f"built {_built('walk_graph.npz')}", "source": "OpenStreetMap extract of 25 Oct 2026"},
+        {"label": "Map tiles", "as_of": "live", "source": "OpenStreetMap"},
+    ]

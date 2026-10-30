@@ -57,8 +57,9 @@ def copy_page():
 
 
 def main(limit=None):
-    if limit == "assets":  # refresh the page files only, keeping the data already built
-        return copy_page()
+    if limit == "assets":  # refresh the page files and the data-date list, keeping the place files already built
+        copy_page()
+        return write(SITE / "data" / "about.json", {"data": mapdata.data_freshness()})
     if amenities.osm_router() is None:
         sys.exit("data/clean/walk_graph.npz is missing: run scripts/build_walk_graph.py first")
     if SITE.exists():
@@ -67,6 +68,7 @@ def main(limit=None):
     data = SITE / "data"
     features = mapdata.features()
     write(data / "features.json", features)
+    write(data / "about.json", {"data": mapdata.data_freshness()})
     shutil.copy(buildings.PATH, data / "buildings.json")
     for flat in mapdata.METRIC_FLAT_TYPES:
         write(data / "metrics" / f"{flat}.json", mapdata.metrics(flat))

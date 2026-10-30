@@ -23,6 +23,7 @@
     if (path === "/chat") {
       return json({ detail: "Chat is paused in this demo: the free model limit has been reached. Run Ask HDB yourself to chat (see the README)." }, 429);
     }
+    if (path === "/about") return real(base + "data/about.json");
     if (path === "/map/features") return real(base + "data/features.json");
     if (path === "/map/buildings") return real(base + "data/buildings.json");
     if (path === "/map/metrics") return real(base + "data/metrics/" + encodeURIComponent(url.searchParams.get("flat_type")) + ".json");

@@ -172,6 +172,10 @@ def create_app():
             raise HTTPException(404, "Unknown place.")
         return mapdata.card(selection)
 
+    @app.get("/about")
+    def about():
+        return {"data": mapdata.data_freshness()}
+
     @app.get("/health")
     def health():
         return {"status": "ok"}
