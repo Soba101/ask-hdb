@@ -41,7 +41,7 @@ class Element {
   setPointerCapture(id) { this.capture = id; }
   hasPointerCapture(id) { return this.capture === id; }
   releasePointerCapture() { this.capture = null; }
-  getBoundingClientRect() { return this.rect || { bottom: 72, height: 0 }; }
+  getBoundingClientRect() { return this.rect || { bottom: 72, height: 0, right: 412 }; }
   setAttribute(key, value) { this.attrs[key] = String(value); }
   getAttribute(key) { return this.attrs[key]; }
   append(...nodes) {

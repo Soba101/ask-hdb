@@ -15,7 +15,7 @@ export function initCardMap(mapLayer) {
   let selected = null, radiusKm = 0, radiusChosen = false, schoolRings = false;
   let revision = 0, radiusRequest = 0, counts = null;
   let schoolSelection = 0, schoolRevision = 0, schoolData = null;
-  const buttons = document.querySelectorAll(".radius button");
+  const buttons = document.querySelectorAll(".radius [data-km]"); // not the Nearby type pills, which share the group style
   function showSchools() {
     schoolRings = true; // 1 km solid ring, 2 km dashed ring; schools are ringed by band.
     mapLayer.highlight([{ ...selected, role: "origin" }, ...schoolData.map((s) => ({ ...s, role: "result" }))]);

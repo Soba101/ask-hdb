@@ -179,9 +179,11 @@ window.visualViewport.height = 800; window.visualViewport.offsetTop = 0; view.ke
 assert.equal(get("app").style.getPropertyValue("--kb"), "0px");
 window.innerHeight = 1000; window.visualViewport.height = 1000; view.resize();
 assert.equal(sheetHeight(), 500); assert.equal(paddings.at(-1).bottom, 500);
-view.mobile.matches = false; view.mobile.change();
-assert.equal(sheet.padding(60), 60); assert.equal(paddings.at(-1).bottom, 0);
-const count = paddings.length;
-sheet.answer(); sheet.section(); sheet.select(point); view.keyboard(); view.resize();
-assert.equal(paddings.length, count, "desktop hooks are inert");
+// A wide screen docks the same sheet as a left panel: always open, no drag, map padded on the left instead of the bottom.
+view.wide.matches = true; view.wide.change();
+assert.equal(side.dataset.snap, "full"); assert.equal(content.inert, false);
+assert.deepEqual(paddings.at(-1), { top: 0, left: 424, right: 0, bottom: 0 });
+const before = state(); drag(-200); assert.equal(state(), before, "no drag on a wide screen");
+sheet.answer(); assert.equal(state(), "full"); sheet.select(null); assert.equal(state(), "full", "selecting never collapses the panel");
+view.wide.matches = false; view.wide.change(); assert.equal(paddings.at(-1).left, 0, "back to the phone sheet");
 console.log("Sheet snaps, tap threshold, keyboard, selection, focus, inset and map padding passed.");

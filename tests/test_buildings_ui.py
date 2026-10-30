@@ -128,7 +128,7 @@ def test_phone_markup_and_touch_css_offline():
         assert any(node["tag"] == "label" and by_id[control] in list(walk(node)) for node in nodes)
 
     css = (STATIC / "style.css").read_text()
-    mobile = css_block(css, "@media (max-width: 800px)")
+    mobile = css_block(css, "@media (min-width: 0px)")  # the sheet look; a wide screen overrides it in the last block
     coarse = css_block(css, "@media (pointer: coarse)")
     assert "flex-wrap: wrap" in css_block(css, ".legend")
     assert "white-space: nowrap" in css_block(css, ".legend-item")
