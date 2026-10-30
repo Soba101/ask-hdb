@@ -5,7 +5,7 @@ export function initSheet({ chat = () => {} } = {}) {
   // The sheet system runs at every width. On a wide screen the sheet is a panel docked on the left, always open.
   const mobile = window.matchMedia("(min-width: 0px)"), wide = window.matchMedia("(min-width: 801px)");
   const side = $("side"), app = $("app"), header = side.querySelector("header");
-  let enabled = false, state = 0, pixels = 0, map = null, selected = !$("card").hidden;
+  let enabled = false, state = 0, pixels = 0, map = null, selected = !$("card").hidden, place = null;
   let slots = [], content, peek, handle, observer, cancelDrag = () => {};
   const points = () => {
     const available = Math.max(0, window.innerHeight - keyboard());
@@ -38,13 +38,15 @@ export function initSheet({ chat = () => {} } = {}) {
     // Wide: the panel sits at the left, so the map keeps clear of it on the left. Phone: clear of the sheet at the bottom.
     map?.setPadding(wide.matches
       ? { top: 0, left: Math.round(side.getBoundingClientRect().right) + 12, right: 0, bottom: 0 }
-      : { top: enabled ? Math.round($("chips").getBoundingClientRect?.().bottom || 0) + 8 : 0, left: 0, right: 0, bottom: pixels });
+      : { top: enabled ? Math.round(Math.max($("chips").getBoundingClientRect?.().bottom || 0, $("chip-detail").getBoundingClientRect?.().bottom || 0)) + 8 : 0, left: 0, right: 0, bottom: pixels });
+    // A taller sheet must not cover the picked place: centre it in the part of the map that stays clear.
+    if (!wide.matches && state > 0 && place?.lng != null) map?.easeTo({ center: [place.lng, place.lat], duration: 250, essential: false });
     if (focus && state > 0) $("tab-chat").focus({ preventScroll: true }); // a place keeps its card in view
   }
   function move(node, parent) { parent.append(node); }
   function select(point) {
     const closing = selected && !point;
-    selected = !!point;
+    selected = !!point; place = point;
     if (!enabled) return;
     if (closing) chat();
     header.hidden = selected;

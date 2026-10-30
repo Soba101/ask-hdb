@@ -145,7 +145,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     background: var(--floating); border: 1px solid var(--line); border-radius: var(--card-radius);
     padding: 8px; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
   #topbar form { margin: 0; }
-  #question { height: 44px; padding: 10px 12px; line-height: 22px; resize: none; overflow: hidden; }
+  #question { height: 44px; max-height: 88px; padding: 10px 12px; line-height: 22px; resize: none; overflow-y: auto; }
   #question::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #topbar .selected { margin-top: 4px; }
   /* A selected-place chip adds a row; every floating control follows that measured height. */
@@ -188,7 +188,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #peek-hint { display: block; font-size: var(--caption); }
   #sheet-peek .legend { padding: 0; border: 0; font-size: 10px; margin-top: 4px; }
   #sheet-peek h2 { font-size: 17px; margin: 0 44px 0 0; }
-  #sheet-peek > .close { position: absolute; top: 20px; right: 8px; min-height: 44px; min-width: 44px; }
+  #sheet-peek > .close { position: absolute; top: 4px; right: 8px; min-height: 44px; min-width: 44px; }
   #sheet-peek .headline { display: flex; list-style: none; gap: 4px; padding: 0; margin: 4px 0 0; }
   #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 4px; font-size: var(--caption); }
   #side[data-snap=peek] #sheet-peek { max-height: 112px; overflow: hidden; }
@@ -400,6 +400,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     /* room for the search bar and the chips, which float over the top of the panel */
     padding-top: calc(var(--topbar-bottom, 74px) + 56px + var(--chip-detail-h, 0px) - 12px); }
   #sheet-handle { display: none; }
+  #sheet-peek > .close { top: 0; } /* no grab bar on a wide screen */
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
   /* The notices and data text sit at the bottom of the panel, below the messages, instead of right under the first message. */
   #sheet-content { display: flex; flex-direction: column; }
