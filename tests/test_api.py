@@ -1,6 +1,7 @@
 """The API streams tool evidence and the checked answer, and enforces its limits."""
 
 import json
+import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -305,3 +306,10 @@ def test_prewarm_runs_one_question_only_for_a_local_model_and_frees_the_slot(mon
     assert asked == ["Hello"]  # a hosted model and the off switch both skip it
     monkeypatch.setenv("PREWARM_MODEL", "1"); assert limits.busy.acquire(blocking=False); api.prewarm(limits)
     assert asked == ["Hello"]  # a visitor's question already holds the slot
+    limits.busy.release()
+    # With a chain, only a chain that ends in the local model is warmed, and the warm-up goes to the local model alone.
+    seen = []
+    monkeypatch.setattr(api.agent, "ask", lambda question, *a, **k: seen.append(os.environ.get("LLM_CHAIN")))
+    monkeypatch.setenv("LLM_CHAIN", "gemini,local"); api.prewarm(limits)
+    monkeypatch.setenv("LLM_CHAIN", "gemini,groq"); api.prewarm(limits)
+    assert seen == ["local"] and os.environ["LLM_CHAIN"] == "gemini,groq"  # restored, and a hosted-only chain is not warmed

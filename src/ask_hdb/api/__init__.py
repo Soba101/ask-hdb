@@ -129,15 +129,22 @@ def warm():
 def prewarm(limits):
     """Send one tiny question through the real agent so a local model loads and caches the tool schemas and system prompt.
     The first visitor then skips minutes of reading the prompt. Hosted providers need no warm-up."""
-    if os.getenv("PREWARM_MODEL", "1") != "1" or os.getenv("LLM_CHAIN") or os.getenv("LLM_PROVIDER", "local") != "local":
+    chain = [name.strip() for name in os.getenv("LLM_CHAIN", "").split(",") if name.strip()]
+    local = "local" in chain if chain else os.getenv("LLM_PROVIDER", "local") == "local"
+    if os.getenv("PREWARM_MODEL", "1") != "1" or not local or not limits.busy.acquire(blocking=False):
         return
-    if not limits.busy.acquire(blocking=False):
-        return
+    previous = os.environ.get("LLM_CHAIN")
     try:
+        if chain:
+            os.environ["LLM_CHAIN"] = "local"  # warm the local model itself, not the hosted tier in front of it
         agent.ask("Hello")
     except Exception as error:  # noqa: BLE001 - the model may be down; a visitor will see that error themselves
         print(f"[prewarm skipped: {type(error).__name__}]")
     finally:
+        if previous is None:
+            os.environ.pop("LLM_CHAIN", None)
+        else:
+            os.environ["LLM_CHAIN"] = previous
         limits.busy.release()
 
 
