@@ -96,3 +96,8 @@ def test_comparing_the_users_number_to_a_ceiling_is_an_echo():
     # From the week 5-2 eval (q_eligibility_005): the user's income in brackets after "ceiling".
     answer = "Income is within the ceiling ($4000 < $8000). The ceiling is $8000 (your income is $4000)."
     assert check(answer, "income $4000 monthly", [{"value": 8000}])["ungrounded"] == []
+
+
+def test_the_3gen_flat_type_is_a_label_not_a_number():
+    assert check("The Tengah project offers 3Gen and 4-room flats.", "", [{"flat_types": ["3Gen", "4-room"]}])["ungrounded"] == []
+    assert check("It has 3 sales.", "", [{"n": 4}])["ungrounded"] == ["3"]
