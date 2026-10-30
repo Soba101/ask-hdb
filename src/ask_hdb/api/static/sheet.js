@@ -49,7 +49,7 @@ export function initSheet({ chat = () => {} } = {}) {
     selected = !!point; place = point;
     if (!enabled) return;
     if (closing) chat();
-    header.hidden = selected;
+    header.hidden = selected && !wide.matches; // a wide panel keeps its title (the page heading) above the card
     $("peek-hint").hidden = selected;
     $("card-summary").hidden = !selected;
     $("card-close").hidden = !selected;
@@ -124,6 +124,7 @@ export function initSheet({ chat = () => {} } = {}) {
     if (!enabled) return;
     const fromHandle = event.target === handle;
     if (event.key === "Escape" && state > 0 && !wide.matches) { event.preventDefault(); snap(state - 1); }
+    else if (event.key === "Escape" && wide.matches && selected) { event.preventDefault(); $("card-close").click(); } // a wide panel has no steps: Esc closes the card
     else if (fromHandle && ["ArrowUp", "ArrowDown", "Enter", " "].includes(event.key)) {
       event.preventDefault();
       snap(event.key === "ArrowDown" ? state - 1 : event.key === "ArrowUp" ? state + 1 : (state + 1) % 3);
@@ -140,6 +141,7 @@ export function initSheet({ chat = () => {} } = {}) {
   // Escape in the search bar steps the sheet down too.
   $("topbar").addEventListener("keydown", (event) => {
     if (enabled && event.key === "Escape" && state > 0 && !wide.matches) { event.preventDefault(); snap(state - 1); }
+    else if (enabled && event.key === "Escape" && wide.matches && selected) { event.preventDefault(); $("card-close").click(); }
   });
   layout();
   return {
