@@ -131,7 +131,12 @@ def prewarm(limits):
     The first visitor then skips minutes of reading the prompt. Hosted providers need no warm-up."""
     chain = [name.strip() for name in os.getenv("LLM_CHAIN", "").split(",") if name.strip()]
     local = "local" in chain if chain else os.getenv("LLM_PROVIDER", "local") == "local"
-    if os.getenv("PREWARM_MODEL", "1") != "1" or not local or not limits.busy.acquire(blocking=False):
+    if os.getenv("PREWARM_MODEL", "1") != "1" or not local:
+        return
+    # Visitors are answered by the first provider, so only a chain that starts with the local model needs the slot held.
+    # Otherwise the warm-up runs beside them: Ollama queues it, and a hosted answer is not kept waiting for it.
+    holds = not chain or chain[0] == "local"
+    if holds and not limits.busy.acquire(blocking=False):
         return
     previous = os.environ.get("LLM_CHAIN")
     try:
@@ -145,7 +150,8 @@ def prewarm(limits):
             os.environ.pop("LLM_CHAIN", None)
         else:
             os.environ["LLM_CHAIN"] = previous
-        limits.busy.release()
+        if holds:
+            limits.busy.release()
 
 
 @asynccontextmanager
