@@ -51,6 +51,7 @@ LABELS = [
     r'\b(?:19|20)\d{2}-\d{2}(?:-\d{2})?\b',            # ISO dates and months
     r'\b\d{1,2}(?:st|nd|rd|th)\b',                     # ordinals
     r'\b[1-5][\s-]?room\b',                            # flat types
+    r'\b3[\s-]?gen(?:eration)?\b',                      # the 3Gen flat type
 ]
 LIST_LABEL = re.compile(r'^\s*(?:[-*+•]\s+)?\d+[.)]\s+', re.MULTILINE)
 THRESHOLD = re.compile(r'(?:minimum|maximum|at least|at most|ceiling|limit|threshold|cap|'

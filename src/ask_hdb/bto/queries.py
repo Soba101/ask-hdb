@@ -72,8 +72,11 @@ def _upcoming(name, town, flat_type, launch_month, category, max_price):
         projects = projects[projects.town.fillna("").str.upper().eq(town.upper())]
     if flat_type:
         projects = projects[projects.flat_types.fillna("").str.upper().str.contains(flat_type.upper(), regex=False)]
-    return [{"project_id": p.project_id, "name": p.name, "town": p.town, "units": int(p.units), "flat_types": p.flat_types,
-             "status": "not on sale yet", "note": "HDB lists this as upcoming (next exercise November 2026). No price, waiting time or completion date is published."}
+    # Numbers are separate fields so an answer can quote them: digits inside a sentence are not evidence for the grounding check.
+    return [{"project_id": p.project_id, "name": p.name, "town": p.town, "units": int(p.units),
+             "flat_types": [t.strip() for t in p.flat_types.split(",")],
+             "next_exercise": "2026-11", "status": "not on sale yet",
+             "note": "HDB lists this as upcoming. No price, waiting time or completion date is published."}
             for p in projects.itertuples()]
 
 
