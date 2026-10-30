@@ -177,7 +177,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     border-radius: var(--card-radius) var(--card-radius) 0 0; overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom); transition: height 180ms ease; }
   #side[data-dragging] { transition: none; }
-  #sheet-peek { position: relative; flex-shrink: 0; padding: 0 12px 4px; }
+  /* The whole header area drags the sheet, so the browser must not claim a vertical touch there as a scroll. */
+  #sheet-peek { position: relative; flex-shrink: 0; padding: 0 12px 4px; touch-action: none; }
   #sheet-handle { display: block; width: 48px; min-height: 20px; padding: 0; margin: 0 auto;
     background: transparent; border: 0; border-radius: var(--pill); touch-action: none; }
   #sheet-handle::after { content: ""; display: block; width: 32px; height: 4px; margin: auto;

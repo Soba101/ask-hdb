@@ -76,7 +76,7 @@ export function initSheet({ chat = () => {} } = {}) {
     move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail")); move($("mop-controls"), $("chip-detail"));
     move($("sun-panel"), $("sun-bar"));
     for (const node of [note, $("building-error"), $("sun-panel-limits")]) move(node, $("sheet-notes"));
-    cancelDrag = sheetGestures({ handles: [peek], button: handle, active: () => enabled,
+    cancelDrag = sheetGestures({ handles: [peek], button: handle, content, active: () => enabled,
       height: () => pixels, points, snap, preview });
     // Selection chips and layer details change height without a window resize.
     observer = new ResizeObserver(() => {
