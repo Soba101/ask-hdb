@@ -117,7 +117,7 @@ async function* events(response) {
 async function ask(question) {
   if (send.disabled) return; // one question at a time
   document.querySelectorAll(".choices.confirm").forEach((c) => c.remove()); // an old "Yes" must not answer a newer turn
-  add("user", question);
+  const bubble = add("user", question);
   clearEvidence();
   send.disabled = true;
   const status = document.createElement("div"); // the ticking timer is hidden from screen readers; one polite note says what is happening
@@ -158,9 +158,9 @@ async function ask(question) {
     if (!answered) throw new Error("The answer was cut off. Please try again.");
   } catch (error) {
     // A failed or stopped question comes back into the box, so nothing has to be typed again.
-    if (!answered && !box.value) box.value = question;
-    add("error", error.name === "AbortError" ? "Stopped. Your question is back in the box."
-      : /Load failed|Failed to fetch|NetworkError/i.test(error.message) ? "Could not reach the server. Check your connection and try again."
+    if (!answered && !box.value) { box.value = question; grow(); }
+    if (error.name === "AbortError") { bubble.remove(); add("status", "Cancelled. Your question is back in the box."); }
+    else add("error", /Load failed|Failed to fetch|NetworkError/i.test(error.message) ? "Could not reach the server. Check your connection and try again."
       : error.message);
   } finally {
     clearInterval(timer);
@@ -213,11 +213,15 @@ function show(question, event) {
   }
 }
 
+// The question box grows to three lines, so a long question stays readable.
+function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 88) + "px"; }
+box.addEventListener("input", grow);
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const question = box.value.trim();
   if (!question || send.disabled) return;
   box.value = "";
+  grow();
   box.placeholder = "Ask about a flat, a grant or a place";
   ask(question);
 });
@@ -429,7 +433,13 @@ async function startMap() {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
+      let tapTimer = 0;
+      map.on("dblclick", () => clearTimeout(tapTimer)); // a double-tap zooms; it is not a selection
       map.on("click", (e) => {
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => pick(e), 250);
+      });
+      const pick = (e) => {
         const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
         const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
         const layers = ["places", "highlight", "blocks"];
@@ -441,7 +451,7 @@ async function startMap() {
         if (!f) return;
         const [lng, lat] = f.geometry.coordinates;
         setSelected({ kind: f.properties.kind, id: f.properties.id, label: f.properties.label, lat, lng });
-      });
+      };
       mapLayer.ring = (rings, fit) => {
         map.getSource("radius").setData({ type: "FeatureCollection", features: rings.map((r) => ({
           type: "Feature", geometry: { type: "Polygon", coordinates: [r.ring] }, properties: { km: r.km, dash: r.dash } })) });
