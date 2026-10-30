@@ -230,7 +230,6 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   clip-path: inset(50%); white-space: nowrap; }
 .layers .seg button { white-space: nowrap; overflow-wrap: normal; word-break: normal; padding: var(--space-1) var(--space-2); }
 .maplibregl-ctrl-attrib-button { background-repeat: no-repeat; background-position: center; }
-@media (pointer: coarse) { .maplibregl-ctrl-attrib-button { min-height: 32px; min-width: 32px; } }
 @media (prefers-color-scheme: dark) {
   .maplibregl-ctrl-group, .maplibregl-ctrl-attrib { background: var(--floating); }
   .maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib a { color: var(--muted); }
@@ -264,7 +263,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (min-width: 801px) {
   :root {
     --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
-    --ios-blue: #0071e3; --tint: #0071e3; --accent: #0071e3; --accent-text: #0071e3;
+    --ios-blue: #0071e3; --tint: #0062c9; --accent: #0071e3; --accent-text: #0071e3;
     --text: #1d1d1f; --muted: #636366; --line: rgba(60, 60, 67, .22);
     --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .82); --floating: var(--material);
     --card-radius: 14px; --radius: 10px;
@@ -320,7 +319,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   :root {
     --text: #f5f5f7; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
     --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .82);
-    --tint: #2997ff; --accent: #2997ff; /* text on dark needs the lighter blue; filled buttons keep #0071e3 */
+    --tint: #64b5ff; --accent: #2997ff; /* text on dark needs the lighter blue; filled buttons keep #0071e3 */
   }
   .layers .seg button.secondary.on, .radius button.secondary.on, #amenity-pills button.secondary.on { background: #636366; color: #fff; }
 }
@@ -331,7 +330,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     --font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
     --text: #000; --muted: #636366; --line: rgba(60, 60, 67, .29);
     --fill: rgba(118, 118, 128, .12); --material: rgba(255, 255, 255, .9); --floating: var(--material);
-    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3;
+    --grabber: rgba(60, 60, 67, .3); --ios-blue: #0071e3; --tint: #0062c9;
     --t-title: 22px; --t-body: 17px; --t-sub: 15px; --t-foot: 13px; --t-cap: 12px;
   }
   body { font-family: var(--font); color: var(--text); }
@@ -413,7 +412,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (max-width: 800px) and (prefers-color-scheme: dark) {
   :root {
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
-    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #2997ff;
+    --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #64b5ff;
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
 }
@@ -452,4 +451,23 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 }
 @media (max-width: 800px) and (prefers-reduced-motion: no-preference) {
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { transition: bottom 420ms cubic-bezier(.2, .9, .3, 1.1); }
+}
+
+/* ---- Phone polish from the design review ---- */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.msg.status button { min-height: 32px; margin-left: var(--space-2); }
+@media (max-width: 800px) {
+  /* A full sheet leaves room only for the search bar: the sun bar and the layer details would sit on top of it. */
+  #app:has(#side[data-snap=full]) #sun-bar, #app:has(#side[data-snap=full]) #chip-detail { display: none; }
+  /* Section rows are plain list rows with a chevron, not blue buttons. */
+  #side #card-sections > button.secondary, #side #card-sections > button.secondary.on { color: var(--text); background: transparent; }
+  /* Segmented controls: one grey track and a raised thumb for the choice. */
+  #side .radius button.secondary, #side #amenity-pills button.secondary { background: transparent; color: var(--text); }
+  #side .radius button.secondary.on, #side #amenity-pills button.secondary.on { background: var(--panel); color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .22); }
+  /* Source captions on the fact tiles wait for the full sheet; they pushed the content too far down. */
+  #side:not([data-snap=full]) .headline small { display: none; }
+  /* An empty search bar does not offer a Send. */
+  #topbar:has(#question:placeholder-shown) #send { background: var(--fill); }
+  #topbar:has(#question:placeholder-shown) #send::after { background: var(--muted); }
 }

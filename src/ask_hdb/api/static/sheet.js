@@ -111,7 +111,7 @@ export function initSheet({ chat = () => {} } = {}) {
   });
   $("topbar").addEventListener("click", (event) => {
     if (!enabled || !$("form").contains(event.target)) return;
-    chat(); snap(2); $("question").focus();
+    chat(); snap(2); $("tab-chat").scrollIntoView?.({ block: "start" }); $("question").focus();
   });
   side.addEventListener("keydown", (event) => {
     if (!enabled) return;
