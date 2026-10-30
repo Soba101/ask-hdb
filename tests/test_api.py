@@ -137,7 +137,7 @@ def test_security_and_cache_headers(client):
 def test_the_page_keeps_the_history_within_the_server_limits():
     from pathlib import Path
     js = (Path(api.__file__).parent / "static/app.js").read_text()
-    assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'aria-live", "off"' in js
+    assert "slice(0, 2000)" in js and "slice(0, 1000)" in js and 'tick.setAttribute("aria-hidden", "true")' in js
 
 
 def test_points_events_follow_their_tool_result(monkeypatch):
