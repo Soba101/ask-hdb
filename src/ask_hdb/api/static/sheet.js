@@ -121,7 +121,7 @@ export function initSheet({ chat = () => {} } = {}) {
   side.addEventListener("keydown", (event) => {
     if (!enabled) return;
     const fromHandle = event.target === handle;
-    if (event.key === "Escape" && state > 0) { event.preventDefault(); snap(state - 1); }
+    if (event.key === "Escape" && state > 0 && !wide.matches) { event.preventDefault(); snap(state - 1); }
     else if (fromHandle && ["ArrowUp", "ArrowDown", "Enter", " "].includes(event.key)) {
       event.preventDefault();
       snap(event.key === "ArrowDown" ? state - 1 : event.key === "ArrowUp" ? state + 1 : (state + 1) % 3);
@@ -137,7 +137,7 @@ export function initSheet({ chat = () => {} } = {}) {
   });
   // Escape in the search bar steps the sheet down too.
   $("topbar").addEventListener("keydown", (event) => {
-    if (enabled && event.key === "Escape" && state > 0) { event.preventDefault(); snap(state - 1); }
+    if (enabled && event.key === "Escape" && state > 0 && !wide.matches) { event.preventDefault(); snap(state - 1); }
   });
   layout();
   return {

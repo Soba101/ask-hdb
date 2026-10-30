@@ -125,7 +125,8 @@ async function ask(question) {
   const tick = document.createElement("span"), cancel = document.createElement("button");
   tick.textContent = "Working on it… 0s"; tick.setAttribute("aria-hidden", "true");
   const announce = document.createElement("span");
-  announce.className = "sr"; announce.setAttribute("role", "status"); announce.textContent = "Working on your answer. This can take up to a minute.";
+  announce.className = "sr"; announce.setAttribute("role", "status");
+  setTimeout(() => { announce.textContent = "Working on your answer. This can take up to a minute."; }, 100); // a live region speaks text added after it exists
   cancel.type = "button"; cancel.className = "secondary"; cancel.textContent = "Cancel";
   status.append(tick, " ", cancel, announce);
   log.after(status);
@@ -157,7 +158,7 @@ async function ask(question) {
     if (!answered) throw new Error("The answer was cut off. Please try again.");
   } catch (error) {
     // A failed or stopped question comes back into the box, so nothing has to be typed again.
-    if (!box.value) box.value = question;
+    if (!answered && !box.value) box.value = question;
     add("error", error.name === "AbortError" ? "Stopped. Your question is back in the box."
       : /Load failed|Failed to fetch|NetworkError/i.test(error.message) ? "Could not reach the server. Check your connection and try again."
       : error.message);
@@ -360,11 +361,17 @@ async function startMap() {
   try {
     const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
     maplibregl = lib.default || lib;
+    // Dark mode dims the light OpenStreetMap tiles so the map is not a bright block next to dark panels.
+    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.55 : 1, "raster-saturation": dark ? -0.3 : 0 });
+    const dark = matchMedia("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
       container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
       style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
-        layers: [{ id: "osm", type: "raster", source: "osm" }] },
+        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(dark.matches) }] },
+    });
+    dark.addEventListener("change", () => {
+      for (const [name, value] of Object.entries(tint(dark.matches))) map.setPaintProperty("osm", name, value);
     });
     sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -414,13 +421,6 @@ async function startMap() {
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
       document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
       document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
-      // Dark mode dims the light OpenStreetMap tiles so the map is not a bright block next to dark panels.
-      const dim = () => {
-        const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-        map.setPaintProperty("osm", "raster-brightness-max", dark ? 0.55 : 1);
-        map.setPaintProperty("osm", "raster-saturation", dark ? -0.3 : 0);
-      };
-      dim(); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", dim);
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
       for (const layer of ["places", "blocks", "highlight"]) {
