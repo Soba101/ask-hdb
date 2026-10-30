@@ -359,6 +359,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #amenity-list button, #route-clear { border-radius: var(--pill); padding: 0 var(--space-4); }
   #sheet-peek .legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: var(--t-cap); }
   #sheet-peek .legend::-webkit-scrollbar { display: none; }
+  /* The legend sits on the sheet itself, not on a floating pill of its own. */
+  #sheet-peek .legend { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; }
   /* A selected place replaces the legend. */
   #side:has(#card-summary:not([hidden])) #sheet-peek .legend { display: none; }
   /* A 44px grab area, drawn around the 36px grabber without making the sheet taller. */
@@ -415,6 +417,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: 0; }
   .mapnote { top: 12px; bottom: auto; left: calc(var(--side-w) + 36px); right: 60px; }
   #amenity-pills button, #card-sections > button { white-space: nowrap; }
-  #sheet-content .card { padding: 8px 16px; }
+  #sheet-content .card { padding: 8px 12px; }
+  /* One left edge: the search bar, chips, title, tabs, messages and notes all start 12px inside the panel. */
+  #side .tabs, #chat, #evidence { padding-inline: 12px; }
+  #sheet-notes { padding-inline: 12px; }
   button.secondary:hover, #card-sections > button:hover { filter: brightness(.96); }
 }
