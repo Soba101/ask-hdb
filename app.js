@@ -362,7 +362,7 @@ async function startMap() {
     const lib = await import("./vendor/maplibre/maplibre-gl.mjs");
     maplibregl = lib.default || lib;
     // Dark mode dims the light OpenStreetMap tiles so the map is not a bright block next to dark panels.
-    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.55 : 1, "raster-saturation": dark ? -0.3 : 0 });
+    const tint = (dark) => ({ "raster-brightness-max": dark ? 0.8 : 1, "raster-saturation": dark ? -0.15 : 0 });
     const dark = matchMedia("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
       container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
@@ -403,8 +403,10 @@ async function startMap() {
         paint: { "line-color": "#1d5fd6", "line-width": 2.5 } });
       map.addLayer({ id: "blocks", type: "circle", source: "blocks", paint: { "circle-color": COLORS, "circle-opacity": 0.6,
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.5, 14, 4, 17, 8] } });
-      map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": COLORS,
-        "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5,
+      // An upcoming BTO is a hollow orange ring: it is not on sale yet and its site is HDB's indicative point.
+      const UPCOMING = ["==", ["get", "status"], "upcoming"];
+      map.addLayer({ id: "places", type: "circle", source: "places", paint: { "circle-color": ["case", UPCOMING, "#ffffff", COLORS],
+        "circle-stroke-color": ["case", UPCOMING, "#e08a00", "#ffffff"], "circle-stroke-width": ["case", UPCOMING, 2.5, 1.5],
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 14, 6, 17, 9] } });
       map.addLayer({ id: "highlight", type: "circle", source: "highlight", paint: { "circle-color": COLORS,
         "circle-stroke-color": ["match", ["get", "band"], "within 1 km", "#00a152", "1 to 2 km", "#ffb000", "borderline", "#9aa3b5", "#ffb000"],

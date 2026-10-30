@@ -37,7 +37,7 @@ h1, h2, b, strong { font-weight: 600; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 var(--space-1) 0 var(--space-2); vertical-align: middle; }
 .dot:first-child { margin-left: 0; }
 /* Legend colours match the map data, independently of the interface accent. */
-.dot.block { background: #1d5fd6; } .dot.mrt { background: #d62d2d; } .dot.school { background: #1f9d55; } .dot.bto { background: #e08a00; }
+.dot.block { background: #1d5fd6; } .dot.mrt { background: #d62d2d; } .dot.school { background: #1f9d55; } .dot.bto { background: #e08a00; } .dot.bto-up { background: #fff; border: 2px solid #e08a00; width: 10px; height: 10px; }
 #side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-left: 1px solid var(--line); font-size: var(--body); }
 header { padding: var(--space-3) var(--space-4) 0; }
 h1 { margin: 0; font-size: 20px; }
@@ -197,6 +197,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-content .card { position: relative; inset: auto; width: 100%; max-height: none; overflow: visible;
     border: 0; border-radius: 0; margin: 0; padding: 8px 12px; }
   #sheet-notes { display: block; padding: 0 17px; }
+  /* The sun note belongs to the sun panel; the sheet moves it out, so it shows only while that panel is open. */
+  #sun-panel-limits { display: none; }
+  #app:has(#sun-panel:not([hidden])) #sun-panel-limits { display: block; }
   #chat, #evidence { min-height: auto; }
   #log { overflow: visible; }
   #side, .selected { overflow-wrap: anywhere; }
@@ -398,6 +401,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     padding-top: calc(var(--topbar-bottom, 74px) + 56px + var(--chip-detail-h, 0px) - 12px); }
   #sheet-handle { display: none; }
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
+  #sheet-peek .legend { flex-wrap: wrap; overflow: visible; } /* both BTO entries stay visible in the wide panel */
   #topbar, #chips, #chip-detail { left: 24px; right: auto; width: calc(var(--side-w) - 24px); z-index: 5; }
   #topbar, #chip-detail > div { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; }
   #chips button { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; }
