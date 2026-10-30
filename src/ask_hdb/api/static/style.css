@@ -109,6 +109,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 /* The gradient encodes prices; it is data rather than decoration. */
 .ramp i { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #fde725, #21908d, #440154); }
 .steps { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; margin-top: var(--space-2); }
+.steps .key { display: inline-flex; align-items: center; white-space: nowrap; font-style: normal; } /* a dot never splits from its label */
 .steps span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: var(--space-2); }
 .steps .l1 { background: #440154; } .steps .l2 { background: #3b528b; } .steps .l3 { background: #21908d; } .steps .l4 { background: #fde725; }
 .steps .m1 { background: #d98200; } .steps .m2 { background: #f7c873; } .steps .m3 { background: #1d5fd6; }
@@ -160,7 +161,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #chip-detail > div { padding: 8px; background: var(--floating); border: 1px solid var(--line); border-radius: 12px; }
   #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 4px 8px; }
   #price-controls label { min-width: 0; font-size: var(--caption); }
-  #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: 10px; }
+  #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: var(--caption); }
   #chip-detail input, #chip-detail select { width: 100%; }
   #chip-detail select, #sun-bar input[type=date] { background: var(--panel); color: var(--text);
     border: 1px solid var(--line); border-radius: var(--radius); font: inherit; min-width: 0; }
@@ -400,7 +401,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
     border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
     /* room for the search bar and the chips, which float over the top of the panel */
-    padding-top: calc(var(--topbar-bottom, 74px) + 56px + var(--chip-detail-h, 0px) - 12px); }
+    padding-top: calc(var(--topbar-bottom, 74px) + 68px + var(--chip-detail-h, 0px) - 12px); }
   #sheet-handle { display: none; }
   #sheet-peek > .close { top: 0; } /* no grab bar on a wide screen */
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
