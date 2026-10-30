@@ -15,7 +15,7 @@ export function wallExposure(az, alt, bearing) {
 export function initBuildings(map) {
   const toggle = $("toggle-3d"), panel = $("sun-panel");
   let enabled = false, outlines = null, loading = false, failed = false, shadows = null, wanted = false;
-  let mode = "type", written = null, rows = {}, color = SUN_COLOR, oldLight = null, oldPitch = 0;
+  let mode = "type", written = null, writtenColumn = 0, shadeColumn = 0, rows = {}, color = SUN_COLOR, oldLight = null, oldPitch = 0;
 
   function paint() {
     if (!outlines) return;
@@ -42,19 +42,19 @@ export function initBuildings(map) {
     if (outlines) for (const f of outlines.features) map.setFeatureState({ source: "buildings", id: f.id }, { exposure: 0 });
   });
 
-  function setMetrics(nextMode, nextRows, expression) {
-    mode = nextMode; rows = nextRows;
+  function setMetrics(nextMode, nextRows, expression, column = 0) {
+    mode = nextMode; rows = nextRows; shadeColumn = column;
     // Reuse the exact price/lease ramp and budget filtering from the existing point layer.
     const stateExpression = (node) => Array.isArray(node)
-      ? node[0] === "get" && ["price", "lease", "mop"].includes(node[1])
-        ? ["coalesce", ["feature-state", node[1]], node[1] === "price" ? 0 : -1]
+      ? node[0] === "get" && ["price", "shade", "lease", "mop"].includes(node[1])
+        ? ["coalesce", ["feature-state", node[1]], ["price", "shade"].includes(node[1]) ? 0 : -1]
         : node.map(stateExpression) : node;
     color = stateExpression(expression);
-    if (outlines && rows !== written) for (const f of outlines.features) {
+    if (outlines && (rows !== written || column !== writtenColumn)) for (const f of outlines.features) {
       const row = rows[f.id];
-      map.setFeatureState({ source: "buildings", id: f.id }, { price: row && row[0] ? row[0] : 0, lease: row ? row[2] : -1, mop: row?.[3] ?? -1 });
+      map.setFeatureState({ source: "buildings", id: f.id }, { price: row && row[0] ? row[0] : 0, shade: row && row[column] ? row[column] : 0, lease: row ? row[2] : -1, mop: row?.[3] ?? -1 });
     }
-    if (outlines) written = rows;
+    if (outlines) { written = rows; writtenColumn = column; }
     if (nextMode === "type" && enabled) clock.updateTime();
     paint();
   }
@@ -79,7 +79,7 @@ export function initBuildings(map) {
         shadows = initShadows(map, outlines);
         map.on("mouseenter", "buildings", () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", "buildings", () => { map.getCanvas().style.cursor = ""; });
-        setMetrics(mode, rows, color);
+        setMetrics(mode, rows, color, shadeColumn);
       }
       if (on && !wanted) return;
       // Sun requests have their own stale guard; they must not lock out switching back to flat.
