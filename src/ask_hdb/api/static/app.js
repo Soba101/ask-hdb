@@ -522,5 +522,14 @@ async function startMap() {
   }
 }
 
+// When each part of the data was built, so a reader can judge how current an answer is.
+fetch("/about").then((r) => (r.ok ? r.json() : null)).then((about) => {
+  for (const item of about?.data || []) {
+    const li = document.createElement("li");
+    li.textContent = item.label + ": " + item.as_of + " (" + item.source + ")";
+    $("freshness-list").appendChild(li);
+  }
+}).catch(() => {}); // the footer is an extra; the page works without it
+
 add("bot", "Hi! Click a block, school or station on the map, or just ask me about HDB resale prices, BTO launches, grants or eligibility. I'll show the tool results behind every number.");
 startMap();

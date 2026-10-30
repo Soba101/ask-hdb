@@ -262,3 +262,11 @@ def test_a_second_question_waits_its_turn_and_the_queue_is_bounded(client):
     limits.waiting = limits.queue_max  # a full queue refuses at once
     assert client.post("/chat", json={"question": "q"}).status_code == 503
     limits.busy.release()
+
+
+def test_about_lists_when_each_part_of_the_data_was_built(client):
+    data = client.get("/about").json()["data"]
+    labels = [row["label"] for row in data]
+    assert {"Resale prices", "HDB rules and grants", "Bus stops and supermarkets", "Walking paths", "Map tiles"} <= set(labels)
+    assert all(row["as_of"] and row["source"] for row in data)
+    assert any("sales to 20" in row["as_of"] for row in data)
