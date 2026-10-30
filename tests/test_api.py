@@ -313,3 +313,10 @@ def test_prewarm_runs_one_question_only_for_a_local_model_and_frees_the_slot(mon
     monkeypatch.setenv("LLM_CHAIN", "gemini,local"); api.prewarm(limits)
     monkeypatch.setenv("LLM_CHAIN", "gemini,groq"); api.prewarm(limits)
     assert seen == ["local"] and os.environ["LLM_CHAIN"] == "gemini,groq"  # restored, and a hosted-only chain is not warmed
+    # A hosted tier in front means visitors never wait on the local model, so the warm-up must not take the slot.
+    monkeypatch.setenv("LLM_CHAIN", "gemini,local")
+    slot_taken = []
+    monkeypatch.setattr(api.agent, "ask", lambda question, *a, **k: slot_taken.append(limits.busy.locked()))
+    api.prewarm(limits)
+    monkeypatch.setenv("LLM_CHAIN", "local,gemini"); api.prewarm(limits)
+    assert slot_taken == [False, True]
