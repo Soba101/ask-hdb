@@ -48,7 +48,7 @@ def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, c
         if mine.empty:
             continue
         out.append({"project_id": project.project_id, "name": project.name, "town": project.town if isinstance(project.town, str) else "unknown (site not found)",
-                    "category": project.category, "wait_months": int(project.wait_months),
+                    "category": project.category, "wait_months": int(project.wait_months) if pd.notna(project.wait_months) else None,
                     "launches": sorted(set(mine.launch)),
                     "flats": [{"flat_type": r.flat_type, "units": int(r.units), "price_low": int(r.price_low),
                                "price_high": int(r.price_high)} for r in mine.itertuples()]})

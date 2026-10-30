@@ -47,8 +47,9 @@ def features():
     for row in load_projects().itertuples():
         if not (_ok(row.lat) and _ok(row.lng)):
             continue  # a BTO project whose site was not found has no point
-        out.append(_feature("bto", row.project_id, f"{row.name} (BTO, approximate site)", row.lat, row.lng,
-                            town=row.town if isinstance(row.town, str) else ""))
+        status = getattr(row, "status", "launched")
+        label = f"{row.name}, not on sale yet" if status == "upcoming" else f"{row.name} (BTO, approximate site)"
+        out.append(_feature("bto", row.project_id, label, row.lat, row.lng, town=row.town if isinstance(row.town, str) else "", status=status))
     return {"type": "FeatureCollection", "features": out}
 
 
@@ -105,7 +106,19 @@ def card(selection):
         return {**base, **_block_facts(selection)}
     if kind == "bto":
         row = load_projects().set_index("project_id").loc[selection["id"]]
-        facts = [f"Category: {row.category}", f"Units: {int(row.units)}", f"Waiting time: about {int(row.wait_months)} months"]
+        if row.get("status") == "upcoming":
+            return {**base, "facts": ["Not on sale yet: HDB lists this project for its November 2026 exercise.", f"Units: {int(row.units)}",
+                                      f"Flat types: {row.flat_types}",
+                                      "No prices, waiting time or completion date are published yet."],
+                    "limits": ["HDB marks upcoming projects as preliminary and subject to change; the site is HDB's indicative point.",
+                               "Source: HDB Flat Portal, upcoming BTO projects (read 2026-10-30)."]}
+        facts = [f"Units: {int(row.units)}"]
+        if isinstance(row.category, str):
+            facts.insert(0, f"Category: {row.category}")
+        elif isinstance(row.get("first_launch"), str):
+            facts.insert(0, f"Launched: {row.first_launch} (an earlier exercise; prices are not in this list)")
+        if _ok(row.wait_months):
+            facts.append(f"Waiting time: about {int(row.wait_months)} months")
         done = _bto_completion(row.get("first_launch"), row.get("wait_months"), load_sales().sale_month.max())
         if done:
             facts.append(done)
@@ -207,6 +220,11 @@ def _place_facts(selection):
 RADII_KM = (0.5, 1.0, 2.0)
 
 
+def _upcoming(projects):
+    """True for projects HDB lists as upcoming (not on sale yet); older tables have no status column."""
+    return projects["status"].eq("upcoming") if "status" in projects else pd.Series(False, index=projects.index)
+
+
 def around(selection, km):
     """Counts of blocks, stations, schools and BTO sites within km (inclusive, straight-line) of the selection."""
     if km not in RADII_KM:
@@ -222,7 +240,8 @@ def around(selection, km):
     counts = {"blocks": count(load_blocks()[lambda d: d.block_id != own]),
               "mrt_lrt": count(places[places.kind.isin(["mrt", "lrt"]) & (places.place_id != own)]),
               "primary_schools": count(places[(places.kind == "primary_school") & (places.place_id != own)]),
-              "bto_sites": count(load_projects()[lambda d: d.project_id != own])}
+              "bto_sites": count(load_projects()[lambda d: d.project_id.ne(own) & ~_upcoming(d)]),
+              "bto_upcoming": count(load_projects()[lambda d: d.project_id.ne(own) & _upcoming(d)])}
     limits = ["Straight-line circle around the selected place; blocks are those with a resale since 2017."]
     if km in (1.0, 2.0):
         limits.append("MOE's 1 km / 2 km school priority distances are measured by MOE with OneMap, not by this circle.")
