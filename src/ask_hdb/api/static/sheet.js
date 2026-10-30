@@ -2,7 +2,8 @@
 import { sheetGestures } from "./sheet-gestures.js";
 const $ = (id) => document.getElementById(id);
 export function initSheet({ chat = () => {} } = {}) {
-  const mobile = window.matchMedia("(max-width: 800px)");
+  // The sheet system runs at every width. On a wide screen the sheet is a panel docked on the left, always open.
+  const mobile = window.matchMedia("(min-width: 0px)"), wide = window.matchMedia("(min-width: 801px)");
   const side = $("side"), app = $("app"), header = side.querySelector("header");
   let enabled = false, state = 0, pixels = 0, map = null, selected = !$("card").hidden;
   let slots = [], content, peek, handle, observer, cancelDrag = () => {};
@@ -25,16 +26,19 @@ export function initSheet({ chat = () => {} } = {}) {
   }
   function snap(next, focus = false) {
     if (!enabled) return;
-    state = Math.max(0, Math.min(2, next));
+    state = wide.matches ? 2 : Math.max(0, Math.min(2, next));
     preview(points()[state]);
     delete side.dataset.dragging;
     side.dataset.snap = ["peek", "half", "full"][state];
-    content.inert = state === 0;
+    content.inert = state === 0 && !wide.matches;
     side.scrollTop = 0;
     if (state === 0) content.scrollTop = 0; // a place opens at its summary, not wherever the last scroll left the sheet
     handle.setAttribute("aria-label", "Results, " + ["peek", "half height", "full height"][state] +
       (state === 2 ? ". Press to collapse." : ". Press to expand."));
-    map?.setPadding({ top: enabled ? Math.round($("chips").getBoundingClientRect?.().bottom || 0) + 8 : 0, left: 0, right: 0, bottom: pixels });
+    // Wide: the panel sits at the left, so the map keeps clear of it on the left. Phone: clear of the sheet at the bottom.
+    map?.setPadding(wide.matches
+      ? { top: 0, left: Math.round(side.getBoundingClientRect().right) + 12, right: 0, bottom: 0 }
+      : { top: enabled ? Math.round($("chips").getBoundingClientRect?.().bottom || 0) + 8 : 0, left: 0, right: 0, bottom: pixels });
     if (focus && state > 0) $("tab-chat").focus({ preventScroll: true }); // a place keeps its card in view
   }
   function move(node, parent) { parent.append(node); }
@@ -76,7 +80,7 @@ export function initSheet({ chat = () => {} } = {}) {
     move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail")); move($("mop-controls"), $("chip-detail"));
     move($("sun-panel"), $("sun-bar"));
     for (const node of [note, $("building-error"), $("sun-panel-limits")]) move(node, $("sheet-notes"));
-    cancelDrag = sheetGestures({ handles: [peek], button: handle, content, active: () => enabled,
+    cancelDrag = sheetGestures({ handles: [peek], button: handle, content, active: () => enabled && !wide.matches,
       height: () => pixels, points, snap, preview });
     // Selection chips and layer details change height without a window resize.
     observer = new ResizeObserver(() => {
@@ -104,6 +108,7 @@ export function initSheet({ chat = () => {} } = {}) {
   }
   function layout() { if (mobile.matches && !enabled) enter(); else if (!mobile.matches && enabled) leave(); }
   mobile.addEventListener("change", layout);
+  wide.addEventListener("change", () => { if (enabled) snap(wide.matches ? 2 : 1); }); // leaving the panel opens the phone sheet half way
   window.addEventListener("resize", () => { if (enabled) snap(state); });
   window.visualViewport?.addEventListener("resize", () => {
     if (!enabled) return;
