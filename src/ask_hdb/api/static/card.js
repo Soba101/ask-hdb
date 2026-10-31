@@ -3,7 +3,7 @@ import { clearBuildingCard, showBuildingFacts, openBuildingSun } from "./buildin
 import { initCardMap } from "./card-map.js";
 import { initAmenityCard } from "./amenity-card.js";
 const $ = (id) => document.getElementById(id);
-const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
+const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Floor plans", "card-plans"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
   ["Schools", "schools"], ["Nearby", "card-nearby"]];
 const QUESTIONS = {
   block: [["Ask about schools", "What are the 3 nearest primary schools to this block?"],
