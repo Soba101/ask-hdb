@@ -63,7 +63,7 @@ def test_error_messages_are_dropped_from_exported_spans_unless_text_is_allowed(m
 def test_a_hosted_provider_never_inherits_the_local_model_url(monkeypatch):
     from ask_hdb import llm
 
-    for name in ("LLM_BASE_URL", "LLM_PROVIDER"):
+    for name in ("LLM_BASE_URL", "LLM_PROVIDER", "LLM_CHAIN"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(llm, "load_dotenv", lambda: None)
     monkeypatch.setenv("LOCAL_LLM_URL", "http://host.docker.internal:11434/v1")
