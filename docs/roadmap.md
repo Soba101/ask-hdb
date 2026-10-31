@@ -90,7 +90,8 @@ Three phases; each gets approval before building.
 - [x] 5-4 (done 2026-10-23): `full` vs `agent`, two runs each on 72 dev questions: both 94-96% number, 93-100% verdict, grounding 100%; inside the same run-to-run spread (`docs/eval-results.md`).
 - **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).
 
-## Week 6: ship (in progress; plan and status: docs/week6-plan.md)
+## Week 6: ship (mostly done; plan and status: docs/week6-plan.md)
+Status 2026-10-31: the app, 3D map, Docker, tracing, README and a public static demo (GitHub Pages, chat paused) are done. Not done: a public host with a model. A Cloudflare quick tunnel from a home machine works for short tests only (see `docs/hosting-plan.md`).
 - [~] Langfuse tracing: built as an optional extra behind env keys, text redacted by default (PR #58); not checked against a live account.
 - [x] Web app, map-first (done 2026-10-24, PRs #52-#56: API with streamed tool evidence, rate limit and token cap; plain-JS page; MapLibre map of every block, station, school and BTO site; click to select; info cards; place lookup; radius ring; primary schools within 2 km with 1 km / 2 km rings). Original description: (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
       (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
@@ -98,8 +99,8 @@ Three phases; each gets approval before building.
       Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
       Needs: rate limit per visitor, a cost cap, no personal data stored, a clear "not financial advice" line.
 - [x] Docker image and compose file for the web app (PR #58); checked locally as simulated hosting. Postgres/pgvector and a self-hosted Langfuse are not part of it.
-- [ ] Deploy to one small VM with a cloud model: not done; needs a host, a cloud model and key, and a dev eval on that model first.
-- [ ] 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
+- [~] Public link: the static demo is live at https://soba101.github.io/ask-hdb/. Deploy to one small VM with a cloud model: not done; needs a host, a cloud model and key, and a dev eval on that model first.
+- [x] (done, PR #59 and #63) 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
 - [~] README rewritten with screenshots and the results table (PR #58); no demo GIF or architecture picture yet.
 - **Exit:** a stranger uses the public link with no help.
 
