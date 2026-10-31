@@ -18,11 +18,12 @@ Many buyers pay an agent thousands of dollars partly to work this out. This proj
 - **Ask in plain words.** "We earn $8,500 a month and want a 4-room near Tampines MRT under $600k. What can we get?"
 - **See the evidence.** Each answer shows the tool results and sources it used, and puts the places on the map.
 - **Click anything.** Pick a block, school or station and the chat knows what "this one" means.
-- **Colour the map.** Blocks by flat type, median price (with a budget slider), remaining lease or MOP status.
+- **Colour the map.** Blocks by flat type, median price (total, per sqm or per sq ft, with a budget slider), remaining lease or MOP status.
+- **Read the block facts.** HDB's own facts for each block (year completed, top floor, flats sold and rented) and the flat models and sizes seen in resales. Floor plans are a link to HDB e-Services: this app copies no drawings.
 - **Check what is nearby.** The three nearest supermarkets, MRT stations and bus stops, and a walking route with steps and a time.
 - **Look at BTO.** Launched and upcoming sites, including Tengah, with an honest "not on sale yet" for the ones that are not.
 - **Tilt to 3D.** Building heights, block facing and ground shadows for a chosen date and time.
-- **Works on a phone.** The chat and the place card live in a bottom sheet.
+- **Works on a phone and a desktop.** On a phone the chat and the place card live in a bottom sheet. On a wide screen they sit in a docked panel and the layer controls sit on the map.
 
 ![A place card: summary, schools within 2 km and nearby places, with the chat below](docs/img/app-card.jpg)
 
