@@ -310,6 +310,11 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
 
+  /* The map credit is one 44px round button: the box and the button share one shape (they were a 24px circle under a 44px square). */
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { box-sizing: border-box; width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%;
+    background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button { width: 100%; height: 100%; border-radius: 50%; background-color: transparent; }
+
   /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
   #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
   #card-sections > button.secondary, #card-sections > button.secondary.on { display: flex; align-items: center; justify-content: space-between;
@@ -390,8 +395,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .msg.status button { min-height: 32px; margin-left: var(--space-2); }
 @media (max-width: 800px) {
-  /* A full sheet leaves room only for the search bar: the sun bar and the layer details would sit on top of it. */
-  #app:has(#side[data-snap=full]) #sun-bar, #app:has(#side[data-snap=full]) #chip-detail { display: none; }
+  /* A full sheet leaves room only for the search bar, and a half sheet leaves a strip of map: the sun bar and the layer details wait until the sheet is lowered. */
+  #app:has(#side[data-snap=full]) #sun-bar, #app:has(#side[data-snap=full]) #chip-detail, #app:has(#side[data-snap=half]) #chip-detail { display: none; }
 }
 @media (min-width: 0px) {
   /* Section rows are plain list rows with a chevron, not blue buttons. */
@@ -443,6 +448,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .mapnote { top: auto; bottom: calc(72px + var(--sun-h, 0px)); left: calc(var(--side-w) + 36px); right: 60px; }
   #amenity-pills button, #card-sections > button { white-space: nowrap; }
   #sheet-content .card { padding: 8px 12px; }
+  #sheet-peek h2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; } /* keeps the pinned top short so the card keeps its scroll room */
   /* One left edge: the search bar, chips, title, tabs, messages and notes all start 12px inside the panel. */
   #side .tabs, #chat, #evidence { padding-inline: 12px; }
   #sheet-notes { padding-inline: 12px; }
