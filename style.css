@@ -242,7 +242,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 /* ---- Polish pass ---- */
 .value { margin-left: var(--space-1); font-weight: 600; }
 /* The section chips name the section, so its own heading is for screen readers only. */
-#card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
+#card-prices > h3, #card-lease > h3, #card-plans > h3, #card-more > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; }
 .layers .seg button { white-space: nowrap; overflow-wrap: normal; word-break: normal; padding: var(--space-1) var(--space-2); }
 .maplibregl-ctrl-attrib-button { background-repeat: no-repeat; background-position: center; }
@@ -319,7 +319,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #card-sections > button::after { content: ""; width: 8px; height: 8px; border: solid var(--muted); border-width: 2px 2px 0 0;
     transform: rotate(45deg); flex-shrink: 0; margin-left: 12px; }
   #card-sections > button[aria-expanded="true"]::after { transform: rotate(135deg); }
-  #card-prices, #card-lease, #card-facing, #schools, #card-nearby { background: var(--fill); margin: 8px 0 0; padding: 8px 16px; border: 0; border-radius: 12px; }
+  #card-prices, #card-lease, #card-plans, #card-more, #card-facing, #schools, #card-nearby { background: var(--fill); margin: 8px 0 0; padding: 8px 16px; border: 0; border-radius: 12px; }
   /* The row already names the section; keep the heading for screen readers. */
   #card-prices > h3, #card-lease > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip-path: inset(50%); white-space: nowrap; }
@@ -412,10 +412,10 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #app { --side-w: clamp(360px, 30vw, 420px); }
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
     border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
-    /* room for the search bar and the chips, which float over the top of the panel */
-    padding-top: calc(var(--topbar-bottom, 74px) + 68px + var(--chip-detail-h, 0px) - 12px); }
+    /* the chat box docks at the bottom of the panel, so the panel keeps room for it */
+    padding-top: 12px; padding-bottom: calc(var(--topbar-h, 52px) + 36px); }
   #sheet-handle { display: none; }
-  #sheet-peek > .close { top: 0; } /* no grab bar on a wide screen */
+  #sheet-peek > .close { top: 12px; } /* no grab bar on a wide screen; the peek is static here, so this is from the panel's top */
   /* With a place open the page title stays for screen readers only; the place's own title leads the panel. */
   #side:has(#card-summary:not([hidden])) #sheet-header { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
@@ -423,16 +423,24 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-content { display: flex; flex-direction: column; }
   #chat:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
   #chat > #log { flex: 1; }
-  #sheet-peek .legend { flex-wrap: wrap; overflow: visible; } /* both BTO entries stay visible in the wide panel */
-  #topbar, #chips, #chip-detail { left: 24px; right: auto; width: calc(var(--side-w) - 24px); z-index: 5; }
-  #chip-detail > div { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; }
-  /* The search bar is the field itself: no slab around it, 12px clear of the panel's top and sides like everything else. */
-  #topbar { top: 24px; background: none; border: 0; padding: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  #chips button { background: var(--fill); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  /* The layer legend floats on the map, bottom left of the map area. */
+  #side { overflow: visible; } /* the legend sits outside the panel, on the map */
+  #sheet-peek { position: static; } /* so the legend positions against the panel, not the short top block */
+  #side:has(#card-summary:not([hidden])) #sheet-peek .legend { display: flex; } /* a wide map keeps its legend with a place open */
+  #sheet-peek .legend { position: absolute; left: calc(100% + 24px); bottom: calc(24px + var(--sun-h, 0px)); width: max-content; max-width: min(520px, calc(100vw - var(--side-w) - 60px)); flex-wrap: wrap; overflow: visible;
+    padding: 6px 10px; border: .5px solid var(--line); border-radius: 12px; background: var(--material);
+    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); z-index: 3; }
+  /* Layer chips and their controls sit on the map, top left of the map area. The chat box docks at the bottom of the panel. */
+  #chips, #chip-detail { left: calc(var(--side-w) + 36px); right: auto; width: min(620px, calc(100% - var(--side-w) - 130px)); z-index: 5; }
+  #chips { top: 12px; }
+  #chip-detail { top: 68px; }
+  #chip-detail > div { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
+  #topbar { left: 24px; right: auto; width: calc(var(--side-w) - 24px); top: auto; bottom: 24px; z-index: 5;
+    background: none; border: 0; padding: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
   #sun-bar { left: calc(var(--side-w) + 36px); right: auto; width: min(480px, calc(100% - var(--side-w) - 60px)); bottom: 24px; }
   .maplibregl-ctrl-top-right { top: 12px; }
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: 0; }
-  .mapnote { top: 12px; bottom: auto; left: calc(var(--side-w) + 36px); right: 60px; }
+  .mapnote { top: auto; bottom: calc(72px + var(--sun-h, 0px)); left: calc(var(--side-w) + 36px); right: 60px; }
   #amenity-pills button, #card-sections > button { white-space: nowrap; }
   #sheet-content .card { padding: 8px 12px; }
   /* One left edge: the search bar, chips, title, tabs, messages and notes all start 12px inside the panel. */
