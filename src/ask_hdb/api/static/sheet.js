@@ -87,6 +87,7 @@ export function initSheet({ chat = () => {} } = {}) {
     // Selection chips and layer details change height without a window resize.
     observer = new ResizeObserver(() => {
       app.style.setProperty("--topbar-bottom", $("topbar").getBoundingClientRect().bottom + "px");
+      app.style.setProperty("--topbar-h", $("topbar").getBoundingClientRect().height + "px"); // a wide panel keeps room for the docked chat box
       app.style.setProperty("--chip-detail-h", $("chip-detail").getBoundingClientRect().height + "px");
       // The map credit sits above the sun bar when it is open.
       app.style.setProperty("--sun-h", ($("sun-panel").hidden ? 0 : $("sun-bar").getBoundingClientRect().height + 8) + "px");
@@ -105,7 +106,7 @@ export function initSheet({ chat = () => {} } = {}) {
     header.removeAttribute("id");
     side.removeAttribute("role"); side.removeAttribute("aria-label");
     delete side.dataset.snap; delete side.dataset.dragging;
-    for (const name of ["--sheet-h", "--kb", "--topbar-bottom", "--chip-detail-h", "--sun-h"]) app.style.removeProperty(name);
+    for (const name of ["--sheet-h", "--kb", "--topbar-bottom", "--topbar-h", "--chip-detail-h", "--sun-h"]) app.style.removeProperty(name);
     map?.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
   }
   function layout() { if (mobile.matches && !enabled) enter(); else if (!mobile.matches && enabled) leave(); }

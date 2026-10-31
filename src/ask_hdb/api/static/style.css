@@ -413,10 +413,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
     border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
     /* the chat box docks at the bottom of the panel, so the panel keeps room for it */
-    padding-top: 12px; padding-bottom: 76px; }
-  #side:has(#selected:not([hidden])) { padding-bottom: 120px; } /* the chat box is taller with an "Asking about" line */
+    padding-top: 12px; padding-bottom: calc(var(--topbar-h, 52px) + 36px); }
   #sheet-handle { display: none; }
-  #sheet-peek > .close { top: 0; } /* no grab bar on a wide screen */
+  #sheet-peek > .close { top: 12px; } /* no grab bar on a wide screen; the peek is static here, so this is from the panel's top */
   /* With a place open the page title stays for screen readers only; the place's own title leads the panel. */
   #side:has(#card-summary:not([hidden])) #sheet-header { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   #sheet-peek { touch-action: auto; } /* nothing drags on a wide screen, so touch may scroll */
@@ -428,7 +427,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #side { overflow: visible; } /* the legend sits outside the panel, on the map */
   #sheet-peek { position: static; } /* so the legend positions against the panel, not the short top block */
   #side:has(#card-summary:not([hidden])) #sheet-peek .legend { display: flex; } /* a wide map keeps its legend with a place open */
-  #sheet-peek .legend { position: absolute; left: calc(100% + 24px); bottom: calc(24px + var(--sun-h, 0px)); width: max-content; max-width: min(520px, 60vw); flex-wrap: wrap; overflow: visible;
+  #sheet-peek .legend { position: absolute; left: calc(100% + 24px); bottom: calc(24px + var(--sun-h, 0px)); width: max-content; max-width: min(520px, calc(100vw - var(--side-w) - 60px)); flex-wrap: wrap; overflow: visible;
     padding: 6px 10px; border: .5px solid var(--line); border-radius: 12px; background: var(--material);
     -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); z-index: 3; }
   /* Layer chips and their controls sit on the map, top left of the map area. The chat box docks at the bottom of the panel. */
@@ -441,7 +440,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sun-bar { left: calc(var(--side-w) + 36px); right: auto; width: min(480px, calc(100% - var(--side-w) - 60px)); bottom: 24px; }
   .maplibregl-ctrl-top-right { top: 12px; }
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: 0; }
-  .mapnote { top: 12px; bottom: auto; left: calc(var(--side-w) + 36px); right: 60px; }
+  .mapnote { top: auto; bottom: calc(72px + var(--sun-h, 0px)); left: calc(var(--side-w) + 36px); right: 60px; }
   #amenity-pills button, #card-sections > button { white-space: nowrap; }
   #sheet-content .card { padding: 8px 12px; }
   /* One left edge: the search bar, chips, title, tabs, messages and notes all start 12px inside the panel. */
