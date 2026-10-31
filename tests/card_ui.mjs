@@ -73,6 +73,7 @@ const stableMetrics = () => {
 stableMetrics();
 await chip("Prices").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, false);
 await chip("Lease").onclick(); assert.equal(openCount(), 1); assert.equal(get("card-prices").hidden, true);
+await chip("Floor plans").onclick(); assert.equal(get("card-plans").hidden, false, "floor plans open on a block");
 await chip("More information").onclick(); assert.equal(get("card-more").hidden, false);
 assert.ok(get("more-facts").children.some((node) => node.textContent === "Sold flats: 3-room 178, 4-room 26"), "official block facts are listed");
 assert.ok(get("more-observed").children.some((node) => node.textContent.startsWith("4 Room · Model A: 3 sales, 90–93 sqm (969–1,001 sq ft)")), "recorded models and sizes");
