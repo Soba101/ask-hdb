@@ -33,9 +33,11 @@ BTO_PROFILE = {k: v for k, v in PROFILE.items() if k not in {"room", "lease_left
 @pytest.fixture(autouse=True)
 def bto_tables(monkeypatch):
     # Tiny BTO tables so the every-tool check does not need the downloaded launch data.
+    from test_bto_history_tool import HISTORY
     from test_bto_tools import FLATS, PLACES, PROJECTS
 
     from ask_hdb.bto import queries
+    monkeypatch.setattr(queries, "load_history", lambda: HISTORY)
     monkeypatch.setattr(queries, "load_projects", lambda: PROJECTS)
     monkeypatch.setattr(queries, "load_flats", lambda: FLATS)
     monkeypatch.setattr(queries, "load_places", lambda: PLACES)

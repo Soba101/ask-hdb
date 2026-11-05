@@ -175,8 +175,11 @@ def test_map_context_goes_in_front_of_the_question_only(model):
 
 
 def test_eval_questions_with_a_map_selection_pass_the_context_line(monkeypatch):
+    from ask_hdb.bto.queries import CLEAN
     from ask_hdb.evalrun import runner
 
+    if not (CLEAN / "blocks.parquet").exists():
+        pytest.skip("Local geo data is unavailable")
     q = {"id": "q_x", "kind": "map", "question": "How far?", "expect": {"number": 1, "tolerance": 0}, "source": "s",
          "context": {"kind": "block", "id": "blk_227_bishan-st-23"}}
     assert "block_id=blk_227_bishan-st-23" in runner.map_context(q)

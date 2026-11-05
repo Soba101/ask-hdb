@@ -266,6 +266,9 @@ def test_a_second_question_waits_its_turn_and_the_queue_is_bounded(client):
 
 
 def test_about_lists_when_each_part_of_the_data_was_built(client):
+    from ask_hdb.bto.queries import CLEAN
+    if not (CLEAN / "resale.parquet").exists():
+        pytest.skip("Clean sales data is unavailable")
     data = client.get("/about").json()["data"]
     labels = [row["label"] for row in data]
     assert {"Resale prices", "HDB rules and grants", "Bus stops and supermarkets", "Walking paths", "Map tiles"} <= set(labels)
