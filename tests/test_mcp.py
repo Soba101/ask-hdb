@@ -11,7 +11,7 @@ from test_agent_limits import LoopModel
 
 from ask_hdb import agent, tools
 from ask_hdb.check_cases import PROFILE
-from ask_hdb.geo import filters
+from ask_hdb.geo import filters, resolve
 from ask_hdb.mcp.client import load_mcp_tools
 from ask_hdb.mcp.server import HousingMCP
 
@@ -22,9 +22,16 @@ def local_data(monkeypatch, sales):
     monkeypatch.setattr(tools, "load_sales", lambda: sales)
     monkeypatch.setattr(filters, "load_blocks", lambda: pd.DataFrame({
         "block_id": [block], "lat": [1.], "lng": [103.]}))
-    monkeypatch.setattr(filters, "load_places", lambda: pd.DataFrame({
-        "place_id": ["mrt_a"], "name": ["A"], "kind": ["mrt"], "lat": [1.], "lng": [103.]}))
-    return block
+    places = pd.DataFrame({"place_id": ["mrt_a"], "name": ["A"], "kind": ["mrt"], "lat": [1.], "lng": [103.]})
+    monkeypatch.setattr(filters, "load_places", lambda: places)
+    # resolve_place reads its own tables; keep them small so the test needs no local data.
+    monkeypatch.setattr(resolve, "load_blocks", lambda: pd.DataFrame({
+        "block_id": [block], "block": ["1"], "street_name": ["X RD"], "town": ["BISHAN"], "lat": [1.], "lng": [103.]}))
+    monkeypatch.setattr(resolve, "load_places", lambda: places)
+    monkeypatch.setattr(resolve, "load_projects", lambda: pd.DataFrame(columns=["project_id", "name", "lat", "lng"]))
+    resolve._block_index.cache_clear()
+    yield block
+    resolve._block_index.cache_clear()
 
 # The buyer fields only (no flat fields), for the BTO rule tools.
 BTO_PROFILE = {k: v for k, v in PROFILE.items() if k not in {"room", "lease_left_months", "price", "category"}}
