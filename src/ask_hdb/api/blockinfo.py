@@ -46,7 +46,7 @@ def observed(sales):
     out = []
     for (flat_type, model), group in sales.groupby(["flat_type", "flat_model"]):
         low, high = float(group.floor_area_sqm.min()), float(group.floor_area_sqm.max())
-        out.append({"flat_type": flat_type.title(), "flat_model": capwords(model), "sales": int(len(group)),
+        out.append({"flat_type": flat_type.title(), "flat_model": capwords(model), "sales": len(group),
                     "area_sqm": [round(low), round(high)], "area_sqft": [round(low * SQFT_PER_SQM), round(high * SQFT_PER_SQM)]})
     return sorted(out, key=lambda item: (-item["sales"], item["flat_type"], item["flat_model"]))
 

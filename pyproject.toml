@@ -1,7 +1,8 @@
 [project]
 name = "ask-hdb"
 version = "0.1.0"
-description = "Add your description here"
+description = "Map and chat for Singapore HDB flat buyers: tools compute every number, the model only explains."
+license = "MIT"
 authors = [
     { name = "Soba", email = "57602047+Soba101@users.noreply.github.com" }
 ]

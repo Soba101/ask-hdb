@@ -309,8 +309,8 @@ def metrics(flat_type):
             row[1] = int(grouped.loc[block_id, "count"])
             if row[1] >= METRIC_MIN_SALES:
                 row[0] = int(grouped.loc[block_id, "median"])
-                row[4] = int(round(per_sqm.loc[block_id]))  # median price per sqm
-                row[5] = int(round(per_sqm.loc[block_id] / SQFT_PER_SQM))  # the same median per sq ft
+                row[4] = int(round(per_sqm.loc[block_id]))  # noqa: RUF046 - numpy floats may not round to a plain int; median price per sqm
+                row[5] = int(round(per_sqm.loc[block_id] / SQFT_PER_SQM))  # noqa: RUF046 - the same median per sq ft
         blocks[block_id] = row
     return {"flat_type": flat_type, "window_months": METRIC_MONTHS, "min_sales": METRIC_MIN_SALES,
             "as_of": f"{latest:%Y-%m}", "blocks": blocks, "mop_years": years,

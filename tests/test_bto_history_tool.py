@@ -1,22 +1,23 @@
 """bto_history returns the stored comparison rows with the limits that must travel with them."""
 
+import pandas as pd
 import pytest
 
 from ask_hdb import tools
 from ask_hdb.bto import queries
 
-
-@pytest.fixture(autouse=True)
-def history_table(monkeypatch):
-    import pandas as pd
-    table = pd.DataFrame([
+HISTORY = pd.DataFrame([
         {"financial_year": 2008, "town": "PUNGGOL", "flat_type": "4 ROOM", "launch_low": 223000, "launch_high": 327000,
          "n_resales": 1000, "resale_median": 460000.0, "resale_p25": 433666.0, "resale_p75": 505000.0,
          "median_minus_launch_high": 133000.0},
         {"financial_year": 2018, "town": "PUNGGOL", "flat_type": "4 ROOM", "launch_low": 1, "launch_high": 2,
          "n_resales": 40, "resale_median": 3.0, "resale_p25": 2.0, "resale_p75": 4.0, "median_minus_launch_high": 1.0},
     ])
-    monkeypatch.setattr(queries, "load_history", lambda: table)
+
+
+@pytest.fixture(autouse=True)
+def history_table(monkeypatch):
+    monkeypatch.setattr(queries, "load_history", lambda: HISTORY)
 
 
 def test_rows_for_one_year_carry_the_limits():
