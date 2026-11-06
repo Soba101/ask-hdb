@@ -5,6 +5,8 @@ A map of Singapore's HDB blocks with a chat beside it. Ask about prices, grants,
 
 **[Try the live demo](https://soba101.github.io/ask-hdb/)** (map, layers, 3D and walking routes work; chat is paused on the demo)
 
+![Ask HDB demo: the chat finds Blk 227 Bishan St 23 and the map flies to it, a question lists its 4-room sales from the data, then the 3D view shows the afternoon sun on the walls](docs/img/demo.gif)
+
 ![Ask HDB: the map with every HDB block, MRT station, school and BTO site, and the chat panel on the left](docs/img/app-overview.jpg)
 
 ## Why it exists
