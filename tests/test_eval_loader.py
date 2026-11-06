@@ -18,11 +18,11 @@ def builder():
 
 def test_question_bank():
     qs = load_questions()
-    assert len(qs) == 124
-    assert len({q['id'] for q in qs}) == 124
+    assert len(qs) == 137
+    assert len({q['id'] for q in qs}) == 137
     assert Counter(q['kind'] for q in qs) == {
-        'price': 15, 'eligibility': 12, 'grants': 10, 'price_check': 8, 'refuse': 15,
-        'distance': 8, 'multi_step': 16, 'bto': 21, 'scenario': 7, 'map': 12}
+        'price': 19, 'eligibility': 12, 'grants': 12, 'price_check': 10, 'refuse': 17,
+        'distance': 11, 'multi_step': 16, 'bto': 21, 'scenario': 7, 'map': 12}
     assert {q['id'] for q in qs if q.get('heldout')} == {
         'q_price_003', 'q_price_009', 'q_price_015', 'q_eligibility_004',
         'q_eligibility_011', 'q_grants_003', 'q_grants_009',
@@ -32,10 +32,14 @@ def test_question_bank():
         'q_multi_step_011', 'q_multi_step_012', 'q_multi_step_013',
         'q_multi_step_014', 'q_multi_step_015', 'q_multi_step_016',
         'q_bto_004', 'q_bto_006', 'q_bto_011', 'q_bto_012', 'q_bto_014', 'q_bto_016', 'q_bto_018', 'q_bto_021', 'q_map_009', 'q_map_010', 'q_map_011', 'q_refuse_013', 'q_refuse_015',
-        'q_scenario_004', 'q_scenario_005', 'q_scenario_006'}
-    assert sum(bool(q.get('heldout')) for q in qs) == 38
+        'q_scenario_004', 'q_scenario_005', 'q_scenario_006',
+        # held-out set 3 (2026-11-06)
+        'q_price_016', 'q_price_017', 'q_price_018', 'q_price_019', 'q_price_check_009',
+        'q_price_check_010', 'q_distance_009', 'q_distance_010', 'q_distance_011',
+        'q_grants_011', 'q_grants_012', 'q_refuse_016', 'q_refuse_017'}
+    assert sum(bool(q.get('heldout')) for q in qs) == 51
     assert len(select_questions(qs)) == 85
-    assert len(select_questions(qs, heldout=True)) == 123
+    assert len(select_questions(qs, heldout=True)) == 136
     assert len(select_questions(qs, only='distance')) == 5
     assert len(select_questions(qs, only='multi_step')) == 7
     assert len(select_questions(qs, only='bto')) == 13
@@ -74,7 +78,7 @@ def test_frozen_expected_prices():
     module = builder()
     if not module.PARQUET.exists():
         pytest.skip('Local resale parquet is absent')
-    assert module.build() == 23
+    assert module.build() == 29
 
 
 def test_builder_detects_mismatch_and_preserves_comments(tmp_path):
@@ -126,8 +130,8 @@ def test_clarify_schema_and_question_wording(tmp_path):
     qs = {q['id']: q for q in load_questions()}
     assert qs['q_refuse_005']['expect'] == {'clarify': True}
     assert qs['q_refuse_005']['heldout'] is True
-    assert sum(q['expect'].get('decline', False) for q in qs.values()) == 10
-    assert sum(q['expect'].get('clarify', False) for q in qs.values()) == 5
+    assert sum(q['expect'].get('decline', False) for q in qs.values()) == 11
+    assert sum(q['expect'].get('clarify', False) for q in qs.values()) == 6
     assert 'both of us have only been employed for 6 months' in qs['q_grants_003']['question']
     for qid in ('q_grants_005', 'q_grants_006', 'q_grants_009'):
         assert 'only my' in qs[qid]['question']
