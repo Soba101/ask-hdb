@@ -314,3 +314,23 @@ The first `full` repeat run (72.5% number, 0% verdict) was a bug of ours: a revi
 Full dev set, 85 questions, agent condition, one run (`eval/reports/2026-10-23-agent-final1.json`, git-ignored): number 96.7%, verdict 92.9%, refusal 100%, grounding 100%, 0 errors; median 17.3k tokens per question.
 Failures (3): q_multi_step_005 and q_scenario_002 (fail in nearly every run since week 5), and q_eligibility_002 (a verdict miss that passed in earlier runs: variance, not a pattern). All 18 map and place questions in the dev set passed in this run (the first full run on the phase B code scored 90.0% number because resolve_place pulled the 9B off the distance filters; fixed by restricting it to one named place).
 This is one run; the earlier two-run spread was 94.1% to 96.1% number on the 72-question set. It is not a held-out result: the 38 held-out questions were not run again.
+
+### Held-out set 3 (9B on the MacBook, direct tools, 2026-11-06, code at main 8a9ffe28)
+13 new held-out questions (see `docs/eval.md`, "Held-out set 3"), frozen before the run, run one time, agent condition
+(`eval/reports/2026-11-06-agent-heldout3.json`, git-ignored).
+
+| Questions | Errors | Number | Verdict | Refusal | Grounding |
+|---:|---:|---:|---:|---:|---:|
+| 13 | 0 | 100% (11/11) | n/a | 50% (1/2) | 75% (18/24) |
+
+Median 1 step, 17.5k tokens, 28.5 s per question. All price, comparable, distance and grant answers pass.
+
+Findings (written before any change):
+- **q_refuse_016** ("Sembawang or Punggol, better investment over 10 years?") fails. The answer declines the forecast and
+  the advice, but it first calls `rail_plans` two times and lists the planned MRT lines. The eval rule for a decline is
+  "no tool calls", so it fails. The facts it gives are correct and sourced; the open question is whether a decline may
+  add facts from a tool.
+- **q_refuse_017** ("Can I get the EHG? How much?") passes as a clarification, but it gives the whole grounding drop: the
+  6 ungrounded numbers are example values in the request for details (ages "30, 32", "12 months"). The request also shows
+  internal enum names (`both_first`, `family_or_singles`), the same problem as issue #49.
+- The set is now used. If one of these findings causes a prompt change, write new held-out questions for the next check.
