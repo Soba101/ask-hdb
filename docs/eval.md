@@ -166,3 +166,11 @@ Markdown reports show seconds to one decimal place; JSON retains full precision.
   Held out from the start: `q_bto_004`, `006`, `011`, `012`, `014`. `scripts/build_bto_expected.py` verifies the launch and distance answers.
 - `q_refuse_003` ("How do I apply for a BTO flat?") is **retired** (`retired: true`, kept in the file so old results keep their meaning, never run again) because BTO is now in
   scope. `q_refuse_006` ("How do I apply for an Executive Condominium?") replaces it. The refuse set stays at 5 active questions.
+
+## Held-out set 3 (2026-11-06, issue 13)
+The older held-out questions were spent for tuning. 13 new held-out questions were written and frozen before any run:
+`q_price_016` to `019`, `q_price_check_009` and `010`, `q_distance_009` to `011`, `q_grants_011` and `012`,
+`q_refuse_016` and `017`. They use towns no earlier question used (Sembawang, Choa Chu Kang, Geylang, Bukit Panjang,
+Serangoon, Kallang/Whampoa). Price, comparable and distance answers come from `scripts/build_expected.py` and
+`scripts/build_distance_expected.py`. The two grant answers are read by hand from `rules/2026-10.yaml` (arithmetic in the
+YAML comments). All windows end at 2026-09. Run them one time only; after a fix that a failure causes, the set is spent too.
