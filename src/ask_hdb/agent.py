@@ -19,7 +19,7 @@ from langgraph.prebuilt import create_react_agent
 from ask_hdb import confirm as profile_check
 from ask_hdb import grounding, tracing, verdict
 from ask_hdb.llm import get_chat_model
-from ask_hdb.tools import TOOLS
+from ask_hdb.tools import TOOLS, load_sales
 
 MAX_TOOL_CALLS = 8
 TOKEN_BUDGET = 64000
@@ -71,11 +71,22 @@ class NeedsConfirmation(Exception):
     """Leave the graph before a profile tool runs on a profile the user has not confirmed."""
 
 
+def _prompt_text():
+    """Add the newest sales month, so "last 12 months" ends at the data, not at a date the model guesses (issue 116)."""
+    try:
+        latest = load_sales()["sale_month"].max().strftime("%Y-%m")
+    except (FileNotFoundError, KeyError, AttributeError, ValueError):
+        return SYSTEM_PROMPT  # no sales table (offline tests): keep the base prompt
+    return (f"{SYSTEM_PROMPT}\nThe newest recorded sale month is {latest}. For \"last N months\", \"past year\" or \"recent\" "
+            f"sales, end the window at {latest} and start it N-1 months before; never use an earlier end month.")
+
+
 def _system_prompt():
     """With Anthropic, mark the prompt as cacheable: the tool schemas and this text repeat on every call and are most of the input."""
+    text = _prompt_text()
     if os.getenv("LLM_PROVIDER", "local").lower() == "anthropic":
-        return SystemMessage(content=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}])
-    return SYSTEM_PROMPT
+        return SystemMessage(content=[{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}])
+    return text
 
 
 def _strip_titles(node):

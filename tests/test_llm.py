@@ -56,9 +56,9 @@ def test_the_anthropic_prompt_is_marked_cacheable_and_other_providers_get_plain_
     from ask_hdb import agent
     monkeypatch.setenv("LLM_PROVIDER", "anthropic")
     block = agent._system_prompt().content[0]
-    assert block["text"] == agent.SYSTEM_PROMPT and block["cache_control"] == {"type": "ephemeral"}
+    assert block["text"] == agent._prompt_text() and block["cache_control"] == {"type": "ephemeral"}
     monkeypatch.setenv("LLM_PROVIDER", "local")
-    assert agent._system_prompt() == agent.SYSTEM_PROMPT
+    assert agent._system_prompt() == agent._prompt_text()
 
 
 def test_chain_order_defaults_and_skipping_providers_without_a_key(monkeypatch):
@@ -133,3 +133,16 @@ def test_a_used_up_minute_skips_to_the_next_provider_and_a_sole_provider_waits(m
     only.note()
     assert llm.Chain([only]).bind().invoke("q") == "late" and slept and slept[0] > 0
     assert llm.Member(Fake("x")).wait() == 0  # no budget set: never waits
+
+
+def test_prompt_names_newest_sale_month(monkeypatch):
+    import pandas as pd
+
+    from ask_hdb import agent
+    monkeypatch.setattr(agent, "load_sales", lambda: pd.DataFrame({"sale_month": pd.to_datetime(["2026-03-01", "2026-09-01"])}))
+    assert "newest recorded sale month is 2026-09" in agent._prompt_text()
+
+    def missing():
+        raise FileNotFoundError
+    monkeypatch.setattr(agent, "load_sales", missing)
+    assert agent._prompt_text() == agent.SYSTEM_PROMPT

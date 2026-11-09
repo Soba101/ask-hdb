@@ -9,7 +9,7 @@ from anthropic import APIError as ProviderAPIError
 from langchain_core.messages import HumanMessage, SystemMessage
 from openai import OpenAIError
 
-from ask_hdb.agent import SYSTEM_PROMPT
+from ask_hdb.agent import _prompt_text
 from ask_hdb.check_cases import CASES
 from ask_hdb.llm import get_chat_model
 from ask_hdb.tools import TOOLS
@@ -67,7 +67,7 @@ def main():
         else:
             try:
                 response = model.bind(max_tokens=2048).invoke([
-                    SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=case["question"]),
+                    SystemMessage(content=_prompt_text()), HumanMessage(content=case["question"]),
                 ])
                 row = check_response(case, response)
             except MODEL_ERRORS as exc:
