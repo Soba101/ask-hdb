@@ -3,7 +3,7 @@ import { clearBuildingCard, showBuildingFacts, openBuildingSun } from "./buildin
 import { initCardMap } from "./card-map.js";
 import { initAmenityCard } from "./amenity-card.js";
 const $ = (id) => document.getElementById(id);
-const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Floor plans", "card-plans"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
+const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Floor plans and Street View", "card-plans"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
   ["Schools", "schools"], ["Nearby", "card-nearby"]];
 const QUESTIONS = {
   block: [["Ask about schools", "What are the 3 nearest primary schools to this block?"],
@@ -140,6 +140,10 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     $("card").scrollTop = 0; // A new place always opens at its summary, not the previous detail.
     if (!point) return;
     current = point;
+    // Google's documented Maps URLs format; the viewer opens the panorama nearest this point.
+    $("streetview-link").href = Number.isFinite(point.lat) && Number.isFinite(point.lng)
+      ? "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + encodeURIComponent(point.lat + "," + point.lng)
+      : "https://www.google.com/maps"; // no coordinates: plain Maps, never a broken viewpoint
     $("card-title").textContent = point.label; $("card-subtitle").textContent = "Loading details…";
     const path = encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id);
     let schoolData;
