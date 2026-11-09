@@ -21,17 +21,29 @@ function inline(el, text) {
   });
 }
 
-// Light Markdown for answers: headings, bullets, rules and pipe tables, one block per line.
+// Light Markdown for answers: headings, lists, rules and pipe tables. Real elements, so screen readers can jump between them.
+const isRow = (line) => /^\|.*\|$/.test(line.trim());
+const cellsOf = (line) => line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, "|").trim()); // "\|" is a literal pipe
+const isRule = (line) => isRow(line) && cellsOf(line).every((c) => /^:?-{3,}:?$/.test(c));
+
 function render(div, text) {
-  const lines = text.split("\n"), isRow = (line) => /^\|.*\|$/.test(line.trim());
+  const lines = text.split("\n");
+  let list = null; // the open <ul> for a run of list lines
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    let m;
-    if (isRow(line)) {
-      const table = document.createElement("table");
+    const raw = lines[i], line = raw.trim();
+    let m = line.match(/^([*-]|\d+[.)])\s+(.*)$/);
+    if (!m) list = null;
+    if (m) {
+      if (!list) { list = document.createElement("ul"); list.className = "md-list"; div.appendChild(list); }
+      const item = document.createElement("li");
+      item.className = "md-d" + Math.min(3, Math.floor((raw.length - raw.trimStart().length) / 2)); // 2 spaces per level
+      inline(item, (/\d/.test(m[1]) ? m[1] : "•") + " " + m[2]);
+      list.appendChild(item);
+    } else if (isRow(line) && i + 1 < lines.length && isRule(lines[i + 1])) { // a table needs its |---| line
+      const table = document.createElement("table"), head = cellsOf(line);
       for (; i < lines.length && isRow(lines[i]); i++) {
-        const cells = lines[i].trim().slice(1, -1).split("|").map((c) => c.trim());
-        if (cells.every((c) => /^:?-{3,}:?$/.test(c))) continue; // the |---|---| line
+        if (isRule(lines[i])) continue;
+        const cells = cellsOf(lines[i]).concat(Array(head.length).fill("")).slice(0, head.length); // keep cells under their header
         const row = table.insertRow(), tag = table.rows.length === 1 ? "th" : "td";
         for (const c of cells) { const cell = document.createElement(tag); inline(cell, c); row.appendChild(cell); }
       }
@@ -39,12 +51,10 @@ function render(div, text) {
       const wrap = document.createElement("div"); wrap.className = "md-table"; wrap.appendChild(table); div.appendChild(wrap);
     } else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
       div.appendChild(document.createElement("hr"));
+    } else if ((m = line.match(/^#{1,6}\s+(.*?)\s*#*$/))) {
+      const heading = document.createElement("h4"); heading.className = "md-h"; inline(heading, m[1].replace(/\*\*/g, "")); div.appendChild(heading);
     } else {
-      const block = document.createElement("p");
-      if ((m = line.match(/^#{1,6}\s+(.*)$/))) { block.className = "md-h"; inline(block, m[1].replace(/\*\*/g, "")); }
-      else if ((m = line.match(/^[*-]\s+(.*)$/))) { block.className = "md-li"; inline(block, "• " + m[1]); }
-      else inline(block, lines[i]);
-      div.appendChild(block);
+      const block = document.createElement("p"); inline(block, raw); div.appendChild(block);
     }
   }
 }

@@ -66,12 +66,15 @@ header p, .muted { color: var(--muted); margin: var(--space-1) 0 0; font-size: v
 .msg.status { color: var(--muted); border: 0; padding: 0 var(--space-1); }
 .msg.bot { white-space: normal; }
 .msg p { margin: 0; min-height: .6em; white-space: pre-wrap; }
-.msg .md-h { font-weight: 600; margin-top: var(--space-2); }
-.msg .md-li { padding-left: 1em; text-indent: -.7em; }
+.msg .md-h { font-size: inherit; font-weight: 600; margin: var(--space-2) 0 0; }
+.msg .md-list { list-style: none; margin: 0; padding: 0; }
+.msg .md-list li { padding-left: 1.1em; text-indent: -1.1em; } /* hanging indent: wrapped lines line up with the text */
+.msg .md-d1 { margin-left: 1.1em; } .msg .md-d2 { margin-left: 2.2em; } .msg .md-d3 { margin-left: 3.3em; }
 .msg hr { border: 0; border-top: 1px solid var(--line); margin: var(--space-2) 0; }
 .msg .md-table { overflow-x: auto; margin: var(--space-1) 0; }
-.msg table { border-collapse: collapse; font-size: .92em; }
-.msg th, .msg td { text-align: left; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.msg table { border-collapse: collapse; font-size: .92em; width: 100%; }
+/* Cells wrap so every column fits a phone; amounts have no spaces, so they stay on one line. */
+.msg th, .msg td { text-align: left; vertical-align: top; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); }
 #side, #chip-detail, #sun-bar { font-variant-numeric: tabular-nums; }
 #card-title { text-wrap: balance; }
 #peek-hint:empty { display: none; }
