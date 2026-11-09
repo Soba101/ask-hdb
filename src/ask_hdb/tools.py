@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 from langchain_core.tools import StructuredTool
 
-from ask_hdb import calc, compare, sales
+from ask_hdb import calc, compare, policy, sales
 from ask_hdb.bto import plans, scenario
 from ask_hdb.bto import queries as bto
 from ask_hdb.geo import filters as geo_filters
@@ -30,6 +30,7 @@ from ask_hdb.tool_inputs import (
     LoanArgs,
     NearestArgs,
     PhgArgs,
+    PolicyArgs,
     ProfileArgs,
     RailPlansArgs,
     ResolveArgs,
@@ -38,7 +39,7 @@ from ask_hdb.tool_inputs import (
 )
 
 # Tools that read their own tables instead of the resale sales frame.
-NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history", "rail_plans", "resolve_place"}
+NO_FRAME = {"nearest_places", "calculate", "list_bto_projects", "bto_nearby", "bto_scenario", "bto_history", "rail_plans", "resolve_place", "policy_explain"}
 
 
 @lru_cache(maxsize=1)
@@ -189,6 +190,12 @@ bto_scenario = _tool("bto_scenario", "BTO flat loan figures: maximum loan, month
 bto_ehg_amount = _tool("bto_ehg_amount", "EHG for a NEW BTO flat ONLY (no resale price or lease). If the user says resale, use ehg_amount instead.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
 
+policy_explain = _tool("policy_explain", "Find policy context and source links in locally built official pages. Context only; never use it for numbers, thresholds or eligibility verdicts.",
+                       PolicyArgs, policy.policy_explain)
+
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
          cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount,
          bto_scenario, bto_history, rail_plans, resolve_place]
+# Offer policy context only when its pages are built, so the model never calls a tool that can only fail.
+if policy.PASSAGES_PATH.exists():
+    TOOLS.append(policy_explain)

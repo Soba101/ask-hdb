@@ -167,9 +167,10 @@ def test_phone_markup_and_touch_css_offline():
     assert "width: 100%" in css_block(coarse, "input[type=date]")
 
 
-def test_chat_markdown_renderer():
+@pytest.mark.parametrize("script", ["markdown_ui.mjs", "policy_ui.mjs"])
+def test_chat_renderers(script):
     node = shutil.which("node")
     if node is None:
         pytest.skip("node is not installed")
-    done = subprocess.run([node, "tests/markdown_ui.mjs"], check=False, capture_output=True, text=True)
+    done = subprocess.run([node, "tests/" + script], check=False, capture_output=True, text=True)
     assert done.returncode == 0, done.stdout + done.stderr

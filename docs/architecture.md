@@ -23,7 +23,7 @@
    ├─ find_sales(filters)            -> pandas, returns rows with IDs
    ├─ compare_price(block_id, price) -> comparable recent sales (COV worry)
    ├─ nearest(block_id, kind)        -> geo index (MRT, schools) built from OneMap
-   └─ search_policy(question)        -> pgvector over HDB policy pages (RAG)
+   └─ policy_explain(topic)          -> local BM25 over official policy passages (context only)
 ```
 
 ## Why it is split this way
@@ -70,7 +70,9 @@ class ToolResult(BaseModel):
 3. `scripts/geocode_blocks.py`: block address -> lat/long via OneMap search. Cached to disk.
    Cross-check with the data.gov.sg HDB Existing Buildings GeoJSON (block + postal code outlines).
 4. `scripts/fetch_places.py`: MRT stations and primary schools with lat/long.
-5. `scripts/fetch_policy.py`: HDB policy pages -> text chunks with URL and fetch date -> pgvector.
+5. `scripts/build_policy_pages.py`: fixed official HTML source list -> local text passages with URL,
+   title and fetch date -> `data/clean/policy_passages.parquet`. Pure Python BM25 at answer time;
+   no external service or download. See [policy pages](policy-pages.md) for the allowlist and reuse limits.
 
 ## Distances
 - v1 uses straight-line (haversine) distance. Every answer says "straight-line".
@@ -84,6 +86,10 @@ class ToolResult(BaseModel):
 - If any number is unsupported, the reply is rejected and rewritten once.
   If it fails again, the agent says it cannot answer reliably.
 - Every check is logged, so the eval can report the grounding rate.
+- `policy_explain` results are excluded by tool name and by their payload marker. Passage text,
+  titles, links and fetched dates cannot ground numbers or dates. They cannot supply place labels either.
+  Rules tools still supply eligibility verdicts. The browser gets only policy page titles and links;
+  stored passages are private context, never a raw source panel. Do not commit fetched material.
 
 ## Safety limits
 - Max tool calls and max tokens per question, set in settings. Hit the limit -> stop and say so.
@@ -103,6 +109,7 @@ src/ask_hdb/
   sales.py, compare.py, calc.py, clean.py   price tools, comparable sales, calculator, cleaning
   confirm.py      code-written "Is this right?" before eligibility and grant tools
   grounding.py    number check against this question's tool results
+  policy.py, policy_sources.py   offline passage search and the fixed official source list
   rules/          dated rule functions (resale, BTO); numbers come from rules/*.yaml
   bto/            BTO launch data, history, scenarios, planned rail lines
   geo/            geocoding, distances, nearest places
@@ -120,4 +127,6 @@ eval/             questions.yaml and reports
 tests/
 docs/
 ```
-Planned, not built: a public deployment, supervisor and worker graph, RAG over policy pages.
+Planned, not built: a public deployment and supervisor and worker graph. The diagram's workers
+remain a design sketch; the current agent is a single bounded conversation. Policy search uses
+that existing agent, with no supervisor added.

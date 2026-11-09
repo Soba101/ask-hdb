@@ -37,6 +37,10 @@ class Arguments(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+class PolicyArgs(Arguments):
+    topic: str = Field(min_length=1, max_length=1000, description="Policy topic or question to explain")
+
+
 class SalesArgs(Arguments):
     town: str | None = None
     flat_type: str | None = Field(None, description="Resale flat type as recorded, such as 4 ROOM or EXECUTIVE")

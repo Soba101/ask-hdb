@@ -27,3 +27,11 @@ def test_a_settled_check_keeps_its_verdict_and_more_phrasings_match():
     assert verdict.replacement("You can buy a resale flat. For the EHG I need your income.", mixed) is None
     for text in ("Yes, you qualify.", "You're eligible for the EHG.", "You’re not eligible."):
         assert verdict.replacement(text, [("can_buy_resale", NULL)])
+
+
+def test_policy_context_and_its_payload_never_settle_a_verdict():
+    policy = ("policy_explain", {"tool": "policy_explain", "eligible": True})
+    for answer in ("Yes.", "**No**.", "You are eligible."):
+        assert verdict.replacement(answer, [policy])
+    assert verdict.replacement("You can buy.", [policy, ("can_buy_resale", YES)]) is None
+    assert verdict.replacement("The page explains the application process.", [policy]) is None

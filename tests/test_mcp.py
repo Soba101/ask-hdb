@@ -9,7 +9,7 @@ import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 from test_agent_limits import LoopModel
 
-from ask_hdb import agent, tools
+from ask_hdb import agent, policy, tools
 from ask_hdb.check_cases import PROFILE
 from ask_hdb.geo import filters, resolve
 from ask_hdb.mcp.client import load_mcp_tools
@@ -50,6 +50,17 @@ def bto_tables(monkeypatch):
     monkeypatch.setattr(queries, "load_places", lambda: PLACES)
 
 
+@pytest.fixture(autouse=True)
+def policy_table(monkeypatch, tmp_path):
+    # Protocol parity includes policy_explain without relying on downloaded text.
+    path = tmp_path / "policy_passages.parquet"
+    pd.DataFrame([{"url": policy.POLICY_URLS[0], "title": "Example policy",
+                   "fetched_at": "2026-11-10", "passage": "Household policy context."}]).to_parquet(path)
+    monkeypatch.setattr(policy, "PASSAGES_PATH", path)
+    yield
+    policy._load_index.cache_clear()
+
+
 def test_protocol_schemas_and_every_tool(local_data):
     async def check():
         async with create_connected_server_and_client_session(HousingMCP("test")) as session:
@@ -78,6 +89,7 @@ def test_protocol_schemas_and_every_tool(local_data):
                                      "loan_years": 25, "category": "Standard", "town": None, "flat_type": None},
                     "rail_plans": {"area": "Punggol"},
                     "resolve_place": {"text": "Bishan MRT"},
+                    "policy_explain": {"topic": "household"},
                     "bto_history": {"town": "PUNGGOL", "flat_type": "4-room", "financial_year": 2008},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)

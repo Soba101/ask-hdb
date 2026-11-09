@@ -5,7 +5,8 @@ real AI engineers from demo builders, so it gets built in week 3, before the fan
 
 ## The eval set: `eval/questions.yaml`
 
-The bank contains 68 questions: the original 50 plus 18 appended for week four.
+The bank contains 141 questions, including one retired question. There are 89 active
+development questions and 51 held out. Policy link checks are development cases.
 Each has a frozen expected answer that code can check.
 
 ```yaml
@@ -20,18 +21,19 @@ Each has a frozen expected answer that code can check.
 
 | Kind | Count | Expected answer comes from |
 |---|---|---|
-| price | 15 | pandas directly on the clean data |
-| eligibility | 12 | HDB's own worked examples and rule tables |
-| grants | 10 | HDB grant tables (amount by income tier) |
-| price check | 8 | comparable sales picked by code (same block/street, storey band, lease band) |
-| distance | 8 | independent spherical law of cosines on local block and place coordinates |
+| price | 19 | pandas directly on the clean data |
+| eligibility | 13 | HDB's own worked examples and rule tables |
+| grants | 15 | HDB grant tables (amount by income tier) |
+| price check | 10 | comparable sales picked by code (same block/street, storey band, lease band) |
+| distance | 11 | independent spherical law of cosines on local block and place coordinates |
 | multi_step | 16 | grant sums, filtered price differences and sale counts, comparable premiums and nearest MRT |
-| bto | 14 | BTO eligibility verdicts, EHG amounts, launch facts and site distances |
+| bto | 21 | BTO eligibility verdicts, EHG amounts, launch facts and site distances |
 | scenario | 7 | loan instalment, loan size, upfront cost, balance at MOP and illustrative sale scenarios, computed independently (month-by-month amortisation) |
-| refuse | 8 (1 retired) | six active declines and one request for missing details: "will prices rise?", "should I buy now?", Executive Condominium questions, "worth $1 million?", "which loan makes more money?" |
+| refuse | 17 (1 retired) | declines and requests for missing details |
+| map | 12 | independently computed straight-line distances and nearby counts |
 
 - Questions are written by hand in plain language, with typos and vague wording on purpose.
-- 30 questions are marked held out; the 67 development questions exclude them by default.
+- Held-out questions are excluded by default.
 - The original 10 held-out questions remain marked, but are spent for tuning (see results).
   The 6 new held-out IDs were fixed before tuning: `q_distance_003`, `q_distance_006`,
   `q_distance_008`, `q_multi_step_002`, `q_multi_step_006`, `q_multi_step_010`.
@@ -79,6 +81,13 @@ Results go to `eval/reports/<date>-<condition>.json`, plus a short markdown tabl
 
 `eval/questions.yaml` uses `expect.number` plus an absolute, inclusive `tolerance`,
 `expect.verdict` (`yes`/`no`) plus `answer_keywords`, `expect.decline: true`, or `expect.clarify: true`.
+An optional `expect.expected_url` adds an exact source-link check to an existing
+answer type. It also requires every scored number to pass the shared grounding check.
+Policy calls never ground numbers, including values in titles, links or fetched dates.
+The development additions `q_grants_013`–`015` and `q_eligibility_013` check EHG,
+CPF Housing Grant, PHG and singles purchase explanations with the relevant HDB link.
+Offline tests include a passage-only amount before and after an otherwise correct
+answer; both fail. See [policy pages](policy-pages.md) for the source and reuse limits.
 Numeric grant answers are scored as numbers; eligibility answers are scored as verdicts.
 For numeric accuracy, the first number absent from the question must match within tolerance;
 a later correct number (even a bold final answer) cannot rescue an earlier guess or range.

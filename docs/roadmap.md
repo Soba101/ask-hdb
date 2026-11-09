@@ -85,7 +85,10 @@ Three phases; each gets approval before building.
 - [x] 5-2: tools return the rule values and counts answers quote. Dev verdict 78.6% -> 57.1% (5-1) -> 100% (5-2), grounding 100%;
       Merged in PR #45. Held-out run (30, once): 24/30; the six misses are listed in `docs/eval-results.md` (not re-tuned on).
 - [ ] Supervisor + workers graph (profile, tools, answer). Deferred: see the plan.
-- [ ] RAG over HDB policy pages for explanations, with links. Deferred: see the plan.
+- [~] Policy explanation retrieval with source links (issue 113): local BM25 over a fixed list of official pages,
+      passages excluded from numeric grounding, web sources show titles and links only. Code and offline tests done.
+      Blocked 2026-11-10: hdb.gov.sg answers 403 to the build script, so no passages are built and the tool
+      returns "policy pages not built". A lawful source for the page text is an open decision.
 - [ ] Refusal handling for out-of-scope questions (dev refusal 100%; q_refuse_008 balanced-answer and q_refuse_005 held-out gaps noted).
 - [x] 5-4 (done 2026-10-23): `full` vs `agent`, two runs each on 72 dev questions: both 94-96% number, 93-100% verdict, grounding 100%; inside the same run-to-run spread (`docs/eval-results.md`).
 - **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).

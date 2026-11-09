@@ -3,7 +3,7 @@
 import re
 from decimal import Decimal
 
-from ask_hdb.grounding import check
+from ask_hdb.grounding import check, tool_results
 
 # Only explicit price scales count; metre and kilometre units never scale values.
 NUMBER = re.compile(r'(?<![\w.])[-+]?\d+(?:,\d{3})*(?:\.\d+)?'
@@ -74,6 +74,12 @@ def answer_passes(question, result):
     expect = question['expect']
     answer = re.sub(r'[*_`]', '', result['answer'])
     calls = result.get('tool_calls', [])
+    if 'expected_url' in expect:
+        # Match a complete link, not a lookalike path or a URL inside tool records.
+        links = re.findall(r'https://[^\s<>\[\]()]+', result['answer'])
+        if (expect['expected_url'] not in [link.rstrip('.,;:!?') for link in links]
+                or check(result['answer'], question['question'], tool_results(calls))['ungrounded']):
+            return False
     if 'number' in expect:
         text = question['question'] + ' ' + _map_context(question)  # the selection line is part of what the user sent
         given = numbers(_without_question_ids(text, text))
@@ -122,7 +128,7 @@ def grounding(question, result):
     # The same check the agent enforces (ask_hdb.grounding), so the column measures it.
     # Question echoes are excluded. Only current tool results count as evidence.
     checked = check(result['answer'], question['question'],
-                    [c.get('result') for c in result.get('tool_calls', [])])
+                    tool_results(result.get('tool_calls', [])))
     total = len(checked['numbers'])
     supported = total - len(checked['ungrounded'])
     return {'supported': supported, 'total': total, 'rate': supported / total if total else 1.0}

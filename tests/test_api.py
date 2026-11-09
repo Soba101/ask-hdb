@@ -35,6 +35,27 @@ def test_events_arrive_in_order_with_the_notice(client):
     assert client.get("/health").json() == {"status": "ok"}
 
 
+def test_policy_context_never_leaves_server_as_tool_evidence(monkeypatch):
+    from ask_hdb.policy_sources import POLICY_URLS
+
+    source = {"title": "Example policy", "url": POLICY_URLS[0]}
+    context = {"tool": "policy_explain", "passages": [
+        {**source, "fetched_at": "2026-11-10", "passage": "Private invented passage 987654"}]}
+
+    def fake_ask(question, history=None, confirm=False, on_event=None, context=None):
+        on_event({"type": "tool_call", "name": "policy_explain", "args": {"topic": "grant"}})
+        on_event({"type": "tool_result", "name": "policy_explain", "args": {"topic": "grant"},
+                  "result": policy_context})
+        assert policy_context["passages"][0]["passage"] == "Private invented passage 987654"
+        return {"answer": "Read the official policy.", "needs_confirmation": False, "stopped_reason": None}
+
+    policy_context = context
+    monkeypatch.setattr(api.agent, "ask", fake_ask)
+    response = TestClient(api.create_app()).post("/chat", json={"question": "Explain the grant"})
+    assert events(response)[1]["result"] == {"sources": [source]}
+    assert all(text not in response.text for text in ("Private invented", "987654", "fetched_at", "2026-11-10"))
+
+
 @pytest.mark.parametrize("body", [{"question": ""}, {"question": "x" * 1001},
                                   {"question": "ok", "history": [{"role": "system", "content": "x"}]},
                                   {"question": "ok", "history": [{"role": "user", "content": "x"}] * 13}])

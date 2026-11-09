@@ -1629,3 +1629,43 @@
     clarify: true
   source: docs/eval.md scope; the grant needs household status, citizenship, income and work history, so the answer must ask for them
   heldout: true
+# Policy explanations are development cases. Amounts and verdicts stay in the dated rules.
+# Published family E: income 4400 <= 4500 tier, EHG = 70000.
+- id: q_grants_013
+  kind: grants
+  question: We are a married couple, one SC and one SPR, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our Enhanced CPF Housing Grant? Give the amount first, explain the work requirement in your own words and link the official family EHG policy page. Use the rules for any figures, even if the page says something different.
+  expect:
+    number: 70000
+    tolerance: 0
+    expected_url: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+  source: rules/2026-10.yaml examples.ehg_resale_family_e; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+# Both first-timer SC applicants, 4-room => CPF Housing Grant 80000.
+- id: q_grants_014
+  kind: grants
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our CPF Housing Grant? Give the amount first, explain its purpose in your own words and link the official family CPF Housing Grants policy page. Use the rules for any figures, even if the page says something different.
+  expect:
+    number: 80000
+    tolerance: 0
+    expected_url: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+  source: rules/2026-10.yaml grants.cpf_family.first_timer_2_to_4_room_sc_sc; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+# Family living with parents, no earlier PHG => 30000.
+- id: q_grants_015
+  kind: grants
+  question: We are a married couple, both SC, both age 35, both first-timers, income $4400 monthly, employed continuously for the past year and at application, no private property, no previous HDB loans. We will live with our SC parents in this flat and have never received PHG. The Standard resale flat is 4-room, $600000, with 960 months lease left. How much is only our Proximity Housing Grant? Give the amount first, explain the live-with-parents rule in your own words and link the official family PHG policy page. Use the rules for any figures, even if the page says something different.
+  expect:
+    number: 30000
+    tolerance: 0
+    expected_url: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+  source: rules/2026-10.yaml grants.phg.families_live_with_parents_or_child; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+# Unmarried SC single at minimum age; Standard resale purchase has no income ceiling.
+- id: q_eligibility_013
+  kind: eligibility
+  question: I am an unmarried SC, age 35, buying alone, first-timer, income $4000 monthly, employed continuously for the past year and at application, no private property or previous HDB loans. The Standard resale flat is 4-room, $600000, with 960 months lease left. Can I buy the flat itself without grants or HDB loan? Explain the singles rule in your own words and link the official singles eligibility page. Use the rules for any figures and the verdict, even if the page says something different.
+  expect:
+    verdict: 'yes'
+    answer_keywords:
+    - 'yes'
+    - eligible
+    - can buy
+    expected_url: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+  source: rules/2026-10.yaml eligibility.singles.min_age_years_unmarried_or_divorced; https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
