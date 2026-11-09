@@ -57,7 +57,7 @@ export function sheetGestures({ handles, button, content, active, height, points
   if (content) {
     let touch = null;
     content.addEventListener("touchstart", (event) => {
-      touch = active() && event.touches.length === 1 ? { y: event.touches[0].clientY, height: height(), start: nearest(height()),
+      touch = active() && event.touches.length === 1 ? { x: event.touches[0].clientX, y: event.touches[0].clientY, height: height(), start: nearest(height()),
         sheet: false, trail: [{ t: event.timeStamp, y: event.touches[0].clientY }] } : null;
     }, { passive: true });
     content.addEventListener("touchmove", (event) => {
@@ -66,6 +66,8 @@ export function sheetGestures({ handles, button, content, active, height, points
       touch.trail.push({ t: event.timeStamp, y });
       if (!touch.sheet) {
         if (Math.abs(delta) < 8) return;
+        // A mostly sideways move scrolls a wide table, never the sheet.
+        if (Math.abs(event.touches[0].clientX - touch.x) > Math.abs(delta)) { touch = null; return; }
         const index = nearest(height());
         if ((delta > 0 && index < 2) || (delta < 0 && content.scrollTop <= 0 && index > 0)) {
           touch.sheet = true; touch.start = index; // from here the finger moves the sheet, counted from where it first touched

@@ -63,7 +63,21 @@ header p, .muted { color: var(--muted); margin: var(--space-1) 0 0; font-size: v
 .msg { padding: var(--space-2) var(--space-3); border-radius: var(--card-radius); white-space: pre-wrap; overflow-wrap: anywhere; max-width: 94%; }
 .msg.user { background: var(--user); align-self: flex-end; }
 .msg.bot { border: 1px solid var(--line); align-self: flex-start; }
-.msg.status { color: var(--muted); font-style: italic; border: 0; padding: 0 var(--space-1); }
+.msg.status { color: var(--muted); border: 0; padding: 0 var(--space-1); }
+.msg.bot { white-space: normal; }
+.msg p { margin: 0; min-height: .6em; white-space: pre-wrap; }
+.msg .md-h { font-size: inherit; font-weight: 600; margin: var(--space-2) 0 0; }
+.msg .md-list { list-style: none; margin: 0; padding: 0; }
+.msg .md-list li { padding-left: 1.1em; text-indent: -1.1em; } /* hanging indent: wrapped lines line up with the text */
+.msg .md-d1 { margin-left: 1.1em; } .msg .md-d2 { margin-left: 2.2em; } .msg .md-d3 { margin-left: 3.3em; }
+.msg hr { border: 0; border-top: 1px solid var(--line); margin: var(--space-2) 0; }
+.msg .md-table { overflow-x: auto; margin: var(--space-1) 0; }
+.msg table { border-collapse: collapse; font-size: .92em; width: 100%; }
+/* Cells wrap so every column fits a phone; amounts have no spaces, so they stay on one line. */
+.msg th, .msg td { text-align: left; vertical-align: top; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); }
+#side, #chip-detail, #sun-bar { font-variant-numeric: tabular-nums; }
+#card-title { text-wrap: balance; }
+#peek-hint:empty { display: none; }
 .msg.error { color: var(--warn); border: 1px solid var(--warn); }
 .choices { display: flex; gap: var(--space-2); margin-top: var(--space-2); flex-wrap: wrap; }
 .selected { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-2); padding: var(--space-1) var(--space-3);
@@ -171,7 +185,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #chips button.on { background: var(--accent-text); }
   #chip-detail { display: block; top: calc(var(--topbar-bottom, 74px) + 60px); }
   #chip-detail > div { padding: 8px; background: var(--floating); border: 1px solid var(--line); border-radius: 12px; }
-  #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 4px 8px; }
+  #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px 16px; }
   #price-controls label { min-width: 0; font-size: var(--caption); }
   #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: var(--caption); }
   #chip-detail input, #chip-detail select { width: 100%; }
@@ -282,16 +296,16 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .tab.on { background: var(--ios-blue); color: #fff; }
 
   /* (b) search bar: iOS search field with a CSS-drawn magnifier and a circular Send */
-  #topbar { background: var(--material); border: .5px solid var(--line); border-radius: 14px; box-shadow: none; }
+  #topbar { background: var(--material); border: .5px solid var(--line); border-radius: 18px; /* field 10px + padding 8px */ box-shadow: none; }
   #topbar form { align-items: center; }
-  #question { font-size: 16px; font-weight: 400; height: 44px; border: 0; border-radius: 10px; background-color: var(--fill); color: var(--text);
+  #question { font-size: 16px; font-weight: 400; height: 44px; border: 0; border-radius: 10px; background-color: var(--panel); color: var(--text); /* solid fill keeps the placeholder above 4.5:1 */
     padding: 10px 12px 10px 38px; background-repeat: no-repeat; background-position: 12px center; background-size: 17px 17px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5L21 21'/%3E%3C/svg%3E"); }
   #question::placeholder { color: var(--muted); opacity: 1; }
   #topbar #send { width: 44px; height: 44px; min-width: 44px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%;
     background: var(--ios-blue); font-size: 0; position: relative; }
   /* The arrow is a mask, so the "Send" text stays for screen readers. */
-  #topbar { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
+  #topbar { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
   #topbar #send::after { content: ""; position: absolute; inset: 0; background: #fff;
     -webkit-mask: center / 20px 20px no-repeat var(--arrow); mask: center / 20px 20px no-repeat var(--arrow); }
   #topbar .selected { background: var(--fill); font-size: var(--t-foot); }
@@ -418,7 +432,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 @media (min-width: 801px) {
   #app { --side-w: clamp(360px, 30vw, 420px); }
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
-    border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
+    border-radius: var(--card-radius); padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
     /* the chat box docks at the bottom of the panel, so the panel keeps room for it */
     padding-top: 12px; padding-bottom: calc(var(--topbar-h, 52px) + 36px); }
   #sheet-handle { display: none; }

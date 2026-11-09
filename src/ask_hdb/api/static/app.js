@@ -13,14 +13,56 @@ const MAX_TURNS = 12;
 let selected = null; // {kind, id, label, lat, lng}
 
 // ---------- chat ----------
+// Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>, *italic* stays plain.
+function inline(el, text) {
+  text.split("**").forEach((part, i) => {
+    if (i % 2) { const strong = document.createElement("strong"); strong.textContent = part; el.appendChild(strong); }
+    else el.append(part.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:]|$)/g, "$1$2"));
+  });
+}
+
+// Light Markdown for answers: headings, lists, rules and pipe tables. Real elements, so screen readers can jump between them.
+const isRow = (line) => /^\|.*\|$/.test(line.trim());
+const cellsOf = (line) => line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, "|").trim()); // "\|" is a literal pipe
+const isRule = (line) => isRow(line) && cellsOf(line).every((c) => /^:?-{3,}:?$/.test(c));
+
+function render(div, text) {
+  const lines = text.split("\n");
+  let list = null; // the open <ul> for a run of list lines
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i], line = raw.trim();
+    let m = line.match(/^([*-]|\d+[.)])\s+(.*)$/);
+    if (!m) list = null;
+    if (m) {
+      if (!list) { list = document.createElement("ul"); list.className = "md-list"; div.appendChild(list); }
+      const item = document.createElement("li");
+      item.className = "md-d" + Math.min(3, Math.floor((raw.length - raw.trimStart().length) / 2)); // 2 spaces per level
+      inline(item, (/\d/.test(m[1]) ? m[1] : "•") + " " + m[2]);
+      list.appendChild(item);
+    } else if (isRow(line) && i + 1 < lines.length && isRule(lines[i + 1])) { // a table needs its |---| line
+      const table = document.createElement("table"), head = cellsOf(line);
+      for (; i < lines.length && isRow(lines[i]); i++) {
+        if (isRule(lines[i])) continue;
+        const cells = cellsOf(lines[i]).concat(Array(head.length).fill("")).slice(0, head.length); // keep cells under their header
+        const row = table.insertRow(), tag = table.rows.length === 1 ? "th" : "td";
+        for (const c of cells) { const cell = document.createElement(tag); inline(cell, c); row.appendChild(cell); }
+      }
+      i--;
+      const wrap = document.createElement("div"); wrap.className = "md-table"; wrap.appendChild(table); div.appendChild(wrap);
+    } else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+      div.appendChild(document.createElement("hr"));
+    } else if ((m = line.match(/^#{1,6}\s+(.*?)\s*#*$/))) {
+      const heading = document.createElement("h4"); heading.className = "md-h"; inline(heading, m[1].replace(/\*\*/g, "")); div.appendChild(heading);
+    } else {
+      const block = document.createElement("p"); inline(block, raw); div.appendChild(block);
+    }
+  }
+}
+
 function add(kind, text) {
   const div = document.createElement("div");
   div.className = "msg " + kind;
-  // Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>.
-  text.split("**").forEach((part, i) => {
-    if (i % 2) { const strong = document.createElement("strong"); strong.textContent = part; div.appendChild(strong); }
-    else div.append(part);
-  });
+  if (kind === "bot") render(div, text); else inline(div, text);
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
   div.scrollIntoView?.({ block: "nearest" }); // on a phone the log sits inside the scrolling sheet

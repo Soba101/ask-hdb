@@ -165,3 +165,11 @@ def test_phone_markup_and_touch_css_offline():
     assert "font-size: 16px" in css_block(coarse, "input, select, textarea, input[type=date], select")
     assert "touch-action: pan-y" in css_block(coarse, "input[type=range]")
     assert "width: 100%" in css_block(coarse, "input[type=date]")
+
+
+def test_chat_markdown_renderer():
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is not installed")
+    done = subprocess.run([node, "tests/markdown_ui.mjs"], check=False, capture_output=True, text=True)
+    assert done.returncode == 0, done.stdout + done.stderr
