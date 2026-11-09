@@ -14,7 +14,8 @@ from ask_hdb.evalrun.conditions import make_condition
 def test_text_is_written_from_the_arguments():
     text = confirm.question_text(PROFILE)
     assert "- Monthly household income: $4,400" in text
-    assert "- Ages: 35,35" in text and "- Works 12 months: yes" in text
+    assert "- Ages (years): 35,35" in text
+    assert "- Worked continuously for the past 12 months: yes" in text
     assert "not applicable" not in text and "Is this right?" in text
     assert f"(profile ref {confirm.ref(PROFILE)})" in text
 
@@ -89,6 +90,27 @@ def test_changed_arguments_ask_again(model):
     assert "$9,000" in again["answer"]
 
 
+def test_confirmation_checks_current_and_earlier_human_words_only(model):
+    history = [HumanMessage(content="Our ages are 35 and we earn $4,400."),
+               AIMessage(content="Assume price 600000, lease 960 and no previous loans (0).")]
+    result = agent.ask("The flat is 4-room. Can we buy?", history, confirm=True,
+                       context="[Map context: lease 960, price 600000]")
+    text = result["answer"]
+    assert "- Ages (years): 35,35\n" in text
+    assert "- Monthly household income: $4,400\n" in text
+    assert "- Flat rooms: 4\n" in text
+    for line in ("- Flat price: $600,000", "- Lease remaining (months): 960", "- Previous HDB loans taken: 0"):
+        assert line + " (you did not give this: please check)" in text
+    assert confirm._shown_ref(text) == confirm.ref(PROFILE)
+
+
+def test_confirmation_remembers_human_numbers_beyond_the_context_window(model):
+    history = [HumanMessage(content="Our ages are 35.")]
+    history += [AIMessage(content="Please continue.")] * agent.HISTORY_MESSAGES
+    result = agent.ask("Can we buy?", history, confirm=True)
+    assert "- Ages (years): 35,35\n" in result["answer"]
+
+
 def test_agent_condition_is_unchanged(model):
     result = agent.ask("Can we buy?")  # the default: no confirmation
     assert not result["needs_confirmation"] and len(result["tool_calls"]) == 1
@@ -145,7 +167,8 @@ def test_a_question_that_states_a_rule_is_not_a_clarification(text):
 
 def test_the_shown_values_keep_their_case_so_the_model_can_reuse_them():
     text = confirm.question_text(PROFILE | {"citizenships": "SC,SC", "category": "Standard"})
-    assert "- Citizenships: SC,SC" in text and "- Category: Standard" in text
+    assert "- Citizenships: Singapore citizen, Singapore citizen (SC,SC)" in text
+    assert "- Category: Standard" in text
 
 
 def test_on_event_reports_tool_steps_and_changes_nothing_else(model):
