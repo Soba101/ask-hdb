@@ -76,7 +76,7 @@ export function initSheet({ chat = () => {} } = {}) {
     for (const node of [...side.children]) if (node !== content && node !== $("sheet-notes")) move(node, content);
     move($("sheet-notes"), content); // the long notes come last, below the chat and the card
     side.append(peek, content);
-    $("peek-hint").textContent = "Ask about a flat, a grant or a place";
+    $("peek-hint").textContent = ""; // the search field already shows this hint
     move($("form"), $("topbar")); move($("selected"), $("topbar"));
     move(seg, $("chips")); move($("toggle-3d"), $("chips"));
     move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail")); move($("mop-controls"), $("chip-detail"));

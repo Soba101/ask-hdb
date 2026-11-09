@@ -31,7 +31,7 @@ assert.equal(side.getAttribute("role"), "region");
 assert.equal(side.getAttribute("aria-label"), "Results");
 assert.equal(state(), "peek"); assert.equal(sheetHeight(), 112);
 assert.equal(content.inert, true);
-assert.equal(get("peek-hint").textContent, "Ask about a flat, a grant or a place");
+assert.equal(get("peek-hint").textContent, ""); // the search field shows the hint; CSS hides the empty line
 assert.equal(get("log").getAttribute("role"), "log");
 assert.equal(get("log").getAttribute("aria-live"), "polite");
 assert.equal(get("card-summary").getAttribute("aria-live"), "polite");
