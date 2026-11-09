@@ -216,8 +216,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-peek .legend { padding: 0; border: 0; font-size: var(--caption); margin-top: 4px; }
   #sheet-peek h2 { font-size: 17px; margin: 0 44px 0 0; }
   #sheet-peek > .close { position: absolute; top: 4px; right: 8px; min-height: 44px; min-width: 44px; }
-  #sheet-peek .headline { display: flex; list-style: none; gap: 4px; padding: 0; margin: 4px 0 0; }
-  #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 4px; font-size: var(--caption); }
+  #sheet-peek .headline { display: flex; list-style: none; gap: 8px; padding: 0; margin: 8px 0 0; }
+  #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 8px 12px; font-size: var(--caption); /* same rhythm as the card sections below */ }
   #side[data-snap=peek] #sheet-peek { max-height: 112px; overflow: hidden; }
   #side[data-snap=peek] #card-subtitle, #side[data-snap=peek] .headline small { display: none; }
   #sheet-content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
