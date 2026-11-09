@@ -14,7 +14,15 @@ class Element {
 const elements = new Map();
 const get = (id) => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
 const listeners = {};
-globalThis.document = { getElementById: get, createElement: () => new Element(), hidden: false,
+function canvasStub() {
+  const ctx = { strokes: [], fills: [], paths: [] };
+  for (const name of ["scale", "beginPath", "moveTo", "lineTo", "arc"]) ctx[name] = (...args) => ctx.paths.push([name, ...args]);
+  ctx.stroke = () => ctx.strokes.push([ctx.strokeStyle, ctx.lineWidth]);
+  ctx.fill = () => ctx.fills.push(ctx.fillStyle);
+  ctx.getImageData = (x, y, width, height) => ({ width, height, ...ctx });
+  return { getContext: () => ctx };
+}
+globalThis.document = { getElementById: get, createElement: (tag) => tag === "canvas" ? canvasStub() : new Element(), hidden: false,
   addEventListener: (event, fn) => { (listeners[event] ||= []).push(fn); } };
 const reduced = { matches: false, addEventListener: (_, fn) => { reduced.change = fn; } };
 globalThis.window = { matchMedia: () => reduced };
@@ -33,7 +41,8 @@ const { Or: sphericalToCartesian } = await import(pathToFileURL(process.cwd() + 
 for (const row of fixture.exposures) assert.ok(Math.abs(wallExposure(...row.args) - row.value) < 1e-10);
 
 class MapStub {
-  constructor() { this.layers = {}; this.states = {}; this.sources = {}; this.pitch = 0; this.events = {}; this.eases = []; this.light = { anchor: "viewport", intensity: .4 }; }
+  constructor() { this.layers = {}; this.images = {}; this.states = {}; this.sources = {}; this.pitch = 0; this.events = {}; this.eases = []; this.light = { anchor: "viewport", intensity: .4 }; }
+  addImage(k, data, options) { this.images[k] = { data, options }; }
   addSource(k, v) { this.sources[k] = { ...v, setData(data) { this.data = data; } }; }
   getSource(k) { return this.sources[k]; }
   isSourceLoaded() { return true; }
@@ -72,6 +81,37 @@ globalThis.fetch = async (url) => {
 };
 get("sun-time").value = "960";
 const map = new MapStub(), controller = initBuildings(map);
+const pins = map.layers["bto-sites"];
+assert.equal(pins.type, "symbol"); assert.equal(pins.source, "places");
+assert.deepEqual(pins.filter, ["==", ["get", "kind"], "bto"]);
+assert.equal(pins.layout.visibility, "none");
+assert.equal(pins.layout["icon-anchor"], "bottom");
+assert.equal(pins.layout["icon-pitch-alignment"], "viewport");
+assert.equal(pins.layout["icon-rotation-alignment"], "viewport");
+assert.equal(pins.layout["icon-allow-overlap"], true);
+assert.equal(pins.layout["icon-ignore-placement"], true);
+assert.deepEqual(pins.layout["icon-image"], ["case", ["==", ["get", "status"], "upcoming"], "bto-pin-upcoming", "bto-pin-launched"]);
+for (const status of ["launched", "upcoming"]) {
+  const { data, options } = map.images[`bto-pin-${status}`];
+  assert.deepEqual([data.width / options.pixelRatio, data.height / options.pixelRatio], [18, 32]);
+  assert.deepEqual(data.fills, [status === "upcoming" ? "#ffffff" : "#e08a00"]);
+  assert.deepEqual(data.strokes, [["#ffffff", 4], ["#e08a00", 2], ["#ffffff", 4], ["#e08a00", 2]]);
+  assert.ok(data.paths.some((p) => p[0] === "lineTo" && p[2] === 30), "a thin stem points to the site");
+}
+
+// A click on the raised icon keeps the source point and site ID for the existing card.
+const app = await readFile(folder + "/app.js", "utf8");
+const pickCode = app.slice(app.indexOf("const pick = (e) =>"), app.indexOf("mapLayer.ring = (rings, fit) =>"));
+let selection;
+const pickMap = { getLayer: () => true, queryRenderedFeatures: (box, { layers }) => {
+  assert.ok(layers.includes("bto-sites"));
+  return [{ layer: { id: "bto-sites" }, geometry: { type: "Point", coordinates: [103.8, 1.3] },
+    properties: { kind: "bto", id: "bto_a", label: "Approximate site" } }];
+} };
+const pick = new Function("map", "matchMedia", "blockIndex", "setSelected", pickCode + "return pick;")(
+  pickMap, () => ({ matches: false }), new Map(), (value) => { selection = value; });
+pick({ point: { x: 100, y: 100 } });
+assert.deepEqual(selection, { kind: "bto", id: "bto_a", label: "Approximate site", lng: 103.8, lat: 1.3 });
 // Colours selected before geometry finishes loading must survive the toggle.
 controller.setMetrics("price", { blk_a: [400000, 5, 80] }, ["get", "price"]);
 await get("toggle-3d").onclick();
@@ -79,6 +119,7 @@ assert.equal(map.pitch, 60);
 assert.equal(get("sun-panel").hidden, false, "the sun bar is visible only in 3D");
 assert.ok(map.layers.blocks.filter, "blocks with an outline are hidden, others stay as points");
 assert.equal(map.layers.buildings.layout.visibility, "visible");
+assert.equal(pins.layout.visibility, "visible");
 assert.equal(map.layers.buildings.paint["fill-extrusion-height"][1], "height_m");
 assert.equal(map.states.blk_a.price, 400000);
 assert.equal(map.light.anchor, "map");
@@ -109,6 +150,7 @@ assert.equal(map.light.intensity, .4);
 assert.deepEqual(map.light.position, [1.15, 210, 30]);
 assert.equal(map.layers.blocks.filter, null);
 assert.equal(map.layers.buildings.layout.visibility, "none");
+assert.equal(pins.layout.visibility, "none");
 assert.equal(get("sun-panel").hidden, true);
 
 rejectDay = true;
@@ -121,6 +163,7 @@ const absent = new MapStub();
 initBuildings(absent);
 await get("toggle-3d").onclick();
 assert.equal(absent.pitch, 0);
+assert.equal(absent.layers["bto-sites"].layout.visibility, "none");
 assert.match(get("building-error").textContent, /unavailable/);
 
 // Only user pitchend events cross the hysteresis thresholds; auto paths never ease.
@@ -136,9 +179,11 @@ await gesture(20); assert.equal(buildingRequests, count, "deduplicate an in-flig
 pendingBuildings.resolve(response(structuredClone(fixture.buildings))); pendingBuildings = null;
 await firstTilt;
 assert.equal(auto.layers.buildings.layout.visibility, "visible"); assert.equal(auto.eases.length, 0);
+assert.equal(auto.layers["bto-sites"].layout.visibility, "visible");
 assert.equal(auto.pitch, 20);
 await gesture(3); assert.equal(auto.layers.buildings.layout.visibility, "visible");
 await gesture(2.9); assert.equal(auto.layers.buildings.layout.visibility, "none");
+assert.equal(auto.layers["bto-sites"].layout.visibility, "none");
 assert.equal(auto.pitch, 2.9);
 assert.equal(get("sun-panel").hidden, true);
 assert.equal(auto.eases.length, 0);

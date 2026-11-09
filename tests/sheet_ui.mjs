@@ -165,10 +165,15 @@ globalThis.fetch = async (url) => {
     positions: Array.from({ length: 97 }, () => ({ azimuth: 90, altitude: 45 })) });
   throw Error("Unexpected request " + url);
 };
-const buildingMap = { on() {}, addSource() {}, addLayer() {}, setPaintProperty() {},
+const buildingMap = { on() {}, addSource() {}, addLayer() {}, addImage() {}, setPaintProperty() {},
   setFeatureState() {}, setLight() {}, setLayoutProperty() {}, setFilter() {}, easeTo() {},
   getLight: () => ({}), getPitch: () => 0 };
+const createElement = document.createElement;
+document.createElement = (tag) => tag === "canvas" ? { getContext: () => ({
+  scale() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, arc() {}, fill() {}, getImageData() {},
+}) } : createElement(tag);
 initBuildings(buildingMap);
+document.createElement = createElement;
 assert.equal(get("sun-panel").hidden, true);
 assert.equal(get("sun-panel").parentNode.id, "sun-bar");
 await get("toggle-3d").onclick();
