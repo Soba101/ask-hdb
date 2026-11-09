@@ -327,7 +327,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   /* The map credit is one 44px round button: the box and the button share one shape (they were a 24px circle under a 44px square). */
   .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { box-sizing: border-box; width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%;
     background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
-  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button { width: 100%; height: 100%; border-radius: 50%; background-color: transparent; }
+  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button { inset: 0; margin: 0; width: 100%; height: 100%; border-radius: 50%; background-color: transparent; } /* inset: the library sets bottom: -4px, which pushed the "i" low */
 
   /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
   #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
