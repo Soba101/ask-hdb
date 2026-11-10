@@ -35,6 +35,8 @@ def _places(places, kind):
 
 def nearest_to_point(lat, lng, places_df, kind, n=3):
     """Same as nearest() for any coordinate, such as an approximate BTO site."""
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        raise ValueError("n must be a positive integer")
     places = _places(places_df, kind)
     places["km"] = haversine_km(float(lat), float(lng), places.lat.to_numpy(), places.lng.to_numpy())
     places = places.sort_values(["km", "place_id"]).head(n)
