@@ -15,6 +15,23 @@ let selected = null; // {kind, id, label, lat, lng}
 // ---------- chat ----------
 // Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>, *italic* stays plain.
 function inline(el, text) {
+  // [label](https://...) and bare https:// links become anchors; any other scheme stays plain text.
+  const link = /\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|https:\/\/[^\s<>()[\]]*[^\s<>()[\].,;:!?'"]/g;
+  let last = 0;
+  for (const m of text.matchAll(link)) {
+    styled(el, text.slice(last, m.index));
+    const a = document.createElement("a");
+    a.href = m[2] || m[0];
+    a.textContent = m[1] || m[0];
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    el.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  styled(el, text.slice(last));
+}
+
+function styled(el, text) {
   text.split("**").forEach((part, i) => {
     if (i % 2) { const strong = document.createElement("strong"); strong.textContent = part; el.appendChild(strong); }
     else el.append(part.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:]|$)/g, "$1$2"));

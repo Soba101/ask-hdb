@@ -40,3 +40,21 @@ assert.equal(note.text, "(Note: MOE measures it.)");
 assert.equal(plain.tag, "p"); assert.equal(plain.text, "| not a table |", "pipes without a |---| line stay text");
 assert.equal(div.children.length, 7);
 console.log("ok");
+
+// Links: Markdown and bare https links become anchors that open in a new tab; other schemes stay text.
+const url = "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant";
+const links = new Node("div");
+render(links, [
+  `* [HDB: Proximity Housing Grant (PHG) for families](${url})`,
+  `See ${url}. Or [bad](javascript:alert(1)) and **bold**.`,
+].join("\n"));
+const [linkList, para] = links.children;
+const anchor = linkList.children[0].children.find((c) => c.tag === "a");
+assert.equal(anchor.href, url); assert.equal(anchor.text, "HDB: Proximity Housing Grant (PHG) for families");
+assert.equal(anchor.target, "_blank"); assert.equal(anchor.rel, "noopener noreferrer");
+const bare = para.children.filter((c) => c.tag === "a");
+assert.equal(bare.length, 1, "only the https link is an anchor");
+assert.equal(bare[0].href, url, "the full stop after a bare link is not part of it");
+assert.ok(para.text.includes("[bad](javascript:alert(1))"), "a non-https link stays plain text");
+assert.ok(para.children.some((c) => c.tag === "strong"), "bold still works next to links");
+console.log("links ok");
