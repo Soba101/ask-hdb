@@ -3,12 +3,14 @@
 Code decides, not the prompt. The agent stops before a gated tool runs and shows the profile
 the model is about to use, written by code from the tool arguments (no model wording). The
 tool runs on a later turn only if the user said yes to that exact profile. Any change in the
-arguments gives a new reference, so the user is asked again.
+arguments the chosen scheme uses gives a new reference, so the user is asked again.
 """
 
 import hashlib
 import re
 from itertools import pairwise
+
+from ask_hdb import confirm_display as display
 
 # Tools whose answer depends on the buyer's profile (eligibility, grants, loan limits).
 GATED = {"can_buy_resale", "cpf_housing_grant", "ehg_amount", "phg_amount", "max_loan",
@@ -34,7 +36,14 @@ def _clean(value):
 
 def profile(args):
     """The arguments that describe the buyer and flat, normalised so equal answers compare equal."""
-    return {k: _clean(v) for k, v in sorted(args.items()) if k not in IGNORED and _clean(v) is not None}
+    ignored = IGNORED.copy()
+    # The wrapper discards the other scheme's timer and family marital status.
+    # Buying company and own income are read only in single-scheme rule branches.
+    if _clean(args.get("scheme")) == "family":
+        ignored |= {"first_timer", "marital_status", "buying_with", "own_monthly_income"}
+    elif _clean(args.get("scheme")) == "single":
+        ignored.add("family_timers")
+    return {k: _clean(v) for k, v in sorted(args.items()) if k not in ignored and _clean(v) is not None}
 
 
 def _hash(lines):
@@ -50,7 +59,7 @@ def _show(key, value):
         return "yes" if value else "no"
     if isinstance(value, (int, float)) and any(word in key for word in MONEY):
         return f"${value:,}"
-    return str(value)  # enum values stay exactly as the tool takes them, so the model cannot copy a reworded one
+    return str(value)  # Canonical lines keep the raw values; readable wording never changes the hash.
 
 
 def _lines(args):
@@ -61,18 +70,25 @@ def _lines(args):
 HEADER = "Before I check this, please confirm the details I will use:"
 
 
-def question_text(args):
-    """The confirmation message, written by code from the tool arguments."""
-    return (HEADER + "\n" + "\n".join(_lines(args))
+def question_text(args, user_words=""):
+    """Code-written details, marking numbers absent from the user's own words."""
+    user_numbers = display.numbers(user_words)
+    lines = []
+    for key, value in profile(args).items():
+        marker = display.CHECK if display.missing_number(key, value, user_numbers) else ""
+        lines.append(f"- {display.label(key)}: {display.readable(key, _show(key, value))}{marker}")
+    return (HEADER + "\n" + "\n".join(lines)
             + f"\nIs this right? Reply yes to continue, or tell me what to change. (profile ref {ref(args)})")
 
 
 def _shown_ref(text):
-    """The ref of the lines the message actually shows, or None when it is not a code-written message.
+    """The ref of the shown values, or None when the message does not match the code template.
     A model that copies the template with other values and an old ref fails this check."""
     lines = text.splitlines()
     found = REF.search(lines[-1]) if len(lines) >= 2 else None
-    if not found or lines[0] != HEADER or _hash(lines[1:-1]) != found.group(1):
+    canonical = [display.canonical_line(line) for line in lines[1:-1]]
+    if (not found or lines[0] != HEADER or None in canonical
+            or _hash(canonical) != found.group(1)):
         return None
     return found.group(1)
 
