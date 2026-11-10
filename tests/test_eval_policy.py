@@ -1,4 +1,4 @@
-"""Links and passage-only numbers are scored together with the existing answer types."""
+"""Links and summary-only numbers are scored together with the existing answer types."""
 
 import pytest
 import yaml
@@ -20,7 +20,7 @@ RULE_CALLS = {
 
 
 @pytest.mark.parametrize('q', QUESTIONS, ids=lambda q: q['id'])
-def test_policy_cases_require_link_and_reject_passage_number_anywhere(q):
+def test_policy_cases_require_link_and_reject_summary_number_anywhere(q):
     expect = q['expect']
     url = expect['expected_url']
     body = f"${expect['number']:,}." if 'number' in expect else 'Yes, you can buy the flat.'
@@ -33,9 +33,8 @@ def test_policy_cases_require_link_and_reject_passage_number_anywhere(q):
         assert evidence['eligible'] is True
     calls = [
         {'name': name, 'result': evidence},
-        {'name': 'policy_explain', 'result': {'tool': 'policy_explain', 'passages': [
-            {'url': url, 'title': 'Example policy', 'fetched_at': '2026-11-10',
-             'passage': 'Invented fixture cap: 987654.'}]}}
+        {'name': 'policy_explain', 'result': {'tool': 'policy_explain', 'pages': [
+            {'url': url, 'title': 'Example policy', 'summary': 'Invented fixture cap: 987654.'}]}}
     ]
     good = {'answer': body + f' See [Official policy]({url}).', 'tool_calls': calls}
     assert answer_passes(q, good)

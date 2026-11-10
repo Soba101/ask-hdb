@@ -211,12 +211,9 @@ bto_scenario = _tool("bto_scenario", "BTO flat loan figures: maximum loan, month
 bto_ehg_amount = _tool("bto_ehg_amount", "EHG for a NEW BTO flat ONLY (no resale price or lease). If the user says resale, use ehg_amount instead.",
                        ProfileArgs, bto_rules.bto_ehg, bto_rule=True)
 
-policy_explain = _tool("policy_explain", "Find policy context and source links in locally built official pages. Context only; never use it for numbers, thresholds or eligibility verdicts.",
+policy_explain = _tool("policy_explain", "Find the official HDB page (title and link) for a policy topic. Summaries are search hints only; never use them for facts, numbers, thresholds or eligibility verdicts.",
                        PolicyArgs, policy.policy_explain)
 
 TOOLS = [price_stats, find_sales, compare_price, can_buy_resale,
          cpf_housing_grant, ehg_amount, phg_amount, max_loan, nearest_places, calculate, list_bto_projects, bto_nearby, can_apply_bto, bto_ehg_amount,
-         bto_scenario, bto_history, rail_plans, resolve_place]
-# Offer policy context only when its pages are built, so the model never calls a tool that can only fail.
-if policy.PASSAGES_PATH.exists():
-    TOOLS.append(policy_explain)
+         bto_scenario, bto_history, rail_plans, resolve_place, policy_explain]

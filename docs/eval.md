@@ -83,11 +83,11 @@ Results go to `eval/reports/<date>-<condition>.json`, plus a short markdown tabl
 `expect.verdict` (`yes`/`no`) plus `answer_keywords`, `expect.decline: true`, or `expect.clarify: true`.
 An optional `expect.expected_url` adds an exact source-link check to an existing
 answer type. It also requires every scored number to pass the shared grounding check.
-Policy calls never ground numbers, including values in titles, links or fetched dates.
+Policy calls never ground numbers, including values in titles, summaries or links.
 The development additions `q_grants_013`–`015` and `q_eligibility_013` check EHG,
 CPF Housing Grant, PHG and singles purchase explanations with the relevant HDB link.
-Offline tests include a passage-only amount before and after an otherwise correct
-answer; both fail. See [policy pages](policy-pages.md) for the source and reuse limits.
+Offline tests include a summary-only amount before and after an otherwise correct
+answer; both fail.
 Numeric grant answers are scored as numbers; eligibility answers are scored as verdicts.
 For numeric accuracy, the first number absent from the question must match within tolerance;
 a later correct number (even a bold final answer) cannot rescue an earlier guess or range.

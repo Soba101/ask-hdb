@@ -21,11 +21,11 @@ const { addResult, addSource } = new Function("document", "sources", code + "ret
 const url = "https://www.hdb.gov.sg/example", card = new Element("div");
 addSource(url, "2026-11-10");
 addResult(card, { name: "policy_explain", result: { sources: [{ title: "Housing support", url }],
-  passage: "This text must never render", fetched_at: "2099-01-01" } });
+  summary: "This text must never render", fetched_at: "2099-01-01" } });
 assert.equal(sources.querySelectorAll("a").length, 1);
 assert.equal(sources.querySelector("a").textContent, "Housing support");
 assert.equal(sources.querySelector("a").href, url);
-assert.equal(card.children.length, 0, "no raw result or passage panel");
+assert.equal(card.children.length, 0, "no raw result or summary panel");
 assert.ok(!sources.textContent.includes("This text must never render"));
 assert.ok(!sources.textContent.includes("2099"));
 addResult(card, { name: "policy_explain", result: { error: "policy pages not built" } });
