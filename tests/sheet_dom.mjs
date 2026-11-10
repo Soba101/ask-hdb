@@ -11,7 +11,7 @@ export function viewport(width) {
     visualViewport: { height: 800, offsetTop: 0,
       addEventListener: (type, fn) => { viewportListeners[type] = fn; } } };
   globalThis.ResizeObserver = class {
-    constructor(fn) { this.fn = fn; }
+    constructor(fn) { this.fn = fn; globalThis.ResizeObserver.last = this; }
     observe() { this.fn(); }
     disconnect() {}
   };

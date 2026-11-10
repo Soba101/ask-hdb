@@ -188,6 +188,13 @@ window.visualViewport.height = 500; window.visualViewport.offsetTop = 20; view.k
 assert.equal(get("app").style.getPropertyValue("--kb"), "280px");
 assert.equal(sheetHeight(), 400); assert.equal(side.dataset.snap, "half");
 assert.equal(sheet.padding(60), 60, "setPadding already applies the sheet height");
+// With the keyboard open, a full sheet stops below the search bar, which is the chat input.
+get("topbar").getBoundingClientRect = () => ({ bottom: 74 });
+key("ArrowUp"); assert.equal(state(), "full"); assert.equal(sheetHeight(), 438, "520 above the keyboard - 74 bar - 8 gap");
+// The question box grows as you type: the observer moves the sheet down with it.
+get("topbar").getBoundingClientRect = () => ({ bottom: 120, height: 108 }); ResizeObserver.last.fn();
+assert.equal(sheetHeight(), 392, "520 - 120 taller bar - 8 gap");
+key("Escape"); delete get("topbar").getBoundingClientRect;
 window.visualViewport.height = 800; window.visualViewport.offsetTop = 0; view.keyboard();
 assert.equal(get("app").style.getPropertyValue("--kb"), "0px");
 window.innerHeight = 1000; window.visualViewport.height = 1000; view.resize();
