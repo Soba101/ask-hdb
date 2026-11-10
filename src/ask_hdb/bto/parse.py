@@ -2,7 +2,7 @@
 
 import re
 
-FLAT = r"(?:2-room\s+Flexi|3-room|4-room|5-room|3Gen|CCA\s*##\s*\(30-yr\s*Lease\))"
+FLAT = r"(?:2-room\s+Flexi|3-room|4-room\s+\(with\s+balcony\)|4-room|5-room|3Gen|CCA\s*##\s*\(\d+-yr\s*Lease\))"
 NUM = r"\d+(?:\s*-\s*\d+)?"
 ROW = re.compile(rf"(?P<flat>{FLAT})\s+(?P<area>{NUM})\s+(?P<internal>{NUM})\s+(?P<units>\d+)\s+"
                  r"\$(?P<low>[\d,]+)\s*-\s*\$(?P<high>[\d,]+)")
@@ -11,7 +11,7 @@ CATEGORY = re.compile(r"(Standard|Plus|Prime)\s+Projects?")
 HEADER = re.compile(r"ANNEX A|Project\s+Estimated\s+Waiting\s+Time\s*@\s*\(months\)\s+Flat\s+Type\s+Estimated\s+"
                     r"Floor\s+Area\s*\*\s*\(sqm\)\s+Estimated\s+Internal\s+Floor\s+Area\s*\^\s*\(sqm\)\s+No\.\s+of\s+Units\s+"
                     r"Indicative\s+Price\s+Range\s*#\s*\(Excluding\s+Grants\)|Table A\(1\)\(a\):[^\n]*|(?m:^\s*\d\s*$)")
-WAIT = re.compile(r"\s(\d+(?:/\d+)?)\s*$")
+WAIT = re.compile(r"\s(\d+(?:\s*/\s*\d+)?)\s*$")
 
 
 def _int(text):

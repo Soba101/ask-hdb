@@ -37,7 +37,7 @@ def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, c
         projects = projects[projects.project_id.isin(launched)]
     rows = flats[flats.project_id.isin(projects.project_id)]
     if flat_type:
-        rows = rows[rows.flat_type.str.upper().eq(flat_type.upper())]
+        rows = rows[rows.flat_type.str.upper().str.startswith(flat_type.upper())]  # "4-room" also finds "4-room (with balcony)"
     if max_price is not None:
         rows = rows[rows.price_low <= max_price]
     if launch_month:
