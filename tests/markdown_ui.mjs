@@ -19,7 +19,7 @@ const { render } = new Function("document", code + "return { render };")(documen
 const div = new Node("div");
 render(div, [
   "### **Sales** ###", "* **2026-09**: $858,000", "  - nested under it", "1. first numbered", "---",
-  "| Condition | Price |", "|---|---|", "| A \\| B | $858,000 |", "| short |", "*(Note: MOE measures it.)*",
+  "| Condition | Price |", "|---|---|", "| A \\| B | $858,000 |", "| short |", "| 2026-09 | 7 - 9 |", "*(Note: MOE measures it.)*",
   "| not a table |", "",
 ].join("\n"));
 const [h, list, hr, wrap, note, plain] = div.children;
@@ -31,10 +31,11 @@ assert.equal(bullet.className, "md-d0"); assert.equal(nested.className, "md-d1",
 assert.equal(numbered.text, "1. first numbered");
 assert.equal(hr.tag, "hr");
 const table = wrap.children[0];
-assert.equal(table.rows.length, 3, "the |---| line is dropped");
+assert.equal(table.rows.length, 4, "the |---| line is dropped");
 assert.equal(table.rows[0].children[0].tag, "th");
 assert.deepEqual(table.rows[1].children.map((c) => c.text), ["A | B", "$858,000"], "an escaped pipe stays in its cell");
 assert.deepEqual(table.rows[2].children.map((c) => c.text), ["short", ""], "a short row is padded under its headers");
+assert.deepEqual(table.rows[3].children.map((c) => c.text), ["2026\u201109", "7\u20119"], "months and ranges use a hyphen that does not break");
 assert.equal(note.text, "(Note: MOE measures it.)");
 assert.equal(plain.tag, "p"); assert.equal(plain.text, "| not a table |", "pipes without a |---| line stay text");
 assert.equal(div.children.length, 7);
