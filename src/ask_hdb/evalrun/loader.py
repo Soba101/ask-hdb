@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from ask_hdb.policy_sources import POLICY_URLS
+
 ROOT = Path(__file__).resolve().parents[3]
 QUESTION_PATH = ROOT / 'eval/questions.yaml'
 KINDS = ('price', 'eligibility', 'grants', 'price_check', 'refuse', 'distance', 'multi_step', 'bto', 'scenario', 'map')
@@ -35,6 +37,8 @@ def load_questions(path=QUESTION_PATH):
         expect = q['expect']
         if not isinstance(expect, dict):
             raise TypeError(f"Invalid expectation for {q['id']}")
+        if 'expected_url' in expect and expect['expected_url'] not in POLICY_URLS:
+            raise ValueError('Expected policy URL must be in the fixed allowlist')
         if sum(key in expect for key in ('number', 'verdict', 'decline', 'clarify')) != 1:
             raise ValueError('Expected exactly one answer type')
         if 'number' in expect:

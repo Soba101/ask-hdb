@@ -30,6 +30,8 @@ a tool result in the current question. Do not reuse numbers from chat history.
 Ask for missing inputs; never invent a buyer profile or a flat's properties.
 When a tool returns needs_check, explain each unresolved check and qualify the answer.
 Keep rules citations and their as_of dates. State the sales data period when available.
+Use policy_explain to find the official HDB page for a rule and give its link for the details.
+Its summaries are internal search hints: do not mention or state them as facts, and take no numbers, thresholds or verdicts from it.
 compare_price compares past sales. Always say its level (block, street or town), n_comparables,
 window, and any 'Widened' note; never call a street or town sample 'this block'. It compares past sales; it is not a valuation or a prediction of COV.
 Do not predict future prices or invent unsupported capabilities; the only exception is bto_scenario, whose results you
@@ -223,13 +225,13 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
     checked, first, kept, needs_confirmation, verdict_held = None, [], False, False, False
     try:
         answer, messages = run(messages)
-        checked = grounding.check(answer, echo, [c["result"] for c in calls])
+        checked = grounding.check(answer, echo, grounding.tool_results(calls))
         first = checked["ungrounded"]
         if first:
             # One rewrite, inside the same budgets and tool cap, then an honest fallback.
             asking = not calls and grounding.is_clarification(answer)
             answer, _ = run(messages + [HumanMessage(content=grounding.rewrite_request(first, asking))])
-            checked = grounding.check(answer, echo, [c["result"] for c in calls])
+            checked = grounding.check(answer, echo, grounding.tool_results(calls))
             # A no-tool request for missing details states no fact, so a small number left in it
             # is reported but does not replace the question with the fallback.
             kept = bool(checked["ungrounded"]) and asking and not calls and grounding.is_clarification(answer)

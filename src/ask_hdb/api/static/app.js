@@ -90,6 +90,14 @@ function addTool(event) {
 }
 
 function addResult(card, event) {
+  if (event.name === "policy_explain") {
+    // Only page names and links may leave policy context on the server.
+    (event.result.sources || []).forEach((source) => addSource(source.url, null, source.title));
+    if (event.result.error) {
+      const note = document.createElement("p"); note.textContent = event.result.error; card.appendChild(note);
+    }
+    return;
+  }
   const details = document.createElement("details");
   const label = document.createElement("summary");
   label.textContent = "Result";
@@ -110,8 +118,12 @@ function collectSources(node) {
   }
 }
 
-function addSource(url, asOf) {
-  if (seen.has(url)) return;
+function addSource(url, asOf, title) {
+  if (seen.has(url)) {
+    // A rules tool may have linked the same page first. Keep its readable policy title.
+    if (title) sources.querySelectorAll("a").forEach((a) => { if (a.href === url) a.textContent = title; });
+    return;
+  }
   seen.add(url);
   if (!sources.firstChild) {
     const title = document.createElement("h2");
@@ -122,7 +134,7 @@ function addSource(url, asOf) {
   const li = document.createElement("li");
   const a = document.createElement("a");
   a.href = url;
-  a.textContent = url.replace(/^https:\/\//, "");
+  a.textContent = title || url.replace(/^https:\/\//, "");
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   li.appendChild(a);

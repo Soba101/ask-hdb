@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 
-from ask_hdb import agent
+from ask_hdb import agent, policy
 from ask_hdb.api import amenities, buildings, mapdata
 from ask_hdb.api.points import map_actions, map_points
 
@@ -258,6 +258,9 @@ def work(question, history, limits, events, left, context=None):
         if event["type"] == "usage":
             spent = event["tokens"]
         else:
+            if event["type"] == "tool_result" and event["name"] == "policy_explain":
+                # Keep the original context inside the agent. The browser gets links only.
+                event = {**event, "result": policy.public_result(event["result"])}
             events.put({k: v for k, v in event.items() if k != "args"} if event["type"] == "tool_result" else event)
             if event["type"] == "tool_result":
                 try:

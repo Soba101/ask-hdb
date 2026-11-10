@@ -15,7 +15,7 @@ def open_questions(results):
     """What the last result of each tool with an `eligible` field still needs; empty when every verdict is settled."""
     last = {}
     for name, result in results:
-        if isinstance(result, dict) and "eligible" in result:
+        if name != "policy_explain" and isinstance(result, dict) and "eligible" in result:
             last[name] = result
     if any(result["eligible"] is not None for result in last.values()):
         return []  # another check was settled: do not throw its verdict away for the one that is open
@@ -29,7 +29,17 @@ def open_questions(results):
 def replacement(answer, results):
     """Plain text to show instead of `answer`, or None when the answer may stand."""
     missing = open_questions(results)
-    if not missing or not VERDICT.search(answer or ""):
+    has_policy = any(name == "policy_explain" for name, _ in results)
+    if (not missing and has_policy
+            and not any(name != "policy_explain" and isinstance(result, dict)
+                        and "error" not in result and isinstance(result.get("eligible"), bool)
+                        for name, result in results)):
+        # Reading a policy page cannot settle a buyer's eligibility.
+        missing = ["household and flat details for a rules check"]
+    # A bare yes or no also needs a rules check when policy context was read.
+    plain = re.sub(r'[*_`]', '', answer or '')
+    stated = VERDICT.search(plain) or (has_policy and re.match(r'^\s*(?:yes|no)\b', plain, re.IGNORECASE))
+    if not missing or not stated:
         return None
     return ("I cannot give a yes or no yet, because the rules check is missing information: "
             + "; ".join(dict.fromkeys(missing)) + ". Please tell me these details and I will check again.")

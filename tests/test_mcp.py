@@ -78,6 +78,7 @@ def test_protocol_schemas_and_every_tool(local_data):
                                      "loan_years": 25, "category": "Standard", "town": None, "flat_type": None},
                     "rail_plans": {"area": "Punggol"},
                     "resolve_place": {"text": "Bishan MRT"},
+                    "policy_explain": {"topic": "household"},
                     "bto_history": {"town": "PUNGGOL", "flat_type": "4-room", "financial_year": 2008},
                     "phg_amount": PROFILE | {"relation": "with"},
                 }.get(direct.name, PROFILE)

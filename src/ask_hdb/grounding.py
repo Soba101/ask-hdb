@@ -19,6 +19,7 @@ Rules, in plain words:
 - Evidence is numeric values, whole-number strings, and the years and months of window
   strings ("2025-10..2026-09"). Digits inside other strings (sentences, IDs, sources,
   as_of dates, URLs) are not evidence. Results with an "error" key and tool arguments are not.
+- Policy explanation results are context only. Their text, titles, links and dates are never evidence.
 - Numbers the user wrote in the question may be restated, but not right after a threshold
   word ("minimum", "at least", "ceiling", "limit"...): the user's 35 is not HDB's minimum age.
   Known limit: other phrasings can still present a question number as a rule.
@@ -97,6 +98,11 @@ def claims(text):
     return found
 
 
+def tool_results(calls):
+    """Policy context cannot support numbers, even if its payload loses its marker."""
+    return [call.get('result') for call in calls if call.get('name') != 'policy_explain']
+
+
 def evidence(results):
     """Numbers and ISO dates in tool results, following the evidence rules above."""
     values, dates = set(), set()
@@ -116,7 +122,8 @@ def evidence(results):
             elif WINDOW.fullmatch(node.strip()):
                 values.update(Decimal(part) for part in WINDOW.fullmatch(node.strip()).groups() if part)
         elif isinstance(node, dict):
-            if 'error' not in node:  # tool errors are not evidence for an answer
+            if 'error' not in node and node.get('tool') != 'policy_explain':
+                # Policy context and tool errors are not evidence for an answer.
                 for name, item in node.items():
                     walk(item, name)
         elif isinstance(node, (list, tuple)):
@@ -140,6 +147,8 @@ def _matches(claim, values):
 def _labels(node):
     """Every string under a `label` key in the tool results."""
     if isinstance(node, dict):
+        if node.get('tool') == 'policy_explain':
+            return  # retrieved text cannot hide claims as place labels either
         for key, value in node.items():
             if key == 'label' and isinstance(value, str) and value.strip():
                 yield value.strip()

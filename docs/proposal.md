@@ -23,7 +23,7 @@
 | Tools | Own MCP server. The agent uses it |
 | Model | Local first (llama-server, OpenAI-compatible). Cloud model as a switch for the demo |
 | Rules | Versioned YAML with source URL and `as_of` date. Never in prompts |
-| RAG | Only to quote and explain policy text. Never to decide eligibility |
+| RAG | Links only: search over own summaries finds the official HDB page and gives its link. No HDB text stored. Never supplies numbers or verdicts |
 | Numbers | Only from tool results. Enforced by a grounding checker |
 | Cost safety | Hard limit on steps and tokens per question. Stops and says so |
 | Human in the loop | Agent shows the buyer profile it understood and asks "Is this right?" before computing |
@@ -41,7 +41,9 @@
 - Eligibility answers are framed as a **pre-check before applying for the HFE letter**,
   which is HDB's official decision.
 - Distance from a block to the nearest MRT, chosen primary schools, or a given address.
-- Explanations that quote HDB policy text with a link.
+- The official HDB policy page title and link for a rule. No HDB text is fetched or stored:
+  hdb.gov.sg refuses automated fetching, and HDB's terms ask for written approval to reuse
+  materials. Passage retrieval can come back only with HDB's approval.
 
 ## Out of scope (v1)
 - EC applications, BTO ballots and priority schemes (BTO eligibility and launch info are planned for week 4b).
