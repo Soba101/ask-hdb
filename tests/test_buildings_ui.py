@@ -63,13 +63,13 @@ class PageTree(HTMLParser):
         self.stack[-1]["children"].append(data)
 
 
-@pytest.mark.parametrize("script", ["card_ui.mjs", "amenity_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs", "sheet_ui.mjs"])
+@pytest.mark.parametrize("script", ["card_ui.mjs", "amenity_ui.mjs", "card_map_ui.mjs", "mobile_ui.mjs", "sheet_ui.mjs", "area_units_ui.mjs"])
 def test_card_offline(tmp_path, script):
     node = shutil.which("node")
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("card.js", "card-map.js", "amenity-card.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js", "style.css"):
+    for name in ("card.js", "card-map.js", "amenity-card.js", "building-card.js", "buildings.js", "sun-controls.js", "shadows.js", "sheet.js", "sheet-gestures.js", "area-units.js", "preferences.js", "style.css"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)

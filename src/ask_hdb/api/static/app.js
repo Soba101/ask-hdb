@@ -4,6 +4,8 @@
 import { initBuildings } from "./buildings.js";
 import { initCard } from "./card.js";
 import { initSheet } from "./sheet.js";
+import { displayAreaUnits } from "./area-units.js";
+import { initPreferences } from "./preferences.js";
 const $ = (id) => document.getElementById(id);
 const sheet = initSheet({ chat: () => tab("chat") });
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
@@ -11,6 +13,10 @@ const tools = $("tools"), sources = $("sources"), empty = $("empty");
 const history = [];
 const MAX_TURNS = 12;
 let selected = null; // {kind, id, label, lat, lng}
+const preferences = initPreferences((unit) => {
+  log.querySelectorAll(".msg.bot").forEach((answer) => displayAreaUnits(answer, unit));
+  card.refreshAreas();
+});
 
 // ---------- chat ----------
 // Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>, *italic* stays plain.
@@ -80,7 +86,10 @@ function render(div, text) {
 function add(kind, text) {
   const div = document.createElement("div");
   div.className = "msg " + kind;
-  if (kind === "bot") render(div, text); else inline(div, text);
+  if (kind === "bot") {
+    render(div, text);
+    displayAreaUnits(div, preferences.areaUnit());
+  } else inline(div, text);
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
   div.scrollIntoView?.({ block: "nearest" }); // on a phone the log sits inside the scrolling sheet
@@ -411,6 +420,7 @@ const mapLayer = {
   route(line) { todo.route = line; },
 };
 const card = initCard({
+  areaUnit: preferences.areaUnit,
   onSelect: sheet.select, onSection: sheet.section, onRoute: sheet.route,
   mapLayer,
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
