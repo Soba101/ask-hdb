@@ -123,8 +123,9 @@ def test_phone_markup_and_touch_css_offline():
     assert "viewport-fit=cover" in viewport["attrs"]["content"]
     assert len([node for node in nodes if node["attrs"].get("class") == "legend-item"]) == 5
     assert "mop-controls" in by_id and "hidden" in by_id["mop-controls"]["attrs"]
-    assert "BTO launched (approximate site)" in (STATIC / "index.html").read_text()
-    assert "Upcoming BTO (not on sale yet)" in (STATIC / "index.html").read_text()
+    page = (STATIC / "index.html").read_text()  # the notes are hidden only in the phone sheet
+    assert 'BTO launched<span class="legend-note">&nbsp;(approximate site)</span>' in page
+    assert 'Upcoming BTO<span class="legend-note">&nbsp;(not on sale yet)</span>' in page
     for control in ("sun-date", "sun-time"):
         assert any(node["tag"] == "label" and by_id[control] in list(walk(node)) for node in nodes)
 

@@ -31,6 +31,7 @@ The app has no login. Do not expose it to the internet without the rate limits a
 | `API_RATE_PER_MINUTE`, `API_DAILY_TOKEN_CAP`, `API_QUEUE_WAIT` | Questions per visitor per minute, the daily token cap, and how many seconds a second visitor waits for the one model slot (30 in Docker). |
 | `BIND_ADDR` | Docker only: the address the port is published on. |
 | `TRACING`, `LANGFUSE_*`, `TRACE_TEXT` | Optional Langfuse tracing, see below. |
+| `TOOL_LOG` | `1` (default) writes one JSON line per tool call to stderr (`docker logs`): the tool, its arguments and a result count. Profile, grant, loan and calculate tools log only argument names, never income, ages or citizenship. `0` turns it off. |
 
 ## Bring your own model
 

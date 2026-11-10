@@ -74,7 +74,7 @@ header p, .muted { color: var(--muted); margin: var(--space-1) 0 0; font-size: v
 .msg .md-table { overflow-x: auto; margin: var(--space-1) 0; }
 .msg table { border-collapse: collapse; font-size: .92em; width: 100%; }
 /* Cells wrap so every column fits a phone; amounts have no spaces, so they stay on one line. */
-.msg th, .msg td { text-align: left; vertical-align: top; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); }
+.msg th, .msg td { text-align: left; vertical-align: top; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); overflow-wrap: normal; } /* .msg breaks words anywhere; cells break only between words */
 #side, #chip-detail, #sun-bar { font-variant-numeric: tabular-nums; }
 #card-title { text-wrap: balance; }
 #peek-hint:empty { display: none; }
@@ -188,6 +188,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px 16px; }
   #price-controls label { min-width: 0; font-size: var(--caption); }
   #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: var(--caption); }
+  #price-controls label:has(#budget) { grid-column: 1 / -1; } /* the slider needs the full width */
   #chip-detail input, #chip-detail select { width: 100%; }
   #chip-detail select, #sun-bar input[type=date] { background: var(--panel); color: var(--text);
     border: 1px solid var(--line); border-radius: var(--radius); font: inherit; min-width: 0; }
@@ -389,7 +390,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .radius button.secondary, #amenity-pills button.secondary { flex: 1; min-width: 0; background: transparent; border-radius: 8px; padding: 0 4px; font-size: var(--t-foot); }
   .radius button.secondary.on, #amenity-pills button.secondary.on { background: var(--ios-blue); color: #fff; }
   #amenity-list button, #route-clear { border-radius: var(--pill); padding: 0 var(--space-4); }
-  #sheet-peek .legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: var(--t-cap); }
+  #sheet-peek .legend { flex-wrap: wrap; row-gap: 2px; font-size: var(--t-cap); } /* wrap, not scroll: a clipped key hides what a colour means */
+  #sheet-peek .legend-note { display: none; } /* two lines on a phone; a BTO card still says "approximate site" */
   #sheet-peek .legend::-webkit-scrollbar { display: none; }
   /* The legend sits on the sheet itself, not on a floating pill of its own. */
   #sheet-peek .legend { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; }
@@ -430,6 +432,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
 /* ---- Wide screens: the sheet becomes a panel docked on the left, always open ---- */
 @media (min-width: 801px) {
+  #sheet-peek .legend-note { display: inline; } /* a wide map has room for the full key */
   #app { --side-w: clamp(360px, 30vw, 420px); }
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
     border-radius: var(--card-radius); padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;

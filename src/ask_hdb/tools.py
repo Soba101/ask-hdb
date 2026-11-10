@@ -93,6 +93,24 @@ def _validation_error(name):
     return handle
 
 
+# Tools whose arguments describe places and flats, not the buyer: their values are safe to log in full.
+# Every other tool (eligibility, grants, loans, calculate) logs only the argument names, never income, ages or citizenship.
+LOG_ARGS = {"price_stats", "find_sales", "compare_price", "resolve_place", "nearest_places",
+            "list_bto_projects", "bto_nearby", "bto_history", "rail_plans"}
+
+
+def _log_call(name, values, result):
+    """One JSON line per tool call on stderr (docker logs), so a wrong answer can be traced to its arguments.
+    Set TOOL_LOG=0 to turn it off."""
+    if os.getenv("TOOL_LOG", "1") == "0":
+        return
+    args = {k: v for k, v in values.items() if v is not None} if name in LOG_ARGS else sorted(values)
+    summary = {k: result[k] for k in ("n_sales", "period", "error", "n_comparables") if isinstance(result, dict) and k in result}
+    if isinstance(result, dict) and isinstance(result.get("sales"), list):
+        summary["sales"] = len(result["sales"])
+    print(json.dumps({"tool": name, "args": args, "result": summary}, default=str), file=sys.stderr, flush=True)
+
+
 def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
     def invoke(**kwargs):
         try:
@@ -127,10 +145,13 @@ def _tool(name, description, schema, function, *, rule=False, bto_rule=False):
                 same = {k: v for k, v in values.items() if k != "limit"}
                 result["sales_without_coordinates"] = sales.price_stats(unlocated_frame, **same)["n_sales"]
             # Catch non-JSON results before they reach the chat client.
-            return json.loads(json.dumps(result, allow_nan=False))
+            result = json.loads(json.dumps(result, allow_nan=False))
+            _log_call(name, values, result)
+            return result
         except (ValueError, TypeError, KeyError, OSError, OverflowError) as exc:
             # Keep a trace so a real bug is not mistaken for a bad model argument.
             print(f"[tool {name} failed: {type(exc).__name__}: {exc}]", file=sys.stderr)
+            _log_call(name, kwargs, {"error": type(exc).__name__})
             if name in NO_FRAME or "near_kind" in kwargs or "near_km" in kwargs:
                 # Keep the message the model needs ("blocks.parquet is missing") but never a server directory.
                 return {"error": f"{name}: " + re.sub(r"(?:/[^/\s'\"]+)+/([^/\s'\"]+)", r"\1", str(exc))}

@@ -45,7 +45,8 @@ function render(div, text) {
         if (isRule(lines[i])) continue;
         const cells = cellsOf(lines[i]).concat(Array(head.length).fill("")).slice(0, head.length); // keep cells under their header
         const row = table.insertRow(), tag = table.rows.length === 1 ? "th" : "td";
-        for (const c of cells) { const cell = document.createElement(tag); inline(cell, c); row.appendChild(cell); }
+        // U+2011 is a hyphen that never breaks, so "2026-09" and "7-9" stay on one line in a narrow column.
+        for (const c of cells) { const cell = document.createElement(tag); inline(cell, c.replace(/(\d) ?- ?(\d)/g, "$1\u2011$2")); row.appendChild(cell); }
       }
       i--;
       const wrap = document.createElement("div"); wrap.className = "md-table"; wrap.appendChild(table); div.appendChild(wrap);
@@ -268,7 +269,11 @@ function show(question, event) {
 }
 
 // The question box grows to three lines, so a long question stays readable.
-function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 88) + "px"; }
+function grow() {
+  // An empty box measures its wrapped placeholder, so it would stay tall after a send: use the CSS height.
+  if (!box.value) { box.style.height = ""; return; }
+  box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 88) + "px";
+}
 box.addEventListener("input", grow);
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -490,7 +495,7 @@ async function startMap() {
       document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
-      for (const layer of ["places", "blocks", "highlight"]) {
+      for (const layer of ["places", "bto-sites", "blocks", "highlight"]) {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
@@ -506,7 +511,7 @@ async function startMap() {
       const pick = (e) => {
         const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
         const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
-        const layers = ["places", "highlight", "blocks"];
+        const layers = ["places", "bto-sites", "highlight", "blocks"];
         if (map.getLayer("buildings")) layers.push("buildings");
         const hits = map.queryRenderedFeatures(box, { layers });
         if (!hits.length) return;

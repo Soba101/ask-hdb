@@ -186,6 +186,8 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
                 if isinstance(message, (HumanMessage, AIMessage))
                 and not (isinstance(message, AIMessage) and message.tool_calls)]
     said_yes, asked = profile_check.confirmed(messages, question)
+    # Only human words can establish that a number was supplied; keep earlier turns too.
+    user_words = "\n".join([str(m.content) for m in messages if isinstance(m, HumanMessage)] + [question])
     echo = "\n".join(asked + [question])  # numbers the user gave may be restated
     # The context line is not part of `question`: grounding and the confirmation gate still see only what the user typed.
     messages = messages[-HISTORY_MESSAGES:] + [HumanMessage(content=f"{context}\n{question}" if context else question)]
@@ -241,7 +243,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
             answer, verdict_held = held, True
     except NeedsConfirmation as exc:
         # Code writes the question from the tool arguments; the tool has not run.
-        answer, needs_confirmation, checked = profile_check.question_text(exc.args[0]), True, None
+        answer, needs_confirmation, checked = profile_check.question_text(exc.args[0], user_words), True, None
     except LimitReached as exc:
         stopped_reason = str(exc)
     except GraphRecursionError:
