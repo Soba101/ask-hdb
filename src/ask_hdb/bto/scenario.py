@@ -1,5 +1,7 @@
 """Illustrative BTO purchase scenario: loan, upfront cost, and a modest sale-after-MOP picture. Not a forecast."""
 
+from math import expm1, log1p
+
 import pandas as pd
 
 from ask_hdb.rules import load_rules
@@ -16,7 +18,8 @@ GROWTH_CAP = 0.03  # our own conservative ceiling on every scenario: the 2021-23
 
 def instalment(principal: float, annual_rate_pct: float, years: int) -> float:
     n, r = years * 12, annual_rate_pct / 100 / 12
-    return principal / n if r == 0 else principal * r / (1 - (1 + r) ** -n)
+    # Preserve tiny rates that would round away when added to one.
+    return principal / n if r == 0 else principal * r / -expm1(-n * log1p(r))
 
 
 def balance(principal: float, annual_rate_pct: float, years: int, months_paid: int) -> float:
@@ -24,7 +27,8 @@ def balance(principal: float, annual_rate_pct: float, years: int, months_paid: i
     months_paid = min(months_paid, n)
     if r == 0:
         return principal * (1 - months_paid / n)
-    return principal * ((1 + r) ** n - (1 + r) ** months_paid) / ((1 + r) ** n - 1)
+    # Dividing the powers by (1 + r) ** n also avoids subtracting nearly equal values.
+    return principal * expm1((months_paid - n) * log1p(r)) / expm1(-n * log1p(r))
 
 
 def past_growth(sales: pd.DataFrame, town: str, room: str) -> dict | None:
