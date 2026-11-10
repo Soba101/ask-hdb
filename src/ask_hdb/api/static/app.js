@@ -311,7 +311,8 @@ form.addEventListener("submit", (e) => {
   ask(question);
 });
 box.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  // Enter belongs to the IME while the user is choosing a character.
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
 });
 
 // ---------- tabs ----------
