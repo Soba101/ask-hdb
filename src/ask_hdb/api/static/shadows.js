@@ -9,21 +9,59 @@ export function shadowOffset(height, sun, latitude) {
     -axis(Math.cos(radians(sun.azimuth))) * length / 110540];
 }
 const signedArea = (ring) => ring.reduce((sum, p, i) => i ? sum + ring[i - 1][0] * p[1] - p[0] * ring[i - 1][1] : 0, 0) / 2;
-// An extruded flat roof shades P plus the sweep of each edge that faces away from the sun.
-// From any shaded point, a step back toward the sun enters P through one of those edges.
+// Douglas-Peucker on a closed ring, in metres. Display only: 1 m is about a pixel at zoom 17.
+function simplify(ring, tolerance = 1) {
+  const scale = Math.cos(radians(ring[0][1])) * 111320, pts = ring.map(([x, y]) => [x * scale, y * 110540]);
+  const keep = new Uint8Array(ring.length), last = ring.length - 1;
+  let far = 0, farthest = -1;
+  for (let i = 1; i < last; i++) {
+    const d = Math.hypot(pts[i][0] - pts[0][0], pts[i][1] - pts[0][1]);
+    if (d > farthest) { farthest = d; far = i; }
+  }
+  keep[0] = keep[last] = keep[far] = 1;
+  const stack = [[0, far], [far, last]];
+  while (stack.length) {
+    const [a, b] = stack.pop(), [ax, ay] = pts[a], dx = pts[b][0] - ax, dy = pts[b][1] - ay, length = Math.hypot(dx, dy) || 1;
+    let worst = -1, at = -1;
+    for (let i = a + 1; i < b; i++) {
+      const d = Math.abs(dx * (pts[i][1] - ay) - dy * (pts[i][0] - ax)) / length;
+      if (d > worst) { worst = d; at = i; }
+    }
+    if (worst > tolerance) { keep[at] = 1; stack.push([a, at], [at, b]); }
+  }
+  const out = ring.filter((_, i) => keep[i]);
+  return out.length >= 4 ? out : ring;
+}
+const oriented = new WeakMap(); // footprints never change, so simplify and orient each part once
+function rings(polygon) {
+  if (!oriented.has(polygon)) oriented.set(polygon, polygon.map((ring, i) => {
+    const r = simplify(ring);
+    return (signedArea(r) > 0) === (i === 0) ? r : [...r].reverse();
+  }));
+  return oriented.get(polygon);
+}
+// An extruded flat roof shades P plus the sweep of each wall that faces away from the sun.
+// From any shaded point, a step back toward the sun enters P through one of those walls.
+// Consecutive facing walls are monotone across the shadow direction, so each run sweeps into one simple band.
 function sweep(polygon, offset) {
-  const rings = polygon.map((ring, i) => (signedArea(ring) > 0) === (i === 0) ? ring : [...ring].reverse());
-  const quads = [];
-  for (const ring of rings) {
-    for (let i = 1; i < ring.length; i++) {
-      const a = ring[i - 1], b = ring[i];
-      // Outward normal of a CCW outer ring (and of a CW hole) is (dy, -dx). Metre scales are a positive factor.
-      if ((b[1] - a[1]) * offset[0] - (b[0] - a[0]) * offset[1] <= 0) continue;
-      const a2 = [a[0] + offset[0], a[1] + offset[1]], b2 = [b[0] + offset[0], b[1] + offset[1]];
-      quads.push([[a, b, b2, a2, a]]);
+  const footprint = rings(polygon), bands = [];
+  for (const ring of footprint) {
+    const n = ring.length - 1;
+    // Outward normal of a CCW outer ring (and of a CW hole) is (dy, -dx). Metre scales are a positive factor.
+    const faces = Array.from({ length: n }, (_, i) =>
+      (ring[i + 1][1] - ring[i][1]) * offset[0] - (ring[i + 1][0] - ring[i][0]) * offset[1] > 0);
+    const start = faces.findIndex((f, i) => f && !faces[(i + n - 1) % n]);
+    if (start < 0) continue; // all walls face the sun, or none do (degenerate)
+    for (let k = 0; k < n; k++) {
+      const i = (start + k) % n;
+      if (!faces[i] || (k > 0 && faces[(i + n - 1) % n])) continue;
+      const chain = [ring[i]];
+      for (let j = i; faces[j % n] && chain.length <= n; j++) chain.push(ring[(j + 1) % n]);
+      const moved = chain.map(([x, y]) => [x + offset[0], y + offset[1]]).reverse();
+      bands.push([[...chain, ...moved, chain[0]]]);
     }
   }
-  return [rings, ...quads];
+  return [footprint, ...bands];
 }
 function parts(feature) {
   const { type, coordinates } = feature.geometry;
