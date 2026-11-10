@@ -51,7 +51,10 @@ def list_bto_projects(name=None, town=None, flat_type=None, launch_month=None, c
                     "category": project.category, "wait_months": int(project.wait_months) if pd.notna(project.wait_months) else None,
                     "launches": sorted(set(mine.launch)),
                     "flats": [{"flat_type": r.flat_type, "units": int(r.units), "price_low": int(r.price_low),
-                               "price_high": int(r.price_high)} for r in mine.itertuples()]})
+                               "price_high": int(r.price_high),
+                               # Two rows of one flat type (e.g. 40 and 49 sqm 2-room Flexi) differ only by size.
+                               **({"floor_area_sqm": r.floor_area_sqm} if isinstance(getattr(r, "floor_area_sqm", None), str) else {})}
+                              for r in mine.itertuples()]})
     result = {"n_projects": len(out), "projects": out[:limit], "note": PRICE_NOTE}
     coming = _upcoming(name, town, flat_type, launch_month, category, max_price)
     if coming:
