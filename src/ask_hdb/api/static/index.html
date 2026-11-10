@@ -180,7 +180,7 @@
       <form id="form">
         <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or a place" required></textarea>
         <button id="send" type="submit">Send</button>
-        <button id="preferences-button" class="secondary" type="button" aria-label="Preferences" aria-haspopup="dialog" aria-controls="preferences" title="Preferences">⚙</button>
+        <button id="preferences-button" class="secondary" type="button" aria-label="Preferences" aria-haspopup="dialog" aria-controls="preferences" title="Preferences"></button>
       </form>
       <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. The map tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
       <details id="notices" class="small"><summary>Data credits</summary>
@@ -199,10 +199,10 @@
 <dialog id="preferences" aria-labelledby="preferences-title">
   <h2 id="preferences-title">Preferences</h2>
   <label for="area-unit">Area units</label>
-  <select id="area-unit" autofocus>
+  <select id="area-unit">
     <option value="sqm" selected>sqm</option><option value="sqft">sq ft</option>
   </select>
-  <button id="preferences-close" class="secondary" type="button">Done</button>
+  <button id="preferences-close" class="secondary" type="button" autofocus>Done</button>
 </dialog>
 <script type="module" src="app.js"></script>
 </body>
