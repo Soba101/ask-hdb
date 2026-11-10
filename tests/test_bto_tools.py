@@ -87,3 +87,14 @@ def test_upcoming_projects_are_listed_apart_and_never_with_a_price(monkeypatch):
     assert "upcoming_projects" not in queries.list_bto_projects(town="TAMPINES")
     assert "upcoming_projects" not in queries.list_bto_projects(town="TENGAH", launch_month="2026-06")  # launched-only filters leave them out
     assert "upcoming_projects" not in queries.list_bto_projects(town="TENGAH", flat_type="CCA")  # no such flat type there
+
+
+def test_same_flat_type_rows_carry_their_floor_area(monkeypatch):
+    flats = pd.DataFrame([
+        {"launch": "2026-02", "project_id": "bto_a", "flat_type": "2-room Flexi", "floor_area_sqm": "40", "units": 156,
+         "price_low": 243000, "price_high": 322000},
+        {"launch": "2026-02", "project_id": "bto_a", "flat_type": "2-room Flexi", "floor_area_sqm": "49", "units": 436,
+         "price_low": 301000, "price_high": 400000}])
+    monkeypatch.setattr(queries, "load_flats", lambda: flats)
+    found = queries.list_bto_projects(**{**ALL, "name": "A"})
+    assert [f["floor_area_sqm"] for f in found["projects"][0]["flats"]] == ["40", "49"]

@@ -31,6 +31,7 @@ def test_projects_categories_waits_and_rows():
         ("Sembawang Deck", "Standard", 33, "3-room", 84, 261000, 343000),
         ("Tampines Nova", "Plus", 32, "2-room Flexi", 24, 197000, 235000),
         ("Redhill Peaks", "Prime", 55, "4-room", 593, 563000, 783000)]
+    assert [r["floor_area_sqm"] for r in rows] == ["40", "93", "69", "40", "90"]
 
 
 def test_wrapped_flat_types_ranges_and_cca():
@@ -53,6 +54,7 @@ Note:"""
     assert [(r["project"], r["wait_months"], r["flat_type"], r["units"]) for r in rows] == [
         ("Woodlands North Verge", 47, "2-room Flexi", 67), ("Woodlands North Verge", 47, "4-room", 608),
         ("Fernvale Plains", 32, "CCA", 207), ("Oak Ville @ AMK", 49, "2-room Flexi", 88)]
+    assert [r["floor_area_sqm"] for r in rows] == ["40", "93-96", "39", "40"]
 
 
 def test_spaced_wait_range_40_year_cca_and_balcony():

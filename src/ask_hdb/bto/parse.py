@@ -19,7 +19,10 @@ def _int(text):
 
 
 def parse_annex_a(text: str, launch: str) -> list[dict]:
-    """One dict per flat-type row: launch, project, category, wait_months, flat_type, units, price_low, price_high."""
+    """One dict per flat-type row: launch, project, category, wait_months, flat_type, floor_area_sqm, units, price_low, price_high.
+
+    floor_area_sqm is HDB's estimated floor area as text ("40" or "105-110"); it tells apart rows of the same flat type.
+    """
     text = text.split("Note:")[0]
     text = HEADER.sub(" ", text)
     rows, position, category, project, wait = [], 0, None, None, None
@@ -37,7 +40,8 @@ def parse_annex_a(text: str, launch: str) -> list[dict]:
             project = re.sub(r"\s*[~^#]+\s*", " ", name).strip()
         flat = re.sub(r"\s+", " ", match["flat"])
         rows.append({"launch": launch, "project": project, "category": category, "wait_months": wait,
-                     "flat_type": "CCA" if flat.startswith("CCA") else flat, "units": int(match["units"]),
+                     "flat_type": "CCA" if flat.startswith("CCA") else flat, "floor_area_sqm": re.sub(r"\s+", "", match["area"]),
+                     "units": int(match["units"]),
                      "price_low": _int(match["low"]), "price_high": _int(match["high"])})
     return rows
 
@@ -72,6 +76,6 @@ def parse_legacy_annex(text: str, launch: str) -> list[dict]:
             short = bool(re.search(r"\d+\s*-?\s*(?:yr|year)\s*Lease", between + " " + (match["mark"] or "")))
         label = flat + " short lease" if short and flat != "CCA" else flat  # flat is set by the first row
         rows.append({"launch": launch, "project": project, "category": None, "wait_months": None,
-                     "flat_type": label, "units": _int(match["units"]),
+                     "flat_type": label, "floor_area_sqm": re.sub(r"\s+", "", match["area"]), "units": _int(match["units"]),
                      "price_low": _int(match["low"]), "price_high": _int(match["high"])})
     return rows

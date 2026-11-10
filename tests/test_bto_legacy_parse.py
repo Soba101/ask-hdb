@@ -35,3 +35,4 @@ def test_legacy_rows_inherit_flat_type_and_project():
         ("Sun Plaza Spring", "5-room", 117),
     ]
     assert rows[0]["price_low"] == 101000 and rows[0]["wait_months"] is None
+    assert [r["floor_area_sqm"] for r in rows] == ["38", "48", "93", "38", "48", "93", "113"]
