@@ -483,7 +483,7 @@ async function startMap() {
       document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
-      for (const layer of ["places", "blocks", "highlight"]) {
+      for (const layer of ["places", "bto-sites", "blocks", "highlight"]) {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
@@ -499,7 +499,7 @@ async function startMap() {
       const pick = (e) => {
         const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
         const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
-        const layers = ["places", "highlight", "blocks"];
+        const layers = ["places", "bto-sites", "highlight", "blocks"];
         if (map.getLayer("buildings")) layers.push("buildings");
         const hits = map.queryRenderedFeatures(box, { layers });
         if (!hits.length) return;
