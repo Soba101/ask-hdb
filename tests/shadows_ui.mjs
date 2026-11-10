@@ -28,6 +28,19 @@ const uFeature = { ...feature, properties: { ...feature.properties, height_m: 5 
 const uShadow = shadowPolygons(uFeature, { azimuth: 180, altitude: 45 });
 assert.ok(!shaded(uShadow, [15 * m, 20 * m]), "the notch is lit by the short shadow");
 assert.ok(shaded(uShadow, [15 * m, 12 * m]) && shaded(uShadow, [5 * m, 33 * m]) && !shaded(uShadow, [15 * m, 33 * m]));
+// Each run of walls facing away from the sun is one band: the U under a south sun has three runs (two arm tops, the notch floor).
+assert.equal(uShadow[0].geometry.coordinates.length, 4);
+// Simplification: collinear points and a 0.3 m wiggle go, real 3 m steps stay; tiny rings stay whole.
+const wiggly = [[0, 0], [10, 0], [20, .3], [30, 0], [40, 0], [40, 20], [37, 20], [37, 23], [0, 23], [0, 0]].map(([x, y]) => [x * m, y * m]);
+const wShadow = shadowPolygons({ ...uFeature, geometry: { type: "Polygon", coordinates: [wiggly] } }, { azimuth: 180, altitude: 45 });
+assert.equal(wShadow[0].geometry.coordinates[0][0].length, 7, "four bottom points become two; the step stays");
+assert.ok(shaded(wShadow, [38.5 * m, 24 * m]) && !shaded(wShadow, [38.5 * m, 26 * m]));
+// A gable: two north walls form one run and one simple band, whose area is the swept width times the shadow length.
+const gable = [[0, 0], [40, 0], [40, 20], [20, 25], [0, 20], [0, 0]].map(([x, y]) => [x * m, y * m]);
+const gShadow = shadowPolygons({ ...uFeature, geometry: { type: "Polygon", coordinates: [gable] } }, { azimuth: 180, altitude: 45 });
+assert.equal(gShadow[0].geometry.coordinates.length, 2, "one band for the whole run");
+const band = gShadow[0].geometry.coordinates[1][0].map(([x, y]) => [x / m, y * 110540]);
+close(Math.abs(band.reduce((sum, p, i) => i ? sum + band[i - 1][0] * p[1] - p[0] * band[i - 1][1] : 0, 0) / 2), 40 * 5);
 // A courtyard block: the courtyard is lit except the band behind its sunny wall.
 const outer = [[0, 0], [40, 0], [40, 40], [0, 40], [0, 0]].map(([x, y]) => [x * m, y * m]);
 const hole = [[10, 10], [10, 30], [30, 30], [30, 10], [10, 10]].map(([x, y]) => [x * m, y * m]);
