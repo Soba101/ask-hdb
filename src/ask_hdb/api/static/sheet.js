@@ -118,7 +118,7 @@ export function initSheet({ chat = () => {} } = {}) {
     app.style.setProperty("--kb", keyboard() + "px"); snap(state);
   });
   $("topbar").addEventListener("click", (event) => {
-    if (!enabled || !$("form").contains(event.target)) return;
+    if (!enabled || !$("form").contains(event.target) || $("preferences-button").contains(event.target)) return;
     chat(); snap(2); $("tab-chat").scrollIntoView?.({ block: "start" }); $("question").focus();
   });
   side.addEventListener("keydown", (event) => {
