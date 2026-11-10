@@ -53,3 +53,24 @@ Note:"""
     assert [(r["project"], r["wait_months"], r["flat_type"], r["units"]) for r in rows] == [
         ("Woodlands North Verge", 47, "2-room Flexi", 67), ("Woodlands North Verge", 47, "4-room", 608),
         ("Fernvale Plains", 32, "CCA", 207), ("Oak Ville @ AMK", 49, "2-room Flexi", 88)]
+
+
+def test_spaced_wait_range_40_year_cca_and_balcony():
+    # Rows copied from the November 2026 annex.
+    text = """Standard Projects
+Chencharu
+Acres 39 / 41
+3-room 69 66 84 $297,000 - $355,000
+Prime Project
+Toa Payoh
+Hillside 45
+CCA ##
+(40-yr Lease) 39 36 256 $151,000 - $192,000
+4-room 90 86 428 $558,000 - $796,000
+4-room
+(with balcony) 93 89 156 $619,000 - $832,000
+Note:"""
+    rows = parse_annex_a(text, "2026-11")
+    assert [(r["project"], r["wait_months"], r["flat_type"], r["units"]) for r in rows] == [
+        ("Chencharu Acres", 39, "3-room", 84), ("Toa Payoh Hillside", 45, "CCA", 256),
+        ("Toa Payoh Hillside", 45, "4-room", 428), ("Toa Payoh Hillside", 45, "4-room (with balcony)", 156)]

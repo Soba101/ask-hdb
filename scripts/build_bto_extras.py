@@ -2,8 +2,8 @@
 
 Run after scripts/build_bto.py (which rewrites the file). It is safe to run again: it replaces its own rows.
 - status "launched": the Tengah projects of 2021 to 2023 from bto_flats_history.parquet, located with OneMap by name.
-- status "upcoming": the 7 projects HDB lists for the November 2026 exercise (data_sources/bto_upcoming/upcoming_2026-11.csv, tracked in Git: HDB's server refuses scripts, so it cannot be downloaded again).
-  They have no name, price, wait time or category yet, so none is invented.
+- status "upcoming": the projects HDB lists for the November 2026 exercise (data_sources/bto_upcoming/upcoming_2026-11.csv, tracked in Git: HDB's server refuses scripts, so it cannot be downloaded again).
+  They have no name, price, wait time or category yet, so none is invented. A code with `launched_as` is launched: its annex project gets HDB's site.
 """
 
 import httpx
@@ -44,8 +44,13 @@ def history_rows(api, cache):
     return rows
 
 
+def upcoming_table():
+    return pd.read_csv(ROOT / "data_sources/bto_upcoming/upcoming_2026-11.csv")
+
+
 def upcoming_rows():
-    table = pd.read_csv(ROOT / "data_sources/bto_upcoming/upcoming_2026-11.csv")
+    table = upcoming_table()
+    table = table[table.launched_as.isna()]  # a launched code comes from the annex instead
     return [{"project_id": "bto_up_" + row.code.lower(), "name": f"{row.town.title()} upcoming BTO (HDB code {row.code})", "category": None,
              "first_launch": "2026-11", "wait_months": np.nan, "units": int(row.units), "lat": row.lat, "lng": row.lng, "road_name": None,
              "town": row.town, "site": "hdb_indicative", "status": "upcoming", "flat_types": row.flat_types.replace("|", ", ")}
@@ -60,6 +65,11 @@ def main():
         projects["flat_types"] = None
     own = projects.project_id.str.startswith("bto_up_") | projects.project_id.isin(["bto_" + slug(n) for n, _ in TENGAH.values()])
     projects = projects[~own]  # this script's own earlier rows; the annex rows are kept
+    # A launched project takes HDB's own indicative site: OneMap does not know a new project name yet.
+    for row in upcoming_table().dropna(subset=["launched_as"]).itertuples():
+        hit = projects.name.eq(row.launched_as)
+        assert hit.sum() == 1, f"{row.launched_as} is not in the annex projects"
+        projects.loc[hit, ["lat", "lng", "town", "site"]] = [row.lat, row.lng, row.town, "hdb_indicative"]
     cache_path = CLEAN / "bto_site_cache.json"
     import json
     cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
