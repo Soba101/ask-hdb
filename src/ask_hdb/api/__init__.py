@@ -12,7 +12,6 @@ from threading import Event, Lock, Thread
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from langchain_core.messages import AIMessage, HumanMessage
@@ -20,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from ask_hdb import agent, policy
 from ask_hdb.api import amenities, buildings, mapdata
+from ask_hdb.api.compression import GZipMiddleware
 from ask_hdb.api.points import map_actions, map_points
 
 NOTICE = ("Information only, not financial advice. Figures come from HDB data and rules with the dates shown; "

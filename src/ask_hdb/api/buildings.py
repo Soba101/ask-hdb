@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
 from ask_hdb import sun
+from ask_hdb.api.compression import accepts_gzip
 from ask_hdb.geo.loaders import ROOT
 
 PATH = ROOT / "data/clean/buildings.geojson"
@@ -102,7 +103,7 @@ def map_buildings(request: Request):
         sent = [tag.strip().removeprefix("W/") for tag in request.headers.get("if-none-match", "").split(",")]
         if headers["ETag"] in sent:
             return Response(status_code=304, headers=headers)
-        if "gzip" in request.headers.get("accept-encoding", ""):
+        if accepts_gzip(request.headers.get("accept-encoding", "")):
             return Response(zipped(), media_type="application/json", headers={**headers, "Content-Encoding": "gzip"})
         return Response(raw(), media_type="application/json", headers=headers)
     except FileNotFoundError:
