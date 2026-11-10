@@ -137,6 +137,14 @@ def test_compare_filters_are_required_but_nullable():
     assert "n_comparables" in tools.compare_price.invoke(args | {"floor_area_sqm": None})
 
 
+@pytest.mark.parametrize("as_of", ["", "NaT"])
+def test_compare_missing_date_returns_structured_error(as_of):
+    args = {"block_id": "blk_001a_tampines-st-11", "price": 150000, "flat_type": "4 ROOM",
+            "as_of": as_of, "storey_mid": None, "lease_left_months": None,
+            "floor_area_sqm": None}
+    assert "error" in tools.compare_price.invoke(args)
+
+
 def test_calculate_does_arithmetic_and_rejects_everything_else():
     assert tools.calculate.invoke({"expression": "$80,000 + 70,000 + 30,000"})["result"] == 180000
     assert tools.calculate.invoke({"expression": "(650000 - 625000) - (620000 - 523000)"})["result"] == -72000
