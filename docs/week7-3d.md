@@ -52,9 +52,10 @@ is used across Singapore. The model does not calculate these facts.
 
 The 3D light shades each wall by its direction but does not cast shadows onto other buildings'
 walls or roofs. Shadows drawn on the ground are illustrative (**ground shadows only**).
-Each polygon part uses the convex hull of its footprint and its offset, separately for a
-MultiPolygon; this overestimates L-shaped and courtyard blocks. No trees or clouds are
-included, overlaps may look darker, and heights come from floor counts. Shadows appear at
+Each polygon part is drawn as its footprint plus the sweep of every wall that faces away
+from the sun, so L-shaped blocks and courtyards keep their lit corners. A flat extrusion
+layer blends once, so overlaps do not look darker. No trees, clouds or roof features are
+included, and heights come from floor counts. Shadows appear at
 zoom 15 or closer, for up to 600 buildings in the viewport widened by 300 m on the sun's side.
 Length is height divided by the tangent of sun altitude, capped at 300 m; shadows are hidden
 below 10 degrees altitude and cleared when 3D is off. This display never changes the facade

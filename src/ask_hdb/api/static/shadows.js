@@ -1,27 +1,29 @@
-// Display geometry only. These hulls never feed the facade or direct-sun figures.
+// Display geometry only. These shadows never feed the facade or direct-sun figures.
 const EMPTY = { type: "FeatureCollection", features: [] };
 const radians = (degrees) => degrees * Math.PI / 180;
 export function shadowOffset(height, sun, latitude) {
   const length = Math.min(Math.max(0, height) / Math.tan(radians(sun.altitude)), 300);
-  // Exact compass axes avoid tiny floating-point slivers in otherwise rectangular hulls.
+  // Exact compass axes avoid tiny floating-point slivers along rectangular walls.
   const axis = (value) => Math.abs(value) < 1e-12 ? 0 : value;
   return [-axis(Math.sin(radians(sun.azimuth))) * length / (111320 * Math.cos(radians(latitude))),
     -axis(Math.cos(radians(sun.azimuth))) * length / 110540];
 }
-function hull(points) {
-  const sorted = [...new Map(points.map((p) => [p.join(","), p])).values()]
-    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const half = (values) => {
-    const result = [];
-    for (const p of values) {
-      while (result.length > 1 && cross(result.at(-2), result.at(-1), p) <= 0) result.pop();
-      result.push(p);
+const signedArea = (ring) => ring.reduce((sum, p, i) => i ? sum + ring[i - 1][0] * p[1] - p[0] * ring[i - 1][1] : 0, 0) / 2;
+// An extruded flat roof shades P plus the sweep of each edge that faces away from the sun.
+// From any shaded point, a step back toward the sun enters P through one of those edges.
+function sweep(polygon, offset) {
+  const rings = polygon.map((ring, i) => (signedArea(ring) > 0) === (i === 0) ? ring : [...ring].reverse());
+  const quads = [];
+  for (const ring of rings) {
+    for (let i = 1; i < ring.length; i++) {
+      const a = ring[i - 1], b = ring[i];
+      // Outward normal of a CCW outer ring (and of a CW hole) is (dy, -dx). Metre scales are a positive factor.
+      if ((b[1] - a[1]) * offset[0] - (b[0] - a[0]) * offset[1] <= 0) continue;
+      const a2 = [a[0] + offset[0], a[1] + offset[1]], b2 = [b[0] + offset[0], b[1] + offset[1]];
+      quads.push([[a, b, b2, a2, a]]);
     }
-    return result.slice(0, -1);
-  };
-  const ring = [...half(sorted), ...half([...sorted].reverse())];
-  return ring.length >= 3 ? [...ring, ring[0]] : [];
+  }
+  return [rings, ...quads];
 }
 function parts(feature) {
   const { type, coordinates } = feature.geometry;
@@ -30,11 +32,9 @@ function parts(feature) {
 export function shadowPolygons(feature, sun) {
   if (!sun || sun.altitude < 10) return [];
   return parts(feature).flatMap((polygon) => {
-    const vertices = polygon[0]; // A hull fills courtyards as well as concave corners.
-    const latitude = vertices[0][1], offset = shadowOffset(feature.properties.height_m, sun, latitude);
-    const ring = hull([...vertices, ...vertices.map(([x, y]) => [x + offset[0], y + offset[1]])]);
-    return ring.length ? [{ type: "Feature", properties: { block_id: feature.properties.block_id },
-      geometry: { type: "Polygon", coordinates: [ring] } }] : [];
+    const latitude = polygon[0][0][1], offset = shadowOffset(feature.properties.height_m, sun, latitude);
+    return [{ type: "Feature", properties: { block_id: feature.properties.block_id },
+      geometry: { type: "MultiPolygon", coordinates: sweep(polygon, offset) } }];
   });
 }
 function bounds(feature) {
@@ -56,8 +56,10 @@ export function initShadows(map, outlines) {
   const index = outlines.features.map((feature) => ({ feature, box: bounds(feature) }));
   let enabled = false, sun = null, frame = null, dirty = false;
   map.addSource("shadows", { type: "geojson", data: EMPTY });
-  map.addLayer({ id: "shadows", type: "fill", source: "shadows", minzoom: 15,
-    paint: { "fill-color": "#182333", "fill-opacity": 0.25 }, layout: { visibility: "none" } }, "blocks");
+  // A flat extrusion blends once per layer, so overlapping wall sweeps do not stack into darker stripes.
+  map.addLayer({ id: "shadows", type: "fill-extrusion", source: "shadows", minzoom: 15,
+    paint: { "fill-extrusion-color": "#182333", "fill-extrusion-opacity": 0.4, "fill-extrusion-height": 0.1,
+      "fill-extrusion-vertical-gradient": false }, layout: { visibility: "none" } }, "blocks");
   function schedule() {
     if (!dirty || frame !== null) return;
     frame = requestAnimationFrame(() => {
