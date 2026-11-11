@@ -1,3 +1,5 @@
+from decimal import Decimal, localcontext
+
 import pandas as pd
 import pytest
 
@@ -11,6 +13,26 @@ def test_instalment_and_balance():
     assert scenario.balance(120000, 0, 10, 60) == pytest.approx(60000)
     assert scenario.balance(300000, 3, 25, 300) == pytest.approx(0, abs=1)
     assert scenario.balance(300000, 3, 25, 0) == pytest.approx(300000)
+
+
+@pytest.mark.parametrize("rate", [1e-14, 1e-10])
+def test_tiny_rates_preserve_instalment_and_balance(monkeypatch, rate):
+    # Decimal provides an independent reference without float cancellation.
+    with localcontext() as context:
+        context.prec = 60
+        r = Decimal(str(rate)) / 1200
+        payment = Decimal(375000) * r / (1 - (1 + r) ** -300)
+        left = Decimal(375000) * ((1 + r) ** 300 - (1 + r) ** 60) / ((1 + r) ** 300 - 1)
+    assert scenario.instalment(375000, rate, 25) == pytest.approx(float(payment), rel=1e-12)
+    assert scenario.balance(375000, rate, 25, 60) == pytest.approx(float(left), rel=1e-12)
+    frame = sales({2018: 100, 2019: 110, 2020: 120, 2021: 130,
+                   2022: 140, 2023: 150, 2024: 160, 2025: 170})
+    monkeypatch.setattr(tools, "load_sales", lambda: frame)
+    out = tools.bto_scenario.invoke({"price": 500000, "grants": 0, "loan_kind": "hdb",
+                                     "category": "Standard", "interest_rate_pct": rate,
+                                     "loan_years": 25, "town": "BEDOK", "flat_type": "4-room"})
+    assert out["monthly_instalment"] == round(payment)
+    assert out["scenarios"][0]["loan_balance_at_sale"] == round(left)
 
 
 def sales(prices_by_year):

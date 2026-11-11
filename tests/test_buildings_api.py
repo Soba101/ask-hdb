@@ -46,6 +46,19 @@ def test_buildings_are_gzipped_cached_and_missing_file_is_clear(client):
     assert buildings.metadata("blk_a") == {}
 
 
+@pytest.mark.parametrize("encoding,compressed", [
+    ("gzip;q=0, identity;q=1", False), ("gzip; q=0.000", False),
+    ("br, gzip;q=0.5", True), ("GZip; q=1", True), ("xgzip", False),
+])
+@pytest.mark.parametrize("path", ["/map/buildings", "/openapi.json"])
+def test_buildings_respect_gzip_quality(client, encoding, compressed, path):
+    response = client.get(path, headers={"accept-encoding": encoding})
+    assert response.status_code == 200
+    assert (response.headers.get("content-encoding") == "gzip") is compressed
+    assert response.json()
+    assert "Accept-Encoding" in response.headers["vary"].split(", ")
+
+
 @pytest.mark.parametrize("query", ["2026-02-30", "2026-13-01", "20260320", "today", ""])
 def test_both_sun_routes_reject_invalid_dates(client, query):
     assert client.get("/sun", params={"date": query}).status_code == 422

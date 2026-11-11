@@ -311,7 +311,8 @@ form.addEventListener("submit", (e) => {
   ask(question);
 });
 box.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  // Enter belongs to the IME while the user is choosing a character. Safari reports that Enter as keyCode 229 with isComposing false.
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); form.requestSubmit(); }
 });
 
 // ---------- tabs ----------

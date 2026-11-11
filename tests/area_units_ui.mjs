@@ -57,6 +57,25 @@ same(markdown.querySelector("a").href, "https://example.test/40sqm");
 same(markdown.querySelector("img"), null);
 displayAreaUnits(markdown, "sqm");
 same(markdown.querySelector("strong").textContent, "40 sqm");
+const split = document.createElement("div");
+render(split, "40 [sqm](https://example.test/unit)");
+displayAreaUnits(split, "sqft");
+same(split.querySelector("a").textContent, "sqm", "a number before a link never empties the link's label");
+
+// Inline formatting must not split a measurement; toggling back restores its text and tags.
+for (const [text, expected] of [["**40** sqm", "431 sq ft / 40 sqm"],
+  ["40 **sqm**", "431 sq ft / 40 sqm"], ["**93**-96 sqm", "1,001-1,033 sq ft / 93-96 sqm"],
+  ["**$5,200** per sqm", "$483 per sq ft / $5,200 per sqm"]]) {
+  const split = document.createElement("div"); render(split, text);
+  const original = split.textContent, bold = split.querySelector("strong"), boldText = bold.textContent;
+  displayAreaUnits(split, "sqft");
+  same(split.textContent, expected);
+  displayAreaUnits(split, "sqft"); same(split.textContent, expected);
+  displayAreaUnits(split, "sqm"); same(split.textContent, original);
+  same(split.querySelector("strong"), bold); same(bold.textContent, boldText);
+}
+const paragraphs = document.createElement("div"); render(paragraphs, "40\n\nsqm");
+displayAreaUnits(paragraphs, "sqft"); same(paragraphs.textContent, "40sqm", "never join separate paragraphs");
 
 const button = get("preferences-button"), dialog = get("preferences"), select = get("area-unit");
 same(button.tagName, "button");

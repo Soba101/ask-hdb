@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from ask_hdb.geo.distance import haversine_km, nearest, within_km
+from ask_hdb.geo.distance import haversine_km, nearest, nearest_to_point, within_km
 
 
 @pytest.fixture
@@ -39,6 +39,13 @@ def test_nearest_and_within(geo_tables):
 def test_nearest_errors(geo_tables, block, kind, message):
     with pytest.raises(ValueError, match=message):
         nearest(*geo_tables, block, kind)
+
+
+@pytest.mark.parametrize("n", [-1, 0, 1.5, True])
+def test_point_nearest_rejects_invalid_counts(geo_tables, n):
+    _, places = geo_tables
+    with pytest.raises(ValueError, match="n must be a positive integer"):
+        nearest_to_point(0, 0, places, "mrt", n=n)
 
 
 @pytest.mark.parametrize("km", [-1, float("nan"), float("inf")])

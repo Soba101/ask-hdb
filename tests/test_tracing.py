@@ -48,7 +48,8 @@ def test_a_missing_package_means_no_tracing_not_a_crash(monkeypatch):
 def test_error_messages_are_dropped_from_exported_spans_unless_text_is_allowed(monkeypatch):
     from types import SimpleNamespace
 
-    from langfuse.types import MaskOtelSpansParams  # noqa: F401 - the real package is installed in the dev environment
+    # Exported span types belong to the optional tracing integration.
+    pytest.importorskip("langfuse.types", reason="Install the tracing extra to test span export masking")
 
     spans = {"a": SimpleNamespace(attributes={tracing.STATUS_MESSAGE: "income='8,500 a month'"}),
              "b": SimpleNamespace(attributes={"other": 1})}

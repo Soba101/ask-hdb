@@ -62,6 +62,9 @@ def compare_price(
 
     # Anchor to the data so a repeated query does not drift with the calendar.
     end = df["sale_month"].max() if as_of is None else pd.Timestamp(as_of)
+    # Pandas parses empty dates as NaT instead of raising an invalid-date error.
+    if pd.isna(end):
+        raise ValueError("as_of must be a valid date")
     end = end.to_period("M")
     start = end - (months - 1)
     rows = _filtered(

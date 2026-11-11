@@ -168,7 +168,7 @@ def test_phone_markup_and_touch_css_offline():
     assert "width: 100%" in css_block(coarse, "input[type=date]")
 
 
-@pytest.mark.parametrize("script", ["markdown_ui.mjs", "policy_ui.mjs"])
+@pytest.mark.parametrize("script", ["markdown_ui.mjs", "policy_ui.mjs", "chat_input_ui.mjs"])
 def test_chat_renderers(script):
     node = shutil.which("node")
     if node is None:

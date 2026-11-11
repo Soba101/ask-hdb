@@ -1,6 +1,7 @@
 """Plain arithmetic for the agent, so the model never adds or subtracts numbers itself."""
 
 import ast
+import math
 import operator
 import re
 
@@ -30,4 +31,7 @@ def calculate(expression: str) -> dict:
         result = _eval(ast.parse(cleaned, mode="eval"))
     except (SyntaxError, ZeroDivisionError, OverflowError) as exc:
         raise ValueError(f"Cannot calculate: {type(exc).__name__}") from None
+    # Reject float overflow here, even when no JSON tool wrapper is involved.
+    if not math.isfinite(result):
+        raise ValueError("Result must be finite")
     return {"expression": cleaned, "result": round(result, 6) if isinstance(result, float) else result}
