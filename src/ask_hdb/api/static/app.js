@@ -472,7 +472,7 @@ async function startMap() {
     const tint = (dark) => ({ "raster-brightness-max": 1, "raster-saturation": dark ? -0.2 : 0 });
     const dark = matchMedia("(prefers-color-scheme: dark)"), isDark = () => matches("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
-      container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
+      container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: false },
       style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
         layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(isDark()) }] },
@@ -531,8 +531,6 @@ async function startMap() {
         "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
-      document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
-      document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
       for (const layer of ["places", "bto-sites", "blocks", "highlight"]) {
