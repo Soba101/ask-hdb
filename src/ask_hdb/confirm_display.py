@@ -70,6 +70,8 @@ def unsupported(key, value, user_words):
         return key not in FACTS or (not value) not in set(_hits(FACTS[key], user_words))
     if key == "previous_hdb_loans" and value == 0 and re.search(r"\bno (?:previous |prior |earlier )?hdb loans?\b", user_words, re.IGNORECASE):
         return False
+    if key == "lease_left_months":
+        return missing_number(key, value, lease_months(user_words))
     if isinstance(value, (int, float)) or NUMBER.fullmatch(str(value)) or key == "ages":
         return missing_number(key, value, numbers(user_words))
     if key == "citizenships":
@@ -84,6 +86,16 @@ def unsupported(key, value, user_words):
 
 def numbers(text):
     return {Decimal(match.group().replace(",", "")) for match in NUMBER.finditer(text)}
+
+
+def lease_months(text):
+    """Numbers as months: "70 years" is 840, so a lease the model copied as 70 months is flagged."""
+    found = set()
+    for match in NUMBER.finditer(text):
+        value = Decimal(match.group().replace(",", ""))
+        years = re.match(r"\s*-?\s*(?:years?|yrs?)\b", text[match.end():], re.IGNORECASE)
+        found.add(value * 12 if years else value)
+    return found
 
 
 def missing_number(key, value, user_numbers):
