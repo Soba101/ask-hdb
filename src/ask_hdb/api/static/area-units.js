@@ -22,7 +22,8 @@ export function convertAreaText(text, unit) {
 }
 
 const originals = new WeakMap();
-const inline = new Set(["strong", "em", "b", "i", "a", "span", "code"]);
+// A link is a boundary: a number before it must not pull its label out (that left an empty link).
+const inline = new Set(["strong", "em", "b", "i", "span", "code"]);
 export function displayAreaUnits(root, unit) {
   // Only edit rendered text. Link destinations and the server's chat history stay intact.
   let nodes = [];

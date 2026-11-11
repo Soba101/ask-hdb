@@ -57,6 +57,10 @@ same(markdown.querySelector("a").href, "https://example.test/40sqm");
 same(markdown.querySelector("img"), null);
 displayAreaUnits(markdown, "sqm");
 same(markdown.querySelector("strong").textContent, "40 sqm");
+const split = document.createElement("div");
+render(split, "40 [sqm](https://example.test/unit)");
+displayAreaUnits(split, "sqft");
+same(split.querySelector("a").textContent, "sqm", "a number before a link never empties the link's label");
 
 // Inline formatting must not split a measurement; toggling back restores its text and tags.
 for (const [text, expected] of [["**40** sqm", "431 sq ft / 40 sqm"],

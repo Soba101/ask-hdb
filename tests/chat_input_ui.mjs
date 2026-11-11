@@ -20,6 +20,8 @@ const enter = (fields) => {
 assert.equal(enter({ isComposing: true }).defaultPrevented, false, "IME keeps Enter to confirm its candidate");
 assert.equal(box.value, "我想买", "the unfinished draft stays in the field");
 assert.deepEqual(questions, []);
+assert.equal(enter({ keyCode: 229 }).defaultPrevented, false, "Safari's IME Enter (keyCode 229) also stays with the IME");
+assert.deepEqual(questions, []);
 assert.equal(enter({ shiftKey: true }).defaultPrevented, false, "Shift+Enter keeps its newline");
 assert.deepEqual(questions, []);
 assert.equal(enter({}).defaultPrevented, true, "ordinary Enter still submits");
