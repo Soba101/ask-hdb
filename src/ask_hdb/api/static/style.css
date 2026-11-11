@@ -299,7 +299,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #side { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
     border: 0; border-top: .5px solid var(--line); border-radius: 12px 12px 0 0;
     /* Safari's see-through address and form bars float above the keyboard: keep the sheet colour behind them, not the map. */
-    box-shadow: 0 var(--kb) 0 var(--panel); }
+    box-shadow: 0 var(--kb) 0 var(--kb) var(--panel); } /* the spread closes the gap when the keyboard is taller than the sheet */
   #sheet-handle::after { width: 36px; height: 5px; background: var(--grabber); }
   #sheet-peek h2 { font-size: var(--t-title); font-weight: 700; line-height: 1.18; }
   #side h1 { font-size: var(--t-title); font-weight: 700; }
