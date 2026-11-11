@@ -5,7 +5,7 @@ import { initBuildings } from "./buildings.js";
 import { initCard } from "./card.js";
 import { initSheet } from "./sheet.js";
 import { displayAreaUnits } from "./area-units.js";
-import { initPreferences } from "./preferences.js";
+import { initPreferences, matches } from "./preferences.js";
 const $ = (id) => document.getElementById(id);
 const sheet = initSheet({ chat: () => tab("chat") });
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
@@ -403,9 +403,11 @@ async function applyLayer() {
     ? "Amber: within MOP. Light amber: MOP ends around " + year + ". Blue: past MOP. Grey: no data. " + data.mop_limits
     : data.limits[3] + " Based on the lease start year of each block.";
 }
-document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
+const LAYER = "ask-hdb.layer", PRICE_UNIT = "ask-hdb.priceUnit";
+const remember = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; remember(LAYER, layerMode); applyLayer(); }; });
 $("flat-type").onchange = applyLayer;
-$("price-unit").onchange = applyLayer;
+$("price-unit").onchange = () => { remember(PRICE_UNIT, $("price-unit").value); applyLayer(); };
 $("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); $("budget").setAttribute("aria-valuetext", fmtMoney(Number($("budget").value))); if (metricsCache[$("flat-type").value]) applyLayer(); };
 
 // ---------- map ----------
@@ -427,6 +429,12 @@ const card = initCard({
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
   ask: (question) => { tab("chat"); ask(question); },
 });
+// The last colour mode and price basis come back on reload; the map queue applies the layer once the map is ready.
+try {
+  if (["price", "lease", "mop"].includes(localStorage.getItem(LAYER))) layerMode = localStorage.getItem(LAYER);
+  if (["total", "sqm", "sqft"].includes(localStorage.getItem(PRICE_UNIT))) $("price-unit").value = localStorage.getItem(PRICE_UNIT);
+} catch {}
+if (layerMode !== "type") applyLayer();
 let maplibregl = null;
 const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
   "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
@@ -461,16 +469,17 @@ async function startMap() {
     maplibregl = lib.default || lib;
     // Dark mode only softens the colours of the OpenStreetMap tiles; it does not dim them, so the map stays easy to read.
     const tint = (dark) => ({ "raster-brightness-max": 1, "raster-saturation": dark ? -0.2 : 0 });
-    const dark = matchMedia("(prefers-color-scheme: dark)");
+    const dark = matchMedia("(prefers-color-scheme: dark)"), isDark = () => matches("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
       container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
       style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
-        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(dark.matches) }] },
+        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(isDark()) }] },
+      // shortcut: MapLibre reads reduceMotion only here, so a changed Motion choice reaches map moves after a reload.
+      reduceMotion: matches("(prefers-reduced-motion: reduce)") || undefined,
     });
-    dark.addEventListener("change", () => {
-      for (const [name, value] of Object.entries(tint(dark.matches))) map.setPaintProperty("osm", name, value);
-    });
+    const retint = () => { for (const [name, value] of Object.entries(tint(isDark()))) map.setPaintProperty("osm", name, value); };
+    dark.addEventListener("change", retint); window.addEventListener("preferences", retint);
     sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     // The browser asks for location permission only when the visitor presses this button, never on page load.

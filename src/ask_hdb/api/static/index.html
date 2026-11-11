@@ -202,6 +202,15 @@
   <select id="area-unit">
     <option value="sqm" selected>sqm</option><option value="sqft">sq ft</option>
   </select>
+  <label for="theme">Appearance</label>
+  <select id="theme">
+    <option value="system" selected>Match device</option><option value="light">Light</option><option value="dark">Dark</option>
+  </select>
+  <label for="motion">Motion</label>
+  <select id="motion" aria-describedby="motion-note">
+    <option value="system" selected>Match device</option><option value="reduce">Reduce</option>
+  </select>
+  <p id="motion-note">Map movement follows a change after the page reloads.</p>
   <button id="preferences-close" class="secondary" type="button" autofocus>Done</button>
 </dialog>
 <script type="module" src="app.js"></script>

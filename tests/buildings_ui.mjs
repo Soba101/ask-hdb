@@ -25,7 +25,7 @@ function canvasStub() {
 globalThis.document = { getElementById: get, createElement: (tag) => tag === "canvas" ? canvasStub() : new Element(), hidden: false,
   addEventListener: (event, fn) => { (listeners[event] ||= []).push(fn); } };
 const reduced = { matches: false, addEventListener: (_, fn) => { reduced.change = fn; } };
-globalThis.window = { matchMedia: () => reduced };
+globalThis.window = { matchMedia: () => reduced, addEventListener() {} };
 let frameId = 0;
 const frames = new Map();
 globalThis.requestAnimationFrame = (fn) => { frames.set(++frameId, fn); return frameId; };
