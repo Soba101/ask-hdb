@@ -41,8 +41,6 @@ def _cpf(use: RuleUse, profile: BuyerProfile, flat: Flat):
     if single:
         key = "singles_first_timer_5_room" if large else "singles_first_timer_2_to_4_room"
     else:
-        if len(profile.citizenships) != 2:
-            use.unknown("family_grant_applicant_composition")
         tier = "5_room_plus" if large else "2_to_4_room"
         if profile.family_timers == "one_first":
             key = f"first_and_second_timer_{tier}"

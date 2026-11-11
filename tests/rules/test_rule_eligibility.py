@@ -85,3 +85,18 @@ def test_only_standard_has_no_income_ceiling_reason(family, flat, category):
     assert any("no income ceiling" in reason for reason in result.reasons) is (
         category == "standard"
     )
+
+
+def test_family_with_one_listed_applicant_asks_for_the_household_first():
+    # Reproduced from a full app test: one family applicant passed every check as eligible.
+    from ask_hdb.rules import BuyerProfile, Flat, can_buy_resale, cpf_housing_grant, ehg_amount, max_loan
+    from ask_hdb.rules.bto import bto_ehg, can_apply_bto
+
+    one = BuyerProfile(scheme="family", citizenships=["SC"], ages=[30], monthly_household_income=5000,
+                       family_timers="both_first", confirmed=True)
+    flat = Flat(room=4, lease_left_months=80 * 12, price=500_000)
+    for result in [can_buy_resale(one, flat), max_loan(one, flat), cpf_housing_grant(one, flat),
+                   ehg_amount(one, flat), bto_ehg(one), can_apply_bto(one, "Standard", "4-room")]:
+        assert result.eligible is None and "family_second_applicant" in result.needs_check
+    two = one.model_copy(update={"citizenships": ["SC", "SC"], "ages": [30, 29]})
+    assert can_buy_resale(two, flat).eligible is True and "family_second_applicant" not in can_buy_resale(two, flat).needs_check
