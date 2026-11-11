@@ -13,7 +13,9 @@ export function initSheet({ chat = () => {} } = {}) {
     const bar = $("topbar").getBoundingClientRect?.().bottom || 0;
     // Measured from the keyboard top, so the open keyboard never lets the sheet climb over the input.
     const room = bar ? available - bar - 8 : Infinity;
-    return [Math.min(112, available), Math.min(window.innerHeight * .5, available, room),
+    // Peek ends at the bottom of its own block, so no sliver of the tabs below shows.
+    const fit = peek?.getBoundingClientRect?.().bottom - side.getBoundingClientRect?.().top;
+    return [Math.min(fit > 0 ? Math.ceil(fit) : 112, 112, available), Math.min(window.innerHeight * .5, available, room),
       Math.min(window.innerHeight * .92, available, room)];
   };
   function keyboard() {
@@ -95,7 +97,7 @@ export function initSheet({ chat = () => {} } = {}) {
       // A question box that grows as you type pushes the sheet down, so the text never slides under it.
       if (!side.dataset.dragging && points()[state] !== pixels) snap(state);
     });
-    observer.observe($("topbar")); observer.observe($("chip-detail")); observer.observe($("sun-bar"));
+    observer.observe($("topbar")); observer.observe($("chip-detail")); observer.observe($("sun-bar")); observer.observe(peek);
     app.style.setProperty("--kb", keyboard() + "px");
     select(selected);
   }

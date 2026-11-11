@@ -206,4 +206,9 @@ assert.deepEqual(paddings.at(-1), { top: 0, left: 424, right: 0, bottom: 0 });
 const before = state(); drag(-200); assert.equal(state(), before, "no drag on a wide screen");
 sheet.answer(); assert.equal(state(), "full"); sheet.select(null); assert.equal(state(), "full", "selecting never collapses the panel");
 view.wide.matches = false; view.wide.change(); assert.equal(paddings.at(-1).left, 0, "back to the phone sheet");
+// Peek fits its own block, so no sliver of the tabs shows below the legend.
+get("sheet-peek").getBoundingClientRect = () => ({ bottom: 799 }); get("side").getBoundingClientRect = () => ({ top: 700, right: 0 });
+key("Escape"); key("Escape"); ResizeObserver.last.fn();
+assert.equal(state(), "peek"); assert.equal(sheetHeight(), 99, "peek ends at the legend");
+delete get("sheet-peek").getBoundingClientRect; delete get("side").getBoundingClientRect;
 console.log("Sheet snaps, tap threshold, keyboard, selection, focus, inset and map padding passed.");
