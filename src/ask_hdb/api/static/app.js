@@ -473,6 +473,8 @@ async function startMap() {
     });
     sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    // The browser asks for location permission only when the visitor presses this button, never on page load.
+    map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true, fitBoundsOptions: { maxZoom: 16 } }), "top-right");
     map.on("load", async () => {
       let data;
       try {
