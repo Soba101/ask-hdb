@@ -89,7 +89,14 @@ def test_only_standard_has_no_income_ceiling_reason(family, flat, category):
 
 def test_family_with_one_listed_applicant_asks_for_the_household_first():
     # Reproduced from a full app test: one family applicant passed every check as eligible.
-    from ask_hdb.rules import BuyerProfile, Flat, can_buy_resale, cpf_housing_grant, ehg_amount, max_loan
+    from ask_hdb.rules import (
+        BuyerProfile,
+        Flat,
+        can_buy_resale,
+        cpf_housing_grant,
+        ehg_amount,
+        max_loan,
+    )
     from ask_hdb.rules.bto import bto_ehg, can_apply_bto
 
     one = BuyerProfile(scheme="family", citizenships=["SC"], ages=[30], monthly_household_income=5000,
