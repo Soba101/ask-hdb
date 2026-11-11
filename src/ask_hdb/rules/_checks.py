@@ -40,6 +40,9 @@ def applicant_checks(use: RuleUse, profile: BuyerProfile, *, purchase=False):
     if profile.scheme == "family":
         use.get("eligibility.families.citizenship_min")
         minimum = use.get("eligibility.families.min_age_years")
+        # A family nucleus has a second member; with only one listed, ask who it is before any verdict.
+        if len(profile.citizenships) != 2:
+            use.unknown("family_second_applicant")
         if "foreigner" in profile.citizenships:
             use.unknown("foreigner_not_supported_v1")
         if "SPR" in profile.citizenships and purchase:
