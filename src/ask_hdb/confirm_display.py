@@ -37,6 +37,51 @@ def readable(key, raw):
     return f"{words} ({raw})" if words != raw else raw
 
 
+NOT = re.compile(r"\b(?:no|not|never|none|neither|nor|without|non)\b|n't\b", re.IGNORECASE)
+# Words that support one value of a choice. A value with no entry here must appear in the user's words as written.
+SAID = {
+    "scheme": {"family": r"famil|married|couple|spouse|husband|wife|fianc", "single": r"single|alone|unmarried|divorced|widowed|by myself|on my own"},
+    "family_timers": {"both_first": r"both\b.{0,25}first[- ]?timer|first[- ]?timers", "one_first": r"\bone\b.{0,25}first[- ]?timer",
+                      "none_first": r"neither\b.{0,25}first|second[- ]?timers"},
+    "first_timer": {"yes": r"first[- ]?timer", "no": r"second[- ]?timer"},
+    "marital_status": {"married": r"\bmarried|husband|wife|spouse", "unmarried": r"unmarried|never married|\bsingle\b",
+                       "divorced": r"divorc", "widowed": r"widow"},
+    "buying_with": {"alone": r"\balone\b|by myself|on my own", "parents": r"parent|mother|father|\bmum\b|\bdad\b",
+                    "family_or_singles": r"famil|sibling|brother|sister|friend|singles"},
+    "relation": {"with": r"\bwith (?:my |our )?(?:parent|child|mother|father)", "near": r"\bnear (?:my |our )?(?:parent|child|mother|father)"},
+}
+CITIZEN = {"SC": r"\bsc\b|citizen|singaporean", "SPR": r"\bs?pr\b|permanent resident", "foreigner": r"foreign"}
+# A yes/no field is supported by its words: without a negation for yes, with one for no.
+FACTS = {"works_12_months": r"work|\b(?:un)?employ|\bjob", "owns_private_property": r"private propert|condo|landed|private home|private flat",
+         "extended_family": r"extended famil"}
+
+
+def _hits(pattern, text):
+    """For each match, whether a negation sits just before it in the same sentence."""
+    for match in re.finditer(pattern, text, re.IGNORECASE):
+        before = re.split(r"[.!?;\n]", text[max(0, match.start() - 25):match.start()])[-1]
+        yield bool(NOT.search(before)) or match.group().lower().startswith("unemploy")  # "unemployed" is a no
+
+
+def unsupported(key, value, user_words):
+    """True when the user's words do not back this value. Over-flagging is the safe side: the user just checks it."""
+    if isinstance(value, bool):
+        # yes needs a plain mention, no needs a negated one; a yes/no field with no word list is always checked.
+        return key not in FACTS or (not value) not in set(_hits(FACTS[key], user_words))
+    if key == "previous_hdb_loans" and value == 0 and re.search(r"\bno (?:previous |prior |earlier )?hdb loans?\b", user_words, re.IGNORECASE):
+        return False
+    if isinstance(value, (int, float)) or NUMBER.fullmatch(str(value)) or key == "ages":
+        return missing_number(key, value, numbers(user_words))
+    if key == "citizenships":
+        return not all(any(not negated for negated in _hits(CITIZEN.get(part.strip(), re.escape(part.strip())), user_words))
+                       for part in str(value).split(","))
+    pattern = SAID.get(key, {}).get(value)
+    if pattern is None:
+        plain = lambda text: re.sub(r"[^a-z0-9]", "", str(text).lower())
+        return plain(value) not in plain(user_words)
+    return not any(not negated for negated in _hits(pattern, user_words))
+
+
 def numbers(text):
     return {Decimal(match.group().replace(",", "")) for match in NUMBER.finditer(text)}
 

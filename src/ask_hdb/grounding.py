@@ -179,6 +179,21 @@ def check(answer, question, results):
             + [raw for raw, iso in days if iso not in dates]}
 
 
+def kinds(ungrounded):
+    """What sort of number each rejected claim is, so a log can say why without the values."""
+    def kind(raw):
+        if '$' in raw:
+            return 'money'
+        if '%' in raw:
+            return 'percent'
+        if re.search(MONTH, raw, re.IGNORECASE):
+            return 'date'
+        if re.fullmatch(r'(?:19[6-9]\d|20\d{2}|2100)', raw):
+            return 'year'
+        return 'number'
+    return sorted(kind(str(raw)) for raw in ungrounded)
+
+
 ASKS = re.compile(r'\?|\b(?:please (?:provide|share|tell|confirm)|could you|can you (?:tell|share|provide)|'
                   r'what is your|what are your|i need|let me know)\b', re.IGNORECASE)
 DECLINE = re.compile(r"\b(?:cannot|can't|can not|unable to|not able to|won't|will not) (?:predict|provide|advise|"

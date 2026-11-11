@@ -72,10 +72,9 @@ HEADER = "Before I check this, please confirm the details I will use:"
 
 def question_text(args, user_words=""):
     """Code-written details, marking numbers absent from the user's own words."""
-    user_numbers = display.numbers(user_words)
     lines = []
     for key, value in profile(args).items():
-        marker = display.CHECK if display.missing_number(key, value, user_numbers) else ""
+        marker = display.CHECK if display.unsupported(key, value, user_words) else ""
         lines.append(f"- {display.label(key)}: {display.readable(key, _show(key, value))}{marker}")
     return (HEADER + "\n" + "\n".join(lines)
             + f"\nIs this right? Reply yes to continue, or tell me what to change. (profile ref {ref(args)})")
@@ -107,4 +106,7 @@ def confirmed(history, question):
             # Only the turn that says yes may restate the earlier question's numbers.
             if index == len(turns) - 2:
                 asked += [t for k, t in turns[index - 1:index] if k == "human"]
+                # The user said yes to these code-written lines, so their values are the user's own.
+                # The ref line is left out: its hex digits are not numbers the user gave.
+                asked.append("\n".join(text.splitlines()[1:-1]))
     return refs, asked

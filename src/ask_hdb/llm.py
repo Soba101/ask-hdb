@@ -1,6 +1,8 @@
 """Choose a chat client without exposing credentials to the agent."""
 
+import json
 import os
+import sys
 import threading
 import time
 from collections import deque
@@ -58,9 +60,9 @@ def _hosted(name):
     rpm = int(os.getenv(f"{provider.upper()}_RPM", RPM[provider]))
     if provider == "gemini":
         return Member(ChatGoogleGenerativeAI(model=model, google_api_key=key, temperature=0, max_retries=0, timeout=timeout),
-                      {"max_tokens": "max_output_tokens"}, rpm)
+                      {"max_tokens": "max_output_tokens"}, rpm, provider)
     return Member(ChatOpenAI(model=model, temperature=0, base_url=ENDPOINTS[provider], api_key=key, timeout=timeout,
-                             max_retries=0), rpm=rpm)
+                             max_retries=0), rpm=rpm, name=provider)
 
 
 # Calls per minute each free tier allows (Gemini's free tier said 5 for one model; OpenRouter says 20 for :free models).
@@ -72,8 +74,8 @@ class Member:
     """One provider in the chain, with the names its client uses for settings the agent sets in OpenAI terms.
     A provider with a per-minute budget is skipped while the budget is used up, or waited for when it is the only one."""
 
-    def __init__(self, model, rename=None, rpm=0):
-        self.model, self.rename, self.rpm = model, rename or {}, rpm
+    def __init__(self, model, rename=None, rpm=0, name="model"):
+        self.model, self.rename, self.rpm, self.name = model, rename or {}, rpm, name
         self.times, self.lock = deque(), threading.Lock()
 
     def wait(self, now=None):
@@ -116,13 +118,19 @@ class Bound:
             try:
                 return model.invoke(messages, config, **member.adapt({**self.settings, **kwargs}))
             except FALLBACK_ON as error:
-                last = error
+                last = _failed(member, error)
             except ValueError as error:
                 # OpenRouter can answer 200 with an error body (an upstream outage); the client raises it as a ValueError.
                 if not (error.args and isinstance(error.args[0], dict) and "code" in error.args[0]):
                     raise
-                last = error
+                last = _failed(member, error)
         raise last
+
+
+def _failed(member, error):
+    # The class name only: provider messages can carry URLs or keys.
+    print(json.dumps({"provider_failed": member.name, "error": type(error).__name__}), file=sys.stderr, flush=True)
+    return error
 
 
 class Chain:
@@ -143,7 +151,7 @@ def get_chat_model():
     names = [n.strip() for n in os.getenv("LLM_CHAIN", "").split(",") if n.strip()]
     if not names:
         return _single()
-    members = [Member(_single()) if name == "local" else _hosted(name) for name in names]
+    members = [Member(_single(), name="local") if name == "local" else _hosted(name) for name in names]
     members = [member for member in members if member is not None]
     if not members:
         raise ValueError("LLM_CHAIN lists no usable provider (missing keys?)")

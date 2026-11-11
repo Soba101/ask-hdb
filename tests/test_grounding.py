@@ -2,6 +2,7 @@
 
 import pytest
 
+from ask_hdb import grounding
 from ask_hdb.evalrun.scoring import CLARIFIES, DECLINES
 from ask_hdb.grounding import CANNOT_ANSWER, check, claims
 
@@ -101,3 +102,7 @@ def test_comparing_the_users_number_to_a_ceiling_is_an_echo():
 def test_the_3gen_flat_type_is_a_label_not_a_number():
     assert check("The Tengah project offers 3Gen and 4-room flats.", "", [{"flat_types": ["3Gen", "4-room"]}])["ungrounded"] == []
     assert check("It has 3 sales.", "", [{"n": 4}])["ungrounded"] == ["3"]
+
+
+def test_rejected_claims_are_logged_by_kind_only():
+    assert grounding.kinds(["$5,000", "2024", "3.5%", "12", "24 Aug 2026"]) == ["date", "money", "number", "percent", "year"]
