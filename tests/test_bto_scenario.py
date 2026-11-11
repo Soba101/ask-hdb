@@ -98,3 +98,12 @@ def test_category_is_required_but_nullable_and_both_hints_appear():
     out = scenario.bto_scenario(sales({2024: 1}), 380000, 0, "hdb", None)
     assert {"interest_rate_and_loan_years_for_instalment_and_scenarios",
             "category_for_mop_years_and_sale_scenarios"} <= set(out["needs_check"])
+
+
+def test_grants_reduce_the_loan_so_grants_plus_loan_never_exceed_the_price():
+    out = scenario.bto_scenario(sales({2024: 1}), 150000, 120000, "hdb", "Standard", 2.6, 25)
+    assert out["loan_amount"] == 30000 and out["upfront_needed_cash_or_cpf"] == 0
+    assert out["monthly_instalment"] == round(scenario.instalment(30000, 2.6, 25))
+    assert "loan_reduced_because_grants_cover_more_than_the_down_payment" in out["needs_check"]
+    assert scenario.bto_scenario(sales({2024: 1}), 150000, 200000, "hdb", None)["loan_amount"] == 0
+    assert "loan_reduced_because_grants_cover_more_than_the_down_payment" not in run(sales({2024: 1}))["needs_check"]

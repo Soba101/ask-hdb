@@ -49,7 +49,8 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
     use = RuleUse(load_rules(BTO_FILE))
     ltv = use.get(f"loan.{'hdb' if loan_kind == 'hdb' else 'bank'}_ltv")
     mop = use.get(f"mop.{'plus_prime_years' if category in {'Plus', 'Prime'} else 'standard_years'}") if category else None
-    loan = ltv * price
+    # Grants pay part of the price first, so the loan never covers more than what is left.
+    loan = min(ltv * price, max(0.0, price - grants))
     known = interest_rate_pct is not None and loan_years is not None
     payment = instalment(loan, interest_rate_pct, loan_years) if known else None
     out = {"purchase_price": price, "grants": grants, "loan_kind": loan_kind, "ltv_pct": round(ltv * 100, 6),
@@ -61,6 +62,8 @@ def bto_scenario(sales, price, grants, loan_kind, category=None, interest_rate_p
                          "loan_amount_assumes_max_ltv_check_hle_msr_and_cpf_paid_in"], "scenarios": []}
     if loan_kind == "bank":
         out["needs_check"].append("bank_ltv_not_separately_confirmed")
+    if loan < ltv * price:
+        out["needs_check"].append("loan_reduced_because_grants_cover_more_than_the_down_payment")
     if category in {"Plus", "Prime"}:
         out["needs_check"].append("plus_prime_subsidy_recovery")
     if not known:
