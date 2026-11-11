@@ -378,7 +378,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
     --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #64b5ff;
   }
-  .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
+  /* The locate icon's blue (on) and red (error) states keep their colour; only the black idle icons turn white. */
+  .maplibregl-ctrl-top-right button:not([class*="geolocate-"]):not(:disabled) .maplibregl-ctrl-icon { filter: invert(1); }
 }
 /* Spring-like settle for the sheet, only when motion is welcome; the drag state keeps its own no-transition rule. */
 @media (min-width: 0px) and (prefers-reduced-motion: no-preference) {
@@ -486,3 +487,5 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-notes { padding-inline: 12px; }
   button.secondary:hover, #card-sections > button:hover { filter: brightness(.96); }
 }
+/* A blocked location shows its crossed-out icon clearly; the button's own disabled opacity already dims it. */
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { opacity: 1; }
