@@ -103,7 +103,7 @@ const blocked = initPreferences((unit) => displayAreaUnits(answer, unit));
 same(blocked.areaUnit(), "sqm");
 select.value = "sqft"; fire(select, "change");
 same(blocked.areaUnit(), "sqft");
-globalThis.localStorage = { getItem: () => null, setItem() {} };
+Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => null, setItem() {} } });
 initPreferences(() => {});
 const theme = get("theme"), motionSelect = get("motion");
 theme.value = "dark"; fire(theme, "change");
