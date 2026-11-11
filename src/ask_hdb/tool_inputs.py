@@ -200,5 +200,5 @@ class BtoScenarioArgs(Arguments):
     loan_years: Annotated[int, Field(ge=1, le=35)] | None = Field(
         None, description="Loan length in years given by the user; leave out if not given, never assume one")
     category: Literal["Standard", "Plus", "Prime"] | None = Field(description="BTO project category if the user said it, else null; needed for sale scenarios")
-    town: str | None = Field(None, description="Town of the flat, such as TAMPINES, for past price growth")
+    town: str | None = Field(None, description="Town of the flat as the user or a tool result gave it, for past price growth; null if none given")
     flat_type: Literal["2-room Flexi", "3-room", "4-room", "5-room"] | None = Field(None, description="Flat type, for past price growth")

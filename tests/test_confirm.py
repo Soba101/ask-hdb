@@ -10,6 +10,9 @@ from ask_hdb import agent, confirm
 from ask_hdb.check_cases import PROFILE
 from ask_hdb.evalrun.conditions import make_condition
 
+# What the tool really runs with: the model's arguments plus the schema defaults.
+FULL = agent._with_defaults({"name": "can_buy_resale", "args": PROFILE}, agent.TOOLS)
+
 
 def test_text_is_written_from_the_arguments():
     text = confirm.question_text(PROFILE)
@@ -73,7 +76,8 @@ def model(monkeypatch):
 def test_tool_waits_for_a_yes_then_runs(model):
     first = agent.ask("Can we buy?", confirm=True)
     assert first["needs_confirmation"] and first["tool_calls"] == []
-    assert first["answer"] == confirm.question_text(PROFILE)
+    assert first["answer"] == confirm.question_text(FULL)
+    assert "- Extended family: no" in first["answer"], "a default the tool will use is shown too"
     history = [HumanMessage(content="Can we buy?"), AIMessage(content=first["answer"])]
     second = agent.ask("yes", history, confirm=True)
     assert not second["needs_confirmation"]
@@ -101,7 +105,7 @@ def test_confirmation_checks_current_and_earlier_human_words_only(model):
     assert "- Flat rooms: 4\n" in text
     for line in ("- Flat price: $600,000", "- Lease remaining (months): 960", "- Previous HDB loans taken: 0"):
         assert line + " (you did not give this: please check)" in text
-    assert confirm._shown_ref(text) == confirm.ref(PROFILE)
+    assert confirm._shown_ref(text) == confirm.ref(FULL)
 
 
 def test_confirmation_remembers_human_numbers_beyond_the_context_window(model):
@@ -154,7 +158,9 @@ def test_earlier_confirmed_questions_are_echo_only_on_the_yes_turn():
     history = [HumanMessage(content="Income 4400, can we buy?"), AIMessage(content=confirm.question_text(PROFILE)),
                HumanMessage(content="yes"), AIMessage(content="Eligible.")]
     refs, asked = confirm.confirmed(history[:2], "yes")
-    assert confirm.ref(PROFILE) in refs and asked == ["Income 4400, can we buy?"]
+    shown = confirm.question_text(PROFILE).splitlines()
+    assert confirm.ref(PROFILE) in refs and asked == ["Income 4400, can we buy?", "\n".join(shown[1:-1])]
+    assert "profile ref" not in asked[1], "the ref's hex digits are not numbers the user gave"
     assert confirm.confirmed(history, "Other question")[1] == []
 
 

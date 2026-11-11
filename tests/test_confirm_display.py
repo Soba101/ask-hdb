@@ -20,14 +20,14 @@ EXAMPLE = {"scheme": "family", "citizenships": "SC,SC", "ages": "30,30",
 def test_example_is_readable_and_marks_only_unsupplied_numbers():
     text = confirm.question_text(EXAMPLE, QUESTION)
     assert f"- Ages (years): 30,30{CHECK}" in text
-    assert "- Citizenships: Singapore citizen, Singapore citizen (SC,SC)\n" in text
+    assert f"- Citizenships: Singapore citizen, Singapore citizen (SC,SC){CHECK}" in text
     assert "- Family timers: both first-timers (both_first)\n" in text
     assert f"- Lease remaining (months): 600{CHECK}" in text
     assert "- Monthly household income: $6,200\n" in text
     assert f"- Previous HDB loans taken: 0{CHECK}" in text
     assert f"- Flat rooms: 4{CHECK}" in text
     assert "Buying with:" not in text and "Marital status:" not in text
-    assert "- Worked continuously for the past 12 months: yes\n" in text
+    assert f"- Worked continuously for the past 12 months: yes{CHECK}" in text
 
 
 def test_hash_still_uses_sorted_raw_canonical_lines():
@@ -78,11 +78,34 @@ def test_income_formats_match_the_same_number(words):
     assert CHECK not in confirm.question_text({"monthly_household_income": 6200}, words)
 
 
-def test_enums_and_boolean_values_are_not_flagged():
-    text = confirm.question_text({"flat_type": "4-room", "works_12_months": True,
-                                  "family_timers": "both_first", "citizenships": "SC,SPR,foreigner"})
+def test_choices_and_yes_no_values_need_the_users_words():
+    args = {"flat_type": "4-room", "works_12_months": True, "family_timers": "both_first", "citizenships": "SC,SPR,foreigner"}
+    assert confirm.question_text(args).count(CHECK) == 4
+    words = "A 4 room flat. I am a citizen, my wife is a PR and her mother is a foreigner. Both first-timers, I have worked 3 years."
+    text = confirm.question_text(args, words)
     assert CHECK not in text
     assert "Singapore citizen, Singapore permanent resident, foreigner (SC,SPR,foreigner)" in text
+
+
+@pytest.mark.parametrize("key,value,words,flagged", [
+    ("scheme", "single", "We want the family scheme, not singles.", True),
+    ("scheme", "family", "We want the family scheme, not singles.", False),
+    ("scheme", "single", "I am unmarried and buying alone.", False),
+    ("owns_private_property", False, "I own a condo.", True),
+    ("owns_private_property", False, "We have never owned a condo.", False),
+    ("owns_private_property", True, "We have no private property.", True),
+    ("works_12_months", True, "Income $5,000.", True),
+    ("works_12_months", True, "I am unemployed.", True),
+    ("works_12_months", False, "I am unemployed.", False),
+    ("works_12_months", True, "Employed continuously for the past year.", False),
+    ("marital_status", "unmarried", "I am unmarried.", False),
+    ("hfe_after_revision", True, "yes", True),
+    ("category", "standard", "A Standard flat", False),
+    ("previous_hdb_loans", 0, "No previous HDB loans.", False),
+    ("previous_hdb_loans", 0, "Income 6200", True),
+])
+def test_each_choice_is_checked_against_what_the_user_said(key, value, words, flagged):
+    assert (CHECK in confirm.question_text({key: value}, words)) is flagged
 
 
 @pytest.mark.parametrize("key,value", [("first_timer", "yes"), ("marital_status", "divorced"),

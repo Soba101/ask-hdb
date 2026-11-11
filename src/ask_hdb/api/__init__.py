@@ -280,7 +280,8 @@ def work(question, history, limits, events, left, context=None):
                     "stopped_reason": result["stopped_reason"], "notice": NOTICE})
     except ClientLeft:
         pass
-    except Exception:  # noqa: BLE001 - never leak provider text, URLs or keys to a visitor
+    except Exception as error:  # noqa: BLE001 - never leak provider text, URLs or keys to a visitor
+        print(json.dumps({"chat_failed": type(error).__name__}), flush=True)  # the class only, never the message
         events.put({"type": "error", "message": "The model call failed. Please try again."})
     finally:
         limits.add_tokens(spent)  # also when the run failed or the visitor left

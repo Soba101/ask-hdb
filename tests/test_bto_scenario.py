@@ -107,3 +107,11 @@ def test_grants_reduce_the_loan_so_grants_plus_loan_never_exceed_the_price():
     assert "loan_reduced_because_grants_cover_more_than_the_down_payment" in out["needs_check"]
     assert scenario.bto_scenario(sales({2024: 1}), 150000, 200000, "hdb", None)["loan_amount"] == 0
     assert "loan_reduced_because_grants_cover_more_than_the_down_payment" not in run(sales({2024: 1}))["needs_check"]
+
+
+def test_a_town_or_flat_type_nobody_gave_is_dropped_before_the_tool_runs():
+    from ask_hdb import agent
+    call = {"name": "bto_scenario", "args": {"price": 1, "town": "TAMPINES", "flat_type": "4-room"}}
+    assert agent._given_place(call, "A 4 room BTO flat", [])["args"] == {"price": 1, "town": None, "flat_type": "4-room"}
+    assert agent._given_place(call, "", [{"result": {"town": "TAMPINES", "flat_type": "4-room"}}])["args"] == call["args"]
+    assert agent._given_place({"name": "price_stats", "args": {"town": "X"}}, "", [])["args"] == {"town": "X"}

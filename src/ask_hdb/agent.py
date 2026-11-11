@@ -2,6 +2,8 @@
 
 import json
 import os
+import re
+import sys
 
 from dotenv import load_dotenv
 from langchain_core.messages import (
@@ -15,6 +17,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langgraph.errors import GraphRecursionError
 from langgraph.prebuilt import create_react_agent
+from pydantic import ValidationError
 
 from ask_hdb import confirm as profile_check
 from ask_hdb import grounding, tracing, verdict
@@ -133,6 +136,32 @@ def ask(question, history=None, confirm=False, on_event=None, context=None) -> d
         return result
 
 
+def _with_defaults(call, tools):
+    """The arguments the tool will really use, defaults included, so the user confirms what runs."""
+    schema = next((tool.args_schema for tool in tools if tool.name == call["name"]), None)
+    try:
+        return schema.model_validate(call["args"]).model_dump()
+    except (AttributeError, ValidationError):  # an MCP schema is a plain dict; invalid arguments fail in the tool itself
+        return call["args"]
+
+
+def _plain(text):
+    return re.sub(r"[^a-z0-9]", "", str(text).lower())
+
+
+def _given_place(call, words, calls):
+    """bto_scenario's town and flat type steer its growth scenarios: drop one the user, the map or a tool did not give.
+    The loan figures do not use them, so they still run."""
+    if call["name"] != "bto_scenario":
+        return call
+    known = _plain(words) + _plain(json.dumps([c["result"] for c in calls], default=str))
+    args = {**call["args"]}
+    for key in ("town", "flat_type"):
+        if args.get(key) and _plain(args[key]) not in known:
+            args[key] = None
+    return {**call, "args": args}
+
+
 def _ask(question, history, tools, confirm=False, on_event=None, context=None):
     calls, pending = [], {}
     tokens, requested, reported = 0, 0, False
@@ -170,9 +199,13 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
             reply = reply.model_copy(update={"tool_calls": reply.tool_calls[
                 :MAX_TOOL_CALLS - requested
             ]})
+        reply = reply.model_copy(update={"tool_calls": [_given_place(call, f"{context or ''}\n{user_words}", calls)
+                                                        for call in reply.tool_calls]})
         for call in reply.tool_calls if confirm else []:
-            if call["name"] in profile_check.GATED and profile_check.ref(call["args"]) not in said_yes:
-                raise NeedsConfirmation(call["args"])
+            if call["name"] in profile_check.GATED:
+                args = _with_defaults(call, tools)
+                if profile_check.ref(args) not in said_yes:
+                    raise NeedsConfirmation(args)
         requested += len(reply.tool_calls)
         return reply
 
@@ -255,5 +288,9 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
         checked = {**checked, "first_ungrounded": first, "rewritten": bool(first),
                    "replaced": answer == grounding.CANNOT_ANSWER, "kept_clarification": kept,
                    "verdict_held": verdict_held}
+        # Runs are one at a time (one model slot), so this line sits right after the run's tool lines.
+        print(json.dumps({"grounding": {"first": grounding.kinds(first), "final": grounding.kinds(checked["ungrounded"]),
+                                        "replaced": checked["replaced"], "tools": [c["name"] for c in calls]}}),
+              file=sys.stderr, flush=True)
     return {"answer": answer, "tool_calls": calls, "tokens": tokens, "stopped_reason": stopped_reason,
             "grounding": checked, "needs_confirmation": needs_confirmation}
