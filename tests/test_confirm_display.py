@@ -103,6 +103,11 @@ def test_choices_and_yes_no_values_need_the_users_words():
     ("category", "standard", "A Standard flat", False),
     ("previous_hdb_loans", 0, "No previous HDB loans.", False),
     ("previous_hdb_loans", 0, "Income 6200", True),
+    ("lease_left_months", 70, "A flat with 70 years lease left", True),
+    ("lease_left_months", 840, "A flat with 70 years lease left", False),
+    ("lease_left_months", 840, "70-year lease left", False),
+    ("lease_left_months", 840, "840 months of lease", False),
+    ("lease_left_months", 960, "lease 960", False),
 ])
 def test_each_choice_is_checked_against_what_the_user_said(key, value, words, flagged):
     assert (CHECK in confirm.question_text({key: value}, words)) is flagged
