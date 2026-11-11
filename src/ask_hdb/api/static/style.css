@@ -235,6 +235,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #side[data-snap=peek] #sheet-peek { max-height: 112px; overflow: hidden; }
   #side[data-snap=peek] #card-subtitle, #side[data-snap=peek] .headline small { display: none; }
   #sheet-content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  /* Content is inert at peek; hiding it means a sheet a few pixels taller than its peek never shows a sliver of the tabs. */
+  #side[data-snap=peek]:not([data-dragging]) #sheet-content { visibility: hidden; }
   #sheet-content .card { position: relative; inset: auto; width: 100%; max-height: none; overflow: visible;
     border: 0; border-radius: 0; margin: 0; padding: 8px 12px; }
   #sheet-notes { display: block; padding: 0 17px; }
@@ -491,3 +493,5 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 }
 /* A blocked location shows its crossed-out icon clearly; the button's own disabled opacity already dims it. */
 .maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { opacity: 1; }
+/* A phone has one close: the "Asking about" chip's x at the top clears the place everywhere. */
+@media (max-width: 800px) { #card-close { display: none; } }

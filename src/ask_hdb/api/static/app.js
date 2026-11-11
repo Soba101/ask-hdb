@@ -429,6 +429,7 @@ const card = initCard({
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
   ask: (question) => { tab("chat"); ask(question); },
 });
+$("card-close").addEventListener("click", () => setSelected(null)); // closing the card also clears the "Asking about" chip
 // The last colour mode and price basis come back on reload; the map queue applies the layer once the map is ready.
 try {
   if (["price", "lease", "mop"].includes(localStorage.getItem(LAYER))) layerMode = localStorage.getItem(LAYER);
