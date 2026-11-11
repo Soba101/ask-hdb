@@ -18,7 +18,7 @@ def test_building_controls_and_sun_formula_offline(tmp_path):
     if node is None:
         pytest.skip("node is not installed")
     (tmp_path / "package.json").write_text('{"type":"module"}')
-    for name in ("buildings.js", "sun-controls.js", "shadows.js", "building-card.js", "card.js", "card-map.js", "app.js", "sheet.js", "sheet-gestures.js"):
+    for name in ("buildings.js", "sun-controls.js", "shadows.js", "building-card.js", "card.js", "card-map.js", "app.js", "sheet.js", "sheet-gestures.js", "preferences.js"):
         source = (STATIC / name).read_text()
         assert "innerHTML" not in source
         (tmp_path / name).write_text(source)

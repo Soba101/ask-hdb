@@ -10,6 +10,12 @@ const { convertAreaText, displayAreaUnits } = await import(pathToFileURL(folder 
 const { initPreferences } = await import(pathToFileURL(folder + "/preferences.js"));
 const { initSheet } = await import(pathToFileURL(folder + "/sheet.js"));
 viewport(375); initSheet();
+// Preferences rewrite these @media conditions; one sheet that cannot be read must not stop the rest.
+const dark = { media: { mediaText: "(min-width: 0px) and (prefers-color-scheme: dark)" } };
+const motion = { media: { mediaText: "(prefers-reduced-motion: no-preference)" } };
+document.styleSheets = [{ get cssRules() { throw Error("cross-origin"); } }, { cssRules: [dark, motion, {}] }];
+const events = [];
+Object.assign(window, { addEventListener() {}, dispatchEvent: (event) => events.push(event.type) });
 
 for (const unit of ["sqm", "sq m", "m²", "square metres", "square meters"]) {
   same(convertAreaText("40 " + unit, "sqft"), "431 sq ft / 40 sqm");
@@ -97,6 +103,18 @@ const blocked = initPreferences((unit) => displayAreaUnits(answer, unit));
 same(blocked.areaUnit(), "sqm");
 select.value = "sqft"; fire(select, "change");
 same(blocked.areaUnit(), "sqft");
+globalThis.localStorage = { getItem: () => null, setItem() {} };
+initPreferences(() => {});
+const theme = get("theme"), motionSelect = get("motion");
+theme.value = "dark"; fire(theme, "change");
+same(dark.media.mediaText, "(min-width: 0px) and (min-width: 0px)", "forced dark turns the dark rules on");
+theme.value = "light"; fire(theme, "change");
+same(dark.media.mediaText, "(min-width: 0px) and (max-width: 0px) and (min-width: 1px)", "forced light turns them off");
+theme.value = "system"; fire(theme, "change");
+same(dark.media.mediaText, "(min-width: 0px) and (prefers-color-scheme: dark)", "Match device restores the rule");
+motionSelect.value = "reduce"; fire(motionSelect, "change");
+same(motion.media.mediaText, "(max-width: 0px) and (min-width: 1px)", "reduced motion turns off the animations");
+assert.ok(events.includes("preferences"), "script checks hear the change");
 console.log("Area conversion, safe display refresh, preference focus and unavailable storage passed.");
 
 assert.equal(convertAreaText("1,001 sqm", "sqft"), "10,775\u00a0sq\u00a0ft / 1,001\u00a0sqm");
