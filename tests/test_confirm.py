@@ -223,3 +223,13 @@ def test_eval_questions_with_a_map_selection_pass_the_context_line(monkeypatch):
     monkeypatch.setattr(agent, "ask", fake_ask)
     make_condition("full")("How far?", context="[ctx]")
     assert seen == ["[ctx]"]
+
+
+def test_invalid_arguments_get_the_tool_error_not_a_confirmation_of_raw_values(model):
+    # Raw strings like "5000" and "true" must never be shown for a yes; the tool's error makes the model fix the call.
+    model.args = {key: value for key, value in PROFILE.items() if key != "ages"} | {
+        "monthly_household_income": "5000", "works_12_months": "true"}
+    result = agent.ask("Can we buy?", confirm=True)
+    assert not result["needs_confirmation"]
+    assert [c["name"] for c in result["tool_calls"]] == ["can_buy_resale"]
+    assert "Invalid arguments" in result["tool_calls"][0]["result"]["error"]

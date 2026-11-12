@@ -15,7 +15,9 @@ Rules, in plain words:
 - Labels are not claims and are skipped: block IDs (blk_...), addresses ("Blk 314",
   "Ave 3"), ISO dates and months (2025-10), ordinals under 100 (1st, 21st), flat types
   (4-room, 3 ROOM), list labels ("1.") and years 1960-2100 that follow a date word
-  (in, since, as of, from, until, a month name) with no money word nearby.
+  (in, since, as of, from, until, a month name) with no money word nearby. With a money word
+  nearby, such a year is a claim, but a tool result that cites the same year (in any string,
+  its source URL included) grounds it: "the October 2024 launch rules, the loan..." cites a rule.
 - Evidence is numeric values, whole-number strings, and the years and months of window
   strings ("2025-10..2026-09"). Digits inside other strings (sentences, IDs, sources,
   as_of dates, URLs) are not evidence. Results with an "error" key and tool arguments are not.
@@ -134,6 +136,19 @@ def evidence(results):
     return values, dates
 
 
+def _cited_years(node):
+    """Years written anywhere in tool result strings, under the same skips as evidence."""
+    if isinstance(node, str):
+        yield from (Decimal(y) for y in re.findall(r'(?<!\d)(?:19[6-9]\d|20\d{2}|2100)(?!\d)', node))
+    elif isinstance(node, dict):
+        if 'error' not in node and node.get('tool') != 'policy_explain':
+            for item in node.values():
+                yield from _cited_years(item)
+    elif isinstance(node, (list, tuple)):
+        for item in node:
+            yield from _cited_years(item)
+
+
 def _matches(claim, values):
     _, value, decimals, scaled, _ = claim
     if value in values:
@@ -173,9 +188,12 @@ def check(answer, question, results):
         answer = re.sub(re.escape(label), ' ', str(answer), flags=re.IGNORECASE)
     stated = [c for c in claims(answer) if c[4] or c[1] not in given]
     found, dates = evidence(results)
+    # A bare year after a date word that a tool also cites is that tool's fact, not an amount.
+    # shortcut: matched by text, so a plain "2024" elsewhere in the same answer also passes; track positions if that matters.
+    cited = {m.group()[-4:] for m in YEAR.finditer(answer)} & {str(y) for y in _cited_years(list(results))}
     days = [(raw, iso) for raw, iso in _date_claims(str(answer))[1] if iso not in asked_dates]
     return {'numbers': [c[0] for c in stated] + [raw for raw, _ in days],
-            'ungrounded': [c[0] for c in stated if not _matches(c, found)]
+            'ungrounded': [c[0] for c in stated if not _matches(c, found) and c[0] not in cited]
             + [raw for raw, iso in days if iso not in dates]}
 
 

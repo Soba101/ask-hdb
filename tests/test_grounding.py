@@ -106,3 +106,18 @@ def test_the_3gen_flat_type_is_a_label_not_a_number():
 
 def test_rejected_claims_are_logged_by_kind_only():
     assert grounding.kinds(["$5,000", "2024", "3.5%", "12", "24 Aug 2026"]) == ["date", "money", "number", "percent", "year"]
+
+
+SCENARIO = {"loan_amount": 300000, "rules": [{"id": "loan.hdb_ltv", "value_pct": 75.0,
+            "source": "https://www.hdb.gov.sg/-/media/hdb-pulse/news/2024/oct-bto-launch/Annex-C.pdf"}]}
+
+
+def test_a_year_the_tool_cites_grounds_that_year_only():
+    # bto_scenario cites its rule as a 2024 URL; quoting that year next to "loan" is not an amount.
+    answer = "Under the October 2024 launch rules, the HDB loan is $300,000."
+    assert check(answer, "Loan for a BTO?", [SCENARIO])["ungrounded"] == []
+    # The cited year never grounds an amount, another year, or a policy or error result.
+    assert check("The loan is $2024.", "", [SCENARIO])["ungrounded"] == ["$2024"]
+    assert check("Under the October 2023 rules, the loan is $300,000.", "", [SCENARIO])["ungrounded"] == ["2023"]
+    for hidden in ({**SCENARIO, "error": "bad"}, {**SCENARIO, "tool": "policy_explain"}):
+        assert check(answer, "", [hidden])["ungrounded"] == ["2024", "$300,000"]
