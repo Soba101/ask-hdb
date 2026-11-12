@@ -11,16 +11,19 @@ Rules, in plain words:
   ("$1.2 million" matches 1200000; "1.5k" does not match 1531).
 - A number written with decimals may be the tool value rounded half-up to that many
   decimals ("0.09" km matches 0.0906). Whole numbers and scaled numbers never round.
-- A date with a day ("24 Aug 2026") must be an ISO date in a tool result or the question.
+- A date with a day ("24 Aug 2026", or day first "20-10-2026") must be an ISO date in a tool
+  result (as_of included) or the question.
 - Labels are not claims and are skipped: block IDs (blk_...), addresses ("Blk 314",
   "Ave 3"), ISO dates and months (2025-10), ordinals under 100 (1st, 21st), flat types
-  (4-room, 3 ROOM), list labels ("1.") and years 1960-2100 that follow a date word
+  (4-room, 3 ROOM), the profile ref ("ref 2ae7e5ca"), list labels ("1.") and years 1960-2100 that follow a date word
   (in, since, as of, from, until, a month name) with no money word nearby. With a money word
   nearby, such a year is a claim, but a tool result that cites the same year (in any string,
   its source URL included) grounds it: "the October 2024 launch rules, the loan..." cites a rule.
 - Evidence is numeric values, whole-number strings, and the years and months of window
   strings ("2025-10..2026-09"). Digits inside other strings (sentences, IDs, sources,
   as_of dates, URLs) are not evidence. Results with an "error" key and tool arguments are not.
+  One exception: a number copied from a tool string with the same next three words
+  ("at least 1 SC or SPR occupant") is a quote of that tool, not a claim.
 - Policy explanation results are context only. Their text, titles, links and dates are never evidence.
 - Numbers the user wrote in the question may be restated, but not right after a threshold
   word ("minimum", "at least", "ceiling", "limit"...): the user's 35 is not HDB's minimum age.
@@ -42,7 +45,9 @@ NUMBER = re.compile(r'(?<![\w.])(-?)\$?(\d+(?:,\d{3})*)(\.\d+)?(\s*(?:million\b|
 MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 MONTH = r'(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?'
 DAY_DATES = [re.compile(r'\b(?P<d>\d{1,2})\s+' + MONTH + r',?\s+(?P<y>(?:19|20)\d{2})\b', re.IGNORECASE),
-             re.compile(r'\b' + MONTH + r'\s+(?P<d>\d{1,2}),?\s+(?P<y>(?:19|20)\d{2})\b', re.IGNORECASE)]
+             re.compile(r'\b' + MONTH + r'\s+(?P<d>\d{1,2}),?\s+(?P<y>(?:19|20)\d{2})\b', re.IGNORECASE),
+             # Day first, as Singapore writes it: "20-10-2026", "20/10/2026".
+             re.compile(r'(?<![\d.])(?P<d>0?[1-9]|[12]\d|3[01])([-/])(?P<m>0?[1-9]|1[0-2])\2(?P<y>(?:19|20)\d{2})\b')]
 YEAR = re.compile(r'\b(?:in|since|as of|from|until|till|during|' + MONTH + r')\s+(?:19[6-9]\d|20\d{2}|2100)\b'
                   r'(?!\d|,\d|%|\.\d)', re.IGNORECASE)
 MONEY = re.compile(r'\$|\b(?:sgd|dollars?|instal+ments?|income|salary|price|cost|loan|grant|'
@@ -55,6 +60,7 @@ LABELS = [
     r'\b\d{1,2}(?:st|nd|rd|th)\b',                     # ordinals
     r'\b[1-5][\s-]?room\b',                            # flat types
     r'\b3[\s-]?gen(?:eration)?\b',                      # the 3Gen flat type
+    r'\bref\s+[0-9a-f]{8}\b',                           # the profile ref from confirm.py
 ]
 LIST_LABEL = re.compile(r'^\s*(?:[-*+•]\s+)?\d+[.)]\s+', re.MULTILINE)
 THRESHOLD = re.compile(r'(?:minimum|maximum|at least|at most|ceiling|limit|threshold|cap|'
@@ -69,7 +75,8 @@ def _date_claims(text):
     found = []
     for pattern in DAY_DATES:
         for m in pattern.finditer(text):
-            iso = f"{m['y']}-{MONTHS.index(m[2 if pattern is DAY_DATES[0] else 1][:3].lower()) + 1:02d}-{int(m['d']):02d}"
+            month = int(m['m']) if 'm' in m.groupdict() else MONTHS.index(m[2 if pattern is DAY_DATES[0] else 1][:3].lower()) + 1
+            iso = f"{m['y']}-{month:02d}-{int(m['d']):02d}"
             found.append((m.group(), iso))
         text = pattern.sub(' ', text)
     return text, found
@@ -174,6 +181,30 @@ def _labels(node):
             yield from _labels(item)
 
 
+def _strings(node):
+    """Tool result strings that may be quoted (no links, errors or policy context)."""
+    if isinstance(node, str) and not node.startswith('http'):
+        yield node
+    elif isinstance(node, dict) and 'error' not in node and node.get('tool') != 'policy_explain':
+        for item in node.values():
+            yield from _strings(item)
+    elif isinstance(node, (list, tuple)):
+        for item in node:
+            yield from _strings(item)
+
+
+QUOTED = re.compile(r'(?<![\w.,$])\d+(?:\s+[a-z]+){3}', re.IGNORECASE)
+
+
+def _without_quotes(answer, results):
+    """Drop a number the answer copies from a tool string with its next three words ("at least 1 SC or SPR")."""
+    text = ' '.join(_strings(list(results)))
+    def drop(match):
+        quoted = re.search(r'(?<![\d.,])' + re.escape(match.group()) + r'\b', text, re.IGNORECASE)
+        return ' ' + match.group().split(None, 1)[1] if quoted else match.group()
+    return QUOTED.sub(drop, answer)
+
+
 PERIOD = re.compile(r'(?<![\d.,$])(\d+)\s*-?\s*(years?|yrs?|months?)\b', re.IGNORECASE)
 ONE_YEAR = re.compile(r'\b(?:a|one|the past|past|the last)\s+year\b', re.IGNORECASE)
 
@@ -204,6 +235,7 @@ def check(answer, question, results):
     for label in sorted(_labels(results), key=len, reverse=True):
         answer = re.sub(re.escape(label), ' ', str(answer), flags=re.IGNORECASE)
     answer = _without_period_echoes(str(answer), question)
+    answer = _without_quotes(answer, results)
     stated =[c for c in claims(answer) if c[4] or c[1] not in given]
     found, dates = evidence(results)
     # A bare year after a date word that a tool also cites is that tool's fact, not an amount.

@@ -115,6 +115,30 @@ def test_period_echoes_stay_narrow(question, answer):
     assert check(answer, question, [])["ungrounded"]
 
 
+RULE = {"eligible": True, "rules": [{"id": "eligibility.families.citizenship_min", "as_of": "2026-10-20",
+         "value": "Applicant is SC or SPR and household includes at least 1 SC or SPR occupant."}]}
+
+
+@pytest.mark.parametrize("answer", [
+    # From live Gemini drafts on 2026-11-12 (yes turn of the profile confirmation).
+    "Yes, you can buy it (profile ref 2ae7e5ca).",
+    "The household includes at least 1 SC or SPR occupant (eligibility.families.citizenship_min).",
+    "According to HDB rules (as of 20-10-2026), you can buy it.",
+    "Rules as of 20/10/2026.",
+])
+def test_live_draft_labels_quotes_and_dates_are_grounded(answer):
+    assert check(answer, "yes", [RULE])["ungrounded"] == []
+
+
+@pytest.mark.parametrize("answer", [
+    "The household includes at least 2 SC or SPR occupants.",  # a changed number in a copied phrase
+    "Your ref 2ae7e5ca allows 3 flats.",  # a number outside the ref
+    "Rules as of 21-10-2026.",  # a date the tool does not give
+])
+def test_live_draft_fixes_stay_narrow(answer):
+    assert check(answer, "yes", [RULE])["ungrounded"]
+
+
 def test_comparing_the_users_number_to_a_ceiling_is_an_echo():
     # From the week 5-2 eval (q_eligibility_005): the user's income in brackets after "ceiling".
     answer = "Income is within the ceiling ($4000 < $8000). The ceiling is $8000 (your income is $4000)."

@@ -90,6 +90,8 @@ class ToolResult(BaseModel):
   same year. Amounts such as `$2024` are never grounded this way.
 - On the turn where the user says yes to a profile confirmation, the code-written confirmation lines count
   as the user's words, so the answer can repeat the user's own income. Earlier turns do not count.
+- The profile ref is a label. A day-first date ("20-10-2026") is checked as a date. A number copied from a
+  tool string with its next three words ("at least 1 SC or SPR occupant") is a quote, not a claim.
 - `policy_explain` results are excluded by tool name and by their payload marker. Titles, summaries
   and links cannot ground numbers or dates. They cannot supply place labels either.
   Rules tools still supply eligibility verdicts. Links only: `policy.py` holds the 10 allowlisted
