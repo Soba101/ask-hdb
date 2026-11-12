@@ -25,6 +25,7 @@ Many buyers pay an agent thousands of dollars partly to work this out. This proj
 - **Check what is nearby.** The three nearest supermarkets, MRT stations and bus stops, and a walking route with steps and a time.
 - **Look at BTO.** Launched and upcoming sites, including Tengah, with an honest "not on sale yet" for the ones that are not.
 - **Tilt to 3D.** Building heights, block facing and ground shadows for a chosen date and time.
+- **Set it up your way.** Areas in sqm or sq ft, light or dark look, less motion, and the map layer you used last. A locate-me button asks for your location only when you press it.
 - **Works on a phone and a desktop.** On a phone the chat and the place card live in a bottom sheet. On a wide screen they sit in a docked panel and the layer controls sit on the map.
 
 ![A place card: summary, schools within 2 km and nearby places, with the chat below](docs/img/app-card.jpg)
@@ -34,6 +35,7 @@ Many buyers pay an agent thousands of dollars partly to work this out. This proj
 The model only chats and chooses which tool to call. Code does every number: eligibility, grants, loan limits, prices and distances.
 A checker compares each number in an answer with the tool results. If a number has no source, the answer is rewritten.
 If the rules cannot decide (for example, a detail is missing), the app asks for that detail and does not guess a verdict.
+Before an eligibility or grant check runs, the app shows the profile it will use in plain words and marks each value you did not give, so you can correct it first.
 
 ```
 You:   We're a married couple, both citizens, earning $8,500 a month together.
