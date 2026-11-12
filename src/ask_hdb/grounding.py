@@ -174,6 +174,23 @@ def _labels(node):
             yield from _labels(item)
 
 
+PERIOD = re.compile(r'(?<![\d.,$])(\d+)\s*-?\s*(years?|yrs?|months?)\b', re.IGNORECASE)
+ONE_YEAR = re.compile(r'\b(?:a|one|the past|past|the last)\s+year\b', re.IGNORECASE)
+
+
+def _months(match):
+    return int(match.group(1)) * (1 if match.group(2).lower().startswith('m') else 12)
+
+
+def _without_period_echoes(answer, question):
+    """Drop a period the user gave, restated in years or months ("past year" -> "12 months"), unless it is a threshold."""
+    said = {_months(m) for m in PERIOD.finditer(str(question))} | ({12} if ONE_YEAR.search(str(question)) else set())
+    def drop(match):
+        threshold = THRESHOLD.search(match.string[max(0, match.start() - 30):match.start()])
+        return ' ' if _months(match) in said and not threshold else match.group()
+    return PERIOD.sub(drop, answer)
+
+
 def check(answer, question, results):
     """Return the stated numbers (question echoes left out) and the ungrounded ones."""
     given = {c[1] for c in claims(question)}
@@ -186,7 +203,8 @@ def check(answer, question, results):
     # A place label that code wrote from our tables ("Blk 227 Bishan St 23") is a name, not a claim: leave exactly that text out.
     for label in sorted(_labels(results), key=len, reverse=True):
         answer = re.sub(re.escape(label), ' ', str(answer), flags=re.IGNORECASE)
-    stated = [c for c in claims(answer) if c[4] or c[1] not in given]
+    answer = _without_period_echoes(str(answer), question)
+    stated =[c for c in claims(answer) if c[4] or c[1] not in given]
     found, dates = evidence(results)
     # A bare year after a date word that a tool also cites is that tool's fact, not an amount.
     # shortcut: matched by text, so a plain "2024" elsewhere in the same answer also passes; track positions if that matters.
