@@ -137,12 +137,17 @@ def ask(question, history=None, confirm=False, on_event=None, context=None) -> d
 
 
 def _with_defaults(call, tools):
-    """The arguments the tool will really use, defaults included, so the user confirms what runs."""
+    """The arguments the tool will really use, defaults included, so the user confirms what runs.
+
+    None when they are invalid: the tool returns the error and the model fixes the call, so the
+    user is never asked to confirm raw values ("5000", "true") that cannot run."""
     schema = next((tool.args_schema for tool in tools if tool.name == call["name"]), None)
     try:
         return schema.model_validate(call["args"]).model_dump()
-    except (AttributeError, ValidationError):  # an MCP schema is a plain dict; invalid arguments fail in the tool itself
+    except AttributeError:  # an MCP schema is a plain dict; invalid arguments fail in the tool itself
         return call["args"]
+    except ValidationError:
+        return None
 
 
 def _plain(text):
@@ -204,7 +209,7 @@ def _ask(question, history, tools, confirm=False, on_event=None, context=None):
         for call in reply.tool_calls if confirm else []:
             if call["name"] in profile_check.GATED:
                 args = _with_defaults(call, tools)
-                if profile_check.ref(args) not in said_yes:
+                if args is not None and profile_check.ref(args) not in said_yes:
                     raise NeedsConfirmation(args)
         requested += len(reply.tool_calls)
         return reply
