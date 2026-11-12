@@ -15,6 +15,8 @@ GitHub stores code and serves static pages (GitHub Pages). It cannot run the Pyt
 | This Mac with a Cloudflare tunnel | Free | Works. The Mac must stay on, and a quick tunnel address changes on restart. A stable address needs a domain. |
 | GitHub Pages (static) | Free, no card | Map and layers only; the chat cannot run there. |
 
+Status 2026-11-12: step 1 is live and rebuilt from main. Step 3 now runs on a small home server (Docker) and not on the Mac, with the same quick tunnel. Step 4 is not started.
+
 ## Plan
 1. **Static demo on GitHub Pages** (free, never sleeps). Export the map data, cards and 3D outlines as files. The map, layers, card, nearby lists and 3D work. Chat and walking routes show "run the app yourself" and link to a short demo video. No keys and no server, so nothing to abuse.
 2. **README link** to the demo, the screenshots and the run steps.

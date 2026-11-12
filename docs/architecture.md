@@ -82,13 +82,35 @@ class ToolResult(BaseModel):
   like `$585,000` vs `585000`, and rounding we declare).
 - If any number is unsupported, the reply is rejected and rewritten once.
   If it fails again, the agent says it cannot answer reliably.
-- Every check is logged, so the eval can report the grounding rate.
+- Every check is logged, so the eval can report the grounding rate. The server log gets one `grounding`
+  line per run: the kinds of rejected numbers (money, year, date, percent, number), whether the reply was
+  replaced, and the tool names. No message text or values.
+- Years: a year after a date word ("October 2024") is a label, unless a money word is close to it.
+  Then it is a claim, and it is grounded only when a tool result string (a source URL included) cites the
+  same year. Amounts such as `$2024` are never grounded this way.
+- On the turn where the user says yes to a profile confirmation, the code-written confirmation lines count
+  as the user's words, so the answer can repeat the user's own income. Earlier turns do not count.
 - `policy_explain` results are excluded by tool name and by their payload marker. Titles, summaries
   and links cannot ground numbers or dates. They cannot supply place labels either.
   Rules tools still supply eligibility verdicts. Links only: `policy.py` holds the 10 allowlisted
   hdb.gov.sg pages with a title and a summary written for this project (search hints, no digits).
   No HDB text is fetched or stored: hdb.gov.sg refuses automated fetching, and HDB's terms ask
   for written approval before reuse. The browser gets page titles and links.
+
+## Profile confirmation
+- Before an eligibility, grant or loan tool runs, `confirm.py` writes an "Is this right?" message from the
+  arguments the tool will run with (schema defaults included). The model does not write it.
+- `confirm_display.py` shows each value in plain words with the raw value in brackets ("both first-timers
+  (both_first)"). A value the user's words do not back gets "(you did not give this: please check)":
+  numbers need a whole matching number (a lease in years counts as months times 12), choices and yes/no
+  values need matching words, and a negation counts ("never owned a condo" backs no).
+- A short ref (a hash of the raw values) ties the user's yes to that exact profile. A changed value needs a new yes.
+- Arguments that fail the tool's schema get no confirmation. The tool returns its validation error and the model fixes the call.
+
+## Tool logs
+- `TOOL_LOG=1` (default) writes one JSON line per tool call: the tool, its arguments and a result count.
+  Profile, grant, loan and calculate tools log only argument names, never income, ages or citizenship.
+- A failed model provider logs `provider_failed` (provider and error class). The API logs `chat_failed` (class only).
 
 ## Safety limits
 - Max tool calls and max tokens per question, set in settings. Hit the limit -> stop and say so.
@@ -107,6 +129,7 @@ src/ask_hdb/
   tools.py        tool wrappers (JSON in, JSON out); tool_inputs.py has their pydantic arguments
   sales.py, compare.py, calc.py, clean.py   price tools, comparable sales, calculator, cleaning
   confirm.py      code-written "Is this right?" before eligibility and grant tools
+  confirm_display.py   plain-word profile lines and the "you did not give this" flags
   grounding.py    number check against this question's tool results
   policy.py, policy_sources.py   policy page links (own summaries) and the fixed official URL list
   rules/          dated rule functions (resale, BTO); numbers come from rules/*.yaml
@@ -126,6 +149,8 @@ eval/             questions.yaml and reports
 tests/
 docs/
 ```
-Planned, not built: a public deployment and supervisor and worker graph. The diagram's workers
+Hosting: a static demo on GitHub Pages (chat paused), and the full app in Docker on a small home server,
+shared through a Cloudflare quick tunnel (the address changes on restart). See `docs/hosting-plan.md`.
+Planned, not built: an always-on public host with a model, and a supervisor and worker graph. The diagram's workers
 remain a design sketch; the current agent is a single bounded conversation. Policy search uses
 that existing agent, with no supervisor added.

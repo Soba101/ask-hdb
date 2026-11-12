@@ -93,7 +93,7 @@ Three phases; each gets approval before building.
 - **Exit:** grounding 100% on the eval (met on dev); full condition beats single agent (not met: equal within the run-to-run spread; `full` adds the profile confirmation, about 3% more tokens).
 
 ## Week 6: ship (mostly done; plan and status: docs/week6-plan.md)
-Status 2026-10-31: the app, 3D map, Docker, tracing, README and a public static demo (GitHub Pages, chat paused) are done. Not done: a public host with a model. A Cloudflare quick tunnel from a home machine works for short tests only (see `docs/hosting-plan.md`).
+Status 2026-11-12: the app, 3D map, Docker, tracing, README with a demo GIF and a public static demo (GitHub Pages, chat paused) are done. The full app with chat runs in Docker on a small home server behind a Cloudflare quick tunnel; the address changes on restart, so it is shared by hand. Not done: an always-on public host with a fixed address (see `docs/hosting-plan.md`).
 - [~] Langfuse tracing: built as an optional extra behind env keys, text redacted by default (PR #58); not checked against a live account.
 - [x] Web app, map-first (done 2026-10-24, PRs #52-#56: API with streamed tool evidence, rate limit and token cap; plain-JS page; MapLibre map of every block, station, school and BTO site; click to select; info cards; place lookup; radius ring; primary schools within 2 km with 1 km / 2 km rings). Original description: (decided 2026-10-20, replaces the Streamlit plan): FastAPI server around the agent
       (`POST /chat` streaming each tool call, result and answer; `GET /health`), and a plain web front end:
@@ -101,10 +101,20 @@ Status 2026-10-31: the app, 3D map, Docker, tracing, README and a public static 
       Same agent and MCP tools as the terminal; model and API key come from the server `.env`, never the browser.
       Needs: rate limit per visitor, a cost cap, no personal data stored, a clear "not financial advice" line.
 - [x] Docker image and compose file for the web app (PR #58); checked locally as simulated hosting. Postgres/pgvector and a self-hosted Langfuse are not part of it.
-- [~] Public link: the static demo is live at https://soba101.github.io/ask-hdb/. Deploy to one small VM with a cloud model: not done; needs a host, a cloud model and key, and a dev eval on that model first.
+- [~] Public link: the static demo is live at https://soba101.github.io/ask-hdb/. The full app runs on a home server behind a quick tunnel (temporary address). A fixed address or a small VM with a cloud model: not done; needs a domain or a host, and a dev eval on the cloud model first.
 - [x] (done, PR #59 and #63) 3D block map in the web app (building outlines extruded by floors if a floors source is found, MRT and school markers, approximate facing). BTO sites join after week 4b.
-- [~] README rewritten with screenshots and the results table (PR #58); no demo GIF or architecture picture yet.
+- [x] README rewritten with screenshots and the results table (PR #58), demo GIF added (PR #115). No architecture picture.
 - **Exit:** a stranger uses the public link with no help.
+
+## After week 6 (plans: docs/week7-plan.md, docs/week8-plan.md and the week 8 sub-plans)
+- [x] 7-1 CI, MIT license, security note (PR #110). Held-out set 3 (PR #114).
+- [x] 3D buildings, sun and shadows (PRs #59, #129, #130); BTO pins in 3D (PR #126, closes #112).
+- [x] Nearby places and walking routes, block facts, MOP layer, phone bottom sheet (week 8 plans).
+- [x] Policy page links, links only (PR #125, closes #113).
+- [x] Trust fixes after a full app test (PRs #136-#145): readable profile confirmation with "you did not give this" flags,
+      household check before a family verdict, BTO loan capped by grants, tool and failure logs, cited years in grounding.
+- [x] Preferences: sqm or sq ft, light or dark, motion, remembered layer; locate-me button (PRs #133, #138, #139).
+- [ ] Rerun the dev eval: the last run (30 Oct) is before PRs #117-#145.
 
 ## Decisions log
 - 2026-10-19: Reddit shows COV/valuation is the top buyer worry. Added price check to v1.

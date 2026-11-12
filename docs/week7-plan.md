@@ -1,6 +1,6 @@
 # Week 7 plan: trust and a stable link (draft, 2026-11-05)
 
-Status: draft for review. Nothing here has started.
+Status 2026-11-12: 7-1 done (PR #110). 7-3 in part: held-out set 3 (PR #114). 7-2 in part: the Evidence tab lists each source with its as-of date. 7-4: decided, keep the current setup. Phone legend fixed (PR #122).
 
 Goal: close the week 6 exit check ("a stranger uses the public link with no help") and fix the real gaps from the external review.
 Each phase is one PR. Each PR needs approval before merge.
