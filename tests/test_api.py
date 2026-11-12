@@ -1,5 +1,6 @@
 """The API streams tool evidence and the checked answer, and enforces its limits."""
 
+import io
 import json
 import os
 
@@ -23,6 +24,7 @@ def client(monkeypatch):
                 "stopped_reason": None, "grounding": None, "needs_confirmation": False}
 
     monkeypatch.setattr(api.agent, "ask", fake_ask)
+    monkeypatch.setenv("PREWARM_MODEL", "0")  # /about must not reach a real model server in tests
     return TestClient(api.create_app())
 
 
@@ -343,3 +345,20 @@ def test_prewarm_runs_one_question_only_for_a_local_model_and_frees_the_slot(mon
     api.prewarm(limits)
     monkeypatch.setenv("LLM_CHAIN", "local,gemini"); api.prewarm(limits)
     assert slot_taken == [False, True]
+
+
+def test_a_page_visit_loads_the_local_model_at_most_once_a_minute(monkeypatch):
+    sent = []
+    monkeypatch.setattr(api.urllib.request, "urlopen", lambda request, timeout: sent.append(request) or io.BytesIO(b"{}"))
+    monkeypatch.setitem(api.LOADED, "at", 0.0)
+    monkeypatch.setenv("LOCAL_LLM_URL", "http://ollama:11434/v1")
+    monkeypatch.setenv("LLM_MODEL", "qwen3.5:9b")
+    monkeypatch.setenv("LLM_CHAIN", "gemini,local")
+    api.load_local_model()
+    api.load_local_model()  # a second visit within the minute sends nothing
+    assert [r.full_url for r in sent] == ["http://ollama:11434/api/generate"]
+    assert json.loads(sent[0].data) == {"model": "qwen3.5:9b", "keep_alive": "30m"}
+    monkeypatch.setitem(api.LOADED, "at", 0.0)
+    monkeypatch.setenv("LLM_CHAIN", "gemini,openrouter")  # no local model, nothing to load
+    api.load_local_model()
+    assert len(sent) == 1

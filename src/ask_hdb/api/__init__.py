@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import time
+import urllib.request
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -154,6 +155,24 @@ def prewarm(limits):
             limits.busy.release()
 
 
+LOADED = {"at": 0.0}
+
+
+def load_local_model():
+    """Ask Ollama to load the local model now, so a fallback answer for this visitor skips the cold load.
+    Its native API loads a model on a request with no prompt. Hosted-only chains and non-Ollama servers are left alone."""
+    chain = [name.strip() for name in os.getenv("LLM_CHAIN", "").split(",") if name.strip()]
+    if "local" not in chain or os.getenv("PREWARM_MODEL", "1") != "1" or time.time() - LOADED["at"] < 60:
+        return
+    LOADED["at"] = time.time()
+    base = os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1").removesuffix("/").removesuffix("/v1")
+    body = json.dumps({"model": os.getenv("LLM_MODEL", "qwen3.5-9b-16k"), "keep_alive": os.getenv("MODEL_KEEP_ALIVE", "30m")})
+    try:
+        urllib.request.urlopen(urllib.request.Request(base + "/api/generate", body.encode(), {"Content-Type": "application/json"}), timeout=120).read()
+    except OSError as error:  # the model server may be down or not Ollama; a visitor sees that only if they reach it
+        print(f"[model load skipped: {type(error).__name__}]")
+
+
 @asynccontextmanager
 async def lifespan(app):
     Thread(target=warm, daemon=True).start()
@@ -203,6 +222,7 @@ def create_app():
 
     @app.get("/about")
     def about():
+        Thread(target=load_local_model, daemon=True).start()  # every page load asks for /about
         return {"data": mapdata.data_freshness()}
 
     @app.get("/health")
