@@ -93,6 +93,28 @@ def test_cannot_answer_is_not_a_decline_or_clarification():
     assert claims(CANNOT_ANSWER) == []
 
 
+@pytest.mark.parametrize("question,answer", [
+    # From the 2026-11-12 27B eval: the user's period, restated in the other unit.
+    ("employed continuously for the past year", "continuous employment for the past 12 months"),
+    ("I have worked for one year", "You have worked 12 months."),
+    ("with 960 months lease left", "The flat has 960 months (80 years) of lease left."),
+    ("a 70-year lease left", "That is 840 months of lease."),
+    ("worked 2 years", "That is 24 months of work."),
+])
+def test_the_users_period_in_the_other_unit_is_an_echo(question, answer):
+    assert check(answer, question, [])["ungrounded"] == []
+
+
+@pytest.mark.parametrize("question,answer", [
+    ("employed for the past year", "You must have worked at least 12 months."),  # a rule threshold, not an echo
+    ("employed for the past year", "Your income is $12 a month."),  # not a period
+    ("lease 960 months", "The lease is 81 years."),  # a wrong conversion
+    ("lease 965 months", "That is 80 years."),  # not a whole number of years
+])
+def test_period_echoes_stay_narrow(question, answer):
+    assert check(answer, question, [])["ungrounded"]
+
+
 def test_comparing_the_users_number_to_a_ceiling_is_an_echo():
     # From the week 5-2 eval (q_eligibility_005): the user's income in brackets after "ceiling".
     answer = "Income is within the ceiling ($4000 < $8000). The ceiling is $8000 (your income is $4000)."
