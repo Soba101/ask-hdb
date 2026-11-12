@@ -1,5 +1,6 @@
 // Keep playback and Singapore's clock independent of the browser's time zone.
 import { refreshFacade } from "./building-card.js";
+import { matches } from "./preferences.js";
 const $ = (id) => document.getElementById(id);
 export function singaporeNow(now = new Date()) {
   const local = new Date(now.getTime() + 8 * 60 * 60 * 1000);
@@ -11,7 +12,7 @@ export function singaporeNow(now = new Date()) {
 
 export function initSunControls(render, clear) {
   const date = $("sun-date"), slider = $("sun-time"), play = $("sun-play");
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)"), still = () => matches("(prefers-reduced-motion: reduce)");
   let samples = [], dayRequest = 0, frame = null, playing = false, lastTick = null, nowRequest = 0;
   function stop() {
     playing = false; lastTick = null;
@@ -40,7 +41,7 @@ export function initSunControls(render, clear) {
       const data = await response.json();
       if (mine !== dayRequest) return false;
       date.value = data.date; samples = data.positions;
-      slider.disabled = false; play.disabled = reduced.matches;
+      slider.disabled = false; play.disabled = still();
       if (minute !== null) slider.value = String(minute);
       updateTime();
       if (down) $("sun-position").textContent = "The sun is down.";
@@ -64,11 +65,11 @@ export function initSunControls(render, clear) {
     }
     frame = requestAnimationFrame(tick);
   }
-  play.disabled = reduced.matches;
+  play.disabled = still();
   play.onclick = () => {
     nowRequest++;
     if (playing) { stop(); return; }
-    if (reduced.matches || slider.disabled || document.hidden || Number(slider.value) >= 1170) return;
+    if (still() || slider.disabled || document.hidden || Number(slider.value) >= 1170) return;
     playing = true; play.textContent = "Pause"; play.setAttribute("aria-pressed", "true");
     frame = requestAnimationFrame(tick);
   };
@@ -89,6 +90,7 @@ export function initSunControls(render, clear) {
     frame = requestAnimationFrame(() => { frame = null; updateTime(); });
   };
   document.addEventListener("visibilitychange", () => { if (document.hidden) manual(); });
-  reduced.addEventListener("change", () => { if (reduced.matches) stop(); play.disabled = reduced.matches || slider.disabled; });
+  const motion = () => { if (still()) stop(); play.disabled = still() || slider.disabled; };
+  reduced.addEventListener("change", motion); window.addEventListener("preferences", motion);
   return { loadDay, updateTime, stop: manual };
 }

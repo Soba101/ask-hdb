@@ -11,8 +11,11 @@ export function initSheet({ chat = () => {} } = {}) {
     const available = Math.max(0, window.innerHeight - keyboard());
     // The search bar is the chat input on a phone, so the full sheet stops below it instead of covering it.
     const bar = $("topbar").getBoundingClientRect?.().bottom || 0;
-    const room = bar ? window.innerHeight - bar - 8 : Infinity;
-    return [Math.min(112, available), Math.min(window.innerHeight * .5, available),
+    // Measured from the keyboard top, so the open keyboard never lets the sheet climb over the input.
+    const room = bar ? available - bar - 8 : Infinity;
+    // Peek ends at the bottom of its own block, so no sliver of the tabs below shows.
+    const fit = peek?.getBoundingClientRect?.().bottom - side.getBoundingClientRect?.().top;
+    return [Math.min(fit > 0 ? Math.ceil(fit) : 112, 112, available), Math.min(window.innerHeight * .5, available, room),
       Math.min(window.innerHeight * .92, available, room)];
   };
   function keyboard() {
@@ -76,7 +79,7 @@ export function initSheet({ chat = () => {} } = {}) {
     for (const node of [...side.children]) if (node !== content && node !== $("sheet-notes")) move(node, content);
     move($("sheet-notes"), content); // the long notes come last, below the chat and the card
     side.append(peek, content);
-    $("peek-hint").textContent = "Ask about a flat, a grant or a place";
+    $("peek-hint").textContent = ""; // the search field already shows this hint
     move($("form"), $("topbar")); move($("selected"), $("topbar"));
     move(seg, $("chips")); move($("toggle-3d"), $("chips"));
     move($("price-controls"), $("chip-detail")); move($("lease-controls"), $("chip-detail")); move($("mop-controls"), $("chip-detail"));
@@ -91,8 +94,10 @@ export function initSheet({ chat = () => {} } = {}) {
       app.style.setProperty("--chip-detail-h", $("chip-detail").getBoundingClientRect().height + "px");
       // The map credit sits above the sun bar when it is open.
       app.style.setProperty("--sun-h", ($("sun-panel").hidden ? 0 : $("sun-bar").getBoundingClientRect().height + 8) + "px");
+      // A question box that grows as you type pushes the sheet down, so the text never slides under it.
+      if (!side.dataset.dragging && points()[state] !== pixels) snap(state);
     });
-    observer.observe($("topbar")); observer.observe($("chip-detail")); observer.observe($("sun-bar"));
+    observer.observe($("topbar")); observer.observe($("chip-detail")); observer.observe($("sun-bar")); observer.observe(peek);
     app.style.setProperty("--kb", keyboard() + "px");
     select(selected);
   }
@@ -118,7 +123,7 @@ export function initSheet({ chat = () => {} } = {}) {
     app.style.setProperty("--kb", keyboard() + "px"); snap(state);
   });
   $("topbar").addEventListener("click", (event) => {
-    if (!enabled || !$("form").contains(event.target)) return;
+    if (!enabled || !$("form").contains(event.target) || $("preferences-button").contains(event.target)) return;
     chat(); snap(2); $("tab-chat").scrollIntoView?.({ block: "start" }); $("question").focus();
   });
   side.addEventListener("keydown", (event) => {

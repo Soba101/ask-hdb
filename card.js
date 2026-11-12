@@ -3,7 +3,7 @@ import { clearBuildingCard, showBuildingFacts, openBuildingSun } from "./buildin
 import { initCardMap } from "./card-map.js";
 import { initAmenityCard } from "./amenity-card.js";
 const $ = (id) => document.getElementById(id);
-const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Floor plans", "card-plans"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
+const SECTIONS = [["Prices", "card-prices"], ["Lease", "card-lease"], ["Floor plans and Street View", "card-plans"], ["More information", "card-more"], ["Sun and facing", "card-facing"],
   ["Schools", "schools"], ["Nearby", "card-nearby"]];
 const QUESTIONS = {
   block: [["Ask about schools", "What are the 3 nearest primary schools to this block?"],
@@ -31,7 +31,7 @@ async function get(path) {
   return response.json();
 }
 
-export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSection = () => {}, onRoute = onSection }) {
+export function initCard({ mapLayer, metrics, ask, areaUnit = () => "sqm", onSelect = () => {}, onSection = () => {}, onRoute = onSection }) {
   const map = initCardMap(mapLayer);
   const amenities = initAmenityCard({ mapLayer, onRoute: () => onRoute() });
   let cardRequest = 0, current = null, facts = null;
@@ -85,12 +85,18 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     }
     $("more-observed-title").hidden = !info.observed.length;
     if (info.observed_period) $("more-observed-title").textContent = "Recorded flat models and sizes (resales " + info.observed_period + ")";
-    for (const item of info.observed) {
-      line("more-observed", item.flat_type + " · " + item.flat_model + ": " + item.sales + " sale" + (item.sales === 1 ? "" : "s") + ", "
-        + range(item.area_sqm[0], item.area_sqm[1], "sqm") + " (" + range(item.area_sqft[0], item.area_sqft[1], "sq ft") + ")", "li");
-    }
+    refreshAreas();
     info.limits.forEach((text) => line("more-limits", text));
     line("more-limits", "Source: " + info.source);
+  }
+  function refreshAreas() {
+    $("more-observed").replaceChildren();
+    for (const item of facts?.more_info?.observed || []) {
+      const areas = [range(...item.area_sqm, "sqm"), range(...item.area_sqft, "sq ft")];
+      if (areaUnit() === "sqft") areas.reverse();
+      line("more-observed", item.flat_type + " · " + item.flat_model + ": " + item.sales + " sale" + (item.sales === 1 ? "" : "s") + ", "
+        + areas[0] + " (" + areas[1] + ")", "li");
+    }
   }
   function render(data, point) {
     facts = data;
@@ -140,6 +146,10 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     $("card").scrollTop = 0; // A new place always opens at its summary, not the previous detail.
     if (!point) return;
     current = point;
+    // Google's documented Maps URLs format; the viewer opens the panorama nearest this point.
+    $("streetview-link").href = Number.isFinite(point.lat) && Number.isFinite(point.lng)
+      ? "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + encodeURIComponent(point.lat + "," + point.lng)
+      : "https://www.google.com/maps"; // no coordinates: plain Maps, never a broken viewpoint
     $("card-title").textContent = point.label; $("card-subtitle").textContent = "Loading details…";
     const path = encodeURIComponent(point.kind) + "/" + encodeURIComponent(point.id);
     let schoolData;
@@ -202,5 +212,5 @@ export function initCard({ mapLayer, metrics, ask, onSelect = () => {}, onSectio
     return ready;
   }
   $("card-close").onclick = () => { cardRequest++; sectionRequest++; clearBuildingCard(); $("card").hidden = true; onSelect(null); };
-  return { select, refreshMetrics, chatHighlight: map.chatHighlight };
+  return { select, refreshMetrics, refreshAreas, chatHighlight: map.chatHighlight };
 }

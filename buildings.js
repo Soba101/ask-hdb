@@ -12,7 +12,30 @@ export function wallExposure(az, alt, bearing) {
   return alt > 0 && value > 1e-12 ? value : 0;
 }
 
+function addBtoPins(map) {
+  for (const status of ["launched", "upcoming"]) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 36; canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    // A narrow stem ends at the indicative point; it implies no block layout.
+    ctx.beginPath(); ctx.moveTo(9, 9); ctx.lineTo(9, 30);
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.strokeStyle = "#e08a00"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(9, 9, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = status === "upcoming" ? "#ffffff" : "#e08a00"; ctx.fill();
+    ctx.strokeStyle = "#e08a00"; ctx.lineWidth = 2; ctx.stroke();
+    map.addImage(`bto-pin-${status}`, ctx.getImageData(0, 0, canvas.width, canvas.height), { pixelRatio: 2 });
+  }
+  map.addLayer({ id: "bto-sites", type: "symbol", source: "places", filter: ["==", ["get", "kind"], "bto"],
+    layout: { visibility: "none", "icon-image": ["case", ["==", ["get", "status"], "upcoming"], "bto-pin-upcoming", "bto-pin-launched"],
+      "icon-anchor": "bottom", "icon-pitch-alignment": "viewport", "icon-rotation-alignment": "viewport",
+      "icon-allow-overlap": true, "icon-ignore-placement": true } }, "highlight");
+}
+
 export function initBuildings(map) {
+  addBtoPins(map);
   const toggle = $("toggle-3d"), panel = $("sun-panel");
   let enabled = false, outlines = null, loading = false, failed = false, shadows = null, wanted = false;
   let mode = "type", written = null, writtenColumn = 0, shadeColumn = 0, rows = {}, color = SUN_COLOR, oldLight = null, oldPitch = 0;
@@ -90,6 +113,7 @@ export function initBuildings(map) {
       toggle.classList.toggle("on", enabled);
       toggle.setAttribute("aria-pressed", String(enabled));
       map.setLayoutProperty("buildings", "visibility", enabled ? "visible" : "none");
+      map.setLayoutProperty("bto-sites", "visibility", enabled ? "visible" : "none");
       // Blocks without an outline stay as points, so nothing disappears from the budget view.
       map.setFilter("blocks", enabled ? ["!", ["in", ["get", "id"], ["literal", outlines.features.map((f) => f.id)]]] : null);
       if (enabled) {

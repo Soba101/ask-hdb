@@ -34,6 +34,19 @@ html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--body)/var(--leading) var(--font); }
 h1, h2, b, strong { font-weight: 600; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#preferences-button { flex-shrink: 0; width: 44px; height: 44px; padding: 0; font-size: 0; border-radius: 50%; position: relative; }
+/* A mask, not an emoji: iOS draws the gear emoji in grey colour art. */
+#preferences-button::after { content: ""; position: absolute; inset: 0; background: currentColor;
+  --sliders: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 7h9M17 7h3M4 17h3M11 17h9'/%3E%3Ccircle cx='15' cy='7' r='2'/%3E%3Ccircle cx='9' cy='17' r='2'/%3E%3C/svg%3E");
+  -webkit-mask: center / 22px 22px no-repeat var(--sliders); mask: center / 22px 22px no-repeat var(--sliders); }
+#preferences { width: min(320px, calc(100% - 32px)); padding: 24px; border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--panel); color: var(--text); }
+#preferences::backdrop { background: rgba(0, 0, 0, .35); }
+#preferences h2 { margin: 0 0 16px; }
+#preferences label { display: block; margin-bottom: 8px; }
+#preferences select { width: 100%; min-height: 44px; font-size: 16px; }
+#preferences select + label { margin-top: 16px; }
+#motion-note { margin: 4px 0 0; color: var(--muted); font-size: var(--caption); }
+#preferences-close { display: block; min-height: 44px; margin: 20px 0 0 auto; }
 #app { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100dvh; }
 #mapwrap { position: relative; min-height: 0; }
 #map { position: absolute; inset: 0; }
@@ -63,7 +76,21 @@ header p, .muted { color: var(--muted); margin: var(--space-1) 0 0; font-size: v
 .msg { padding: var(--space-2) var(--space-3); border-radius: var(--card-radius); white-space: pre-wrap; overflow-wrap: anywhere; max-width: 94%; }
 .msg.user { background: var(--user); align-self: flex-end; }
 .msg.bot { border: 1px solid var(--line); align-self: flex-start; }
-.msg.status { color: var(--muted); font-style: italic; border: 0; padding: 0 var(--space-1); }
+.msg.status { color: var(--muted); border: 0; padding: 0 var(--space-1); }
+.msg.bot { white-space: normal; }
+.msg p { margin: 0; min-height: .6em; white-space: pre-wrap; }
+.msg .md-h { font-size: inherit; font-weight: 600; margin: var(--space-2) 0 0; }
+.msg .md-list { list-style: none; margin: 0; padding: 0; }
+.msg .md-list li { padding-left: 1.1em; text-indent: -1.1em; } /* hanging indent: wrapped lines line up with the text */
+.msg .md-d1 { margin-left: 1.1em; } .msg .md-d2 { margin-left: 2.2em; } .msg .md-d3 { margin-left: 3.3em; }
+.msg hr { border: 0; border-top: 1px solid var(--line); margin: var(--space-2) 0; }
+.msg .md-table { overflow-x: auto; margin: var(--space-1) 0; }
+.msg table { border-collapse: collapse; font-size: .92em; width: 100%; }
+/* Cells wrap so every column fits a phone; amounts have no spaces, so they stay on one line. */
+.msg th, .msg td { text-align: left; vertical-align: top; padding: 2px 8px 2px 0; border-bottom: 1px solid var(--line); overflow-wrap: normal; } /* .msg breaks words anywhere; cells break only between words */
+#side, #chip-detail, #sun-bar { font-variant-numeric: tabular-nums; }
+#card-title { text-wrap: balance; }
+#peek-hint:empty { display: none; }
 .msg.error { color: var(--warn); border: 1px solid var(--warn); }
 .choices { display: flex; gap: var(--space-2); margin-top: var(--space-2); flex-wrap: wrap; }
 .selected { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-2); padding: var(--space-1) var(--space-3);
@@ -171,9 +198,10 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #chips button.on { background: var(--accent-text); }
   #chip-detail { display: block; top: calc(var(--topbar-bottom, 74px) + 60px); }
   #chip-detail > div { padding: 8px; background: var(--floating); border: 1px solid var(--line); border-radius: 12px; }
-  #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 4px 8px; }
+  #price-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px 16px; }
   #price-controls label { min-width: 0; font-size: var(--caption); }
   #price-controls .ramp, #price-controls p { grid-column: 1 / -1; margin: 0; font-size: var(--caption); }
+  #price-controls label:has(#budget) { grid-column: 1 / -1; } /* the slider needs the full width */
   #chip-detail input, #chip-detail select { width: 100%; }
   #chip-detail select, #sun-bar input[type=date] { background: var(--panel); color: var(--text);
     border: 1px solid var(--line); border-radius: var(--radius); font: inherit; min-width: 0; }
@@ -202,11 +230,13 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-peek .legend { padding: 0; border: 0; font-size: var(--caption); margin-top: 4px; }
   #sheet-peek h2 { font-size: 17px; margin: 0 44px 0 0; }
   #sheet-peek > .close { position: absolute; top: 4px; right: 8px; min-height: 44px; min-width: 44px; }
-  #sheet-peek .headline { display: flex; list-style: none; gap: 4px; padding: 0; margin: 4px 0 0; }
-  #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 4px; font-size: var(--caption); }
+  #sheet-peek .headline { display: flex; list-style: none; gap: 8px; padding: 0; margin: 8px 0 0; }
+  #sheet-peek .headline li { min-width: 0; flex-basis: 0; padding: 8px 12px; font-size: var(--caption); /* same rhythm as the card sections below */ }
   #side[data-snap=peek] #sheet-peek { max-height: 112px; overflow: hidden; }
   #side[data-snap=peek] #card-subtitle, #side[data-snap=peek] .headline small { display: none; }
   #sheet-content { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+  /* Content is inert at peek; hiding it means a sheet a few pixels taller than its peek never shows a sliver of the tabs. */
+  #side[data-snap=peek]:not([data-dragging]) #sheet-content { visibility: hidden; }
   #sheet-content .card { position: relative; inset: auto; width: 100%; max-height: none; overflow: visible;
     border: 0; border-radius: 0; margin: 0; padding: 8px 12px; }
   #sheet-notes { display: block; padding: 0 17px; }
@@ -245,12 +275,10 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 #card-prices > h3, #card-lease > h3, #card-plans > h3, #card-more > h3, #card-facing > h3, #card-nearby > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; }
 .layers .seg button { white-space: nowrap; overflow-wrap: normal; word-break: normal; padding: var(--space-1) var(--space-2); }
-.maplibregl-ctrl-attrib-button { background-repeat: no-repeat; background-position: center; }
 @media (prefers-color-scheme: dark) {
   .maplibregl-ctrl-group, .maplibregl-ctrl-attrib { background: var(--floating); }
   .maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib a { color: var(--muted); }
   .maplibregl-ctrl-group button + button { border-top-color: var(--line); }
-  .maplibregl-ctrl-attrib-button { filter: invert(1); }
 }
 #amenity-list li { border-bottom: .5px solid var(--line); }
 #amenity-list li:last-child { border-bottom: 0; }
@@ -271,7 +299,9 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
   /* (a) bottom sheet: frosted material, 12px top radius, hairline, no heavy shadow */
   #side { background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-    border: 0; border-top: .5px solid var(--line); border-radius: 12px 12px 0 0; box-shadow: none; }
+    border: 0; border-top: .5px solid var(--line); border-radius: 12px 12px 0 0;
+    /* Safari's see-through address and form bars float above the keyboard: keep the sheet colour behind them, not the map. */
+    box-shadow: 0 var(--kb) 0 var(--kb) var(--panel); } /* the spread closes the gap when the keyboard is taller than the sheet */
   #sheet-handle::after { width: 36px; height: 5px; background: var(--grabber); }
   #sheet-peek h2 { font-size: var(--t-title); font-weight: 700; line-height: 1.18; }
   #side h1 { font-size: var(--t-title); font-weight: 700; }
@@ -282,16 +312,16 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .tab.on { background: var(--ios-blue); color: #fff; }
 
   /* (b) search bar: iOS search field with a CSS-drawn magnifier and a circular Send */
-  #topbar { background: var(--material); border: .5px solid var(--line); border-radius: 14px; box-shadow: none; }
+  #topbar { background: var(--material); border: .5px solid var(--line); border-radius: 18px; /* field 10px + padding 8px */ box-shadow: none; }
   #topbar form { align-items: center; }
-  #question { font-size: 16px; font-weight: 400; height: 44px; border: 0; border-radius: 10px; background-color: var(--fill); color: var(--text);
+  #question { font-size: 16px; font-weight: 400; height: 44px; border: 0; border-radius: 10px; background-color: var(--panel); color: var(--text); /* solid fill keeps the placeholder above 4.5:1 */
     padding: 10px 12px 10px 38px; background-repeat: no-repeat; background-position: 12px center; background-size: 17px 17px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5L21 21'/%3E%3C/svg%3E"); }
   #question::placeholder { color: var(--muted); opacity: 1; }
   #topbar #send { width: 44px; height: 44px; min-width: 44px; padding: 0; flex-shrink: 0; border: 0; border-radius: 50%;
     background: var(--ios-blue); font-size: 0; position: relative; }
   /* The arrow is a mask, so the "Send" text stays for screen readers. */
-  #topbar { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
+  #topbar { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V5M5.5 11.5L12 5l6.5 6.5'/%3E%3C/svg%3E"); }
   #topbar #send::after { content: ""; position: absolute; inset: 0; background: #fff;
     -webkit-mask: center / 20px 20px no-repeat var(--arrow); mask: center / 20px 20px no-repeat var(--arrow); }
   #topbar .selected { background: var(--fill); font-size: var(--t-foot); }
@@ -309,11 +339,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group button { width: 44px; height: 44px; border-radius: 50%; background-color: var(--material);
     -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group button + button { border-top: .5px solid var(--line); }
-
-  /* The map credit is one 44px round button: the box and the button share one shape (they were a 24px circle under a 44px square). */
-  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) { box-sizing: border-box; width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%;
-    background: var(--material); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); border: .5px solid var(--line); }
-  .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button { width: 100%; height: 100%; border-radius: 50%; background-color: transparent; }
+  /* The map credit is one short line, so it shows as plain text: no "i" button that opens over the sheet. */
+  .maplibregl-ctrl-attrib { font-size: 11px; border-radius: 8px; }
 
   /* (e) card sections as an iOS inset grouped list: one rounded group, real DOM order kept for focus and screen readers */
   #card-sections { display: flex; flex-direction: column; gap: 0; margin-top: 12px; border-radius: 12px; overflow: hidden; background: var(--fill); }
@@ -350,7 +377,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
     --text: #fff; --muted: #aeaeb2; --line: rgba(84, 84, 88, .65);
     --fill: rgba(118, 118, 128, .24); --material: rgba(28, 28, 30, .9); --grabber: rgba(235, 235, 245, .3); --ios-blue: #0071e3; --tint: #64b5ff;
   }
-  .maplibregl-ctrl-top-right .maplibregl-ctrl-icon { filter: invert(1); }
+  /* The locate icon's blue (on) and red (error) states keep their colour; only the black idle icons turn white. */
+  .maplibregl-ctrl-top-right button:not([class*="geolocate-"]):not(:disabled) .maplibregl-ctrl-icon { filter: invert(1); }
 }
 /* Spring-like settle for the sheet, only when motion is welcome; the drag state keeps its own no-transition rule. */
 @media (min-width: 0px) and (prefers-reduced-motion: no-preference) {
@@ -375,7 +403,8 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   .radius button.secondary, #amenity-pills button.secondary { flex: 1; min-width: 0; background: transparent; border-radius: 8px; padding: 0 4px; font-size: var(--t-foot); }
   .radius button.secondary.on, #amenity-pills button.secondary.on { background: var(--ios-blue); color: #fff; }
   #amenity-list button, #route-clear { border-radius: var(--pill); padding: 0 var(--space-4); }
-  #sheet-peek .legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: var(--t-cap); }
+  #sheet-peek .legend { flex-wrap: wrap; row-gap: 2px; font-size: var(--t-cap); } /* wrap, not scroll: a clipped key hides what a colour means */
+  #sheet-peek .legend-note { display: none; } /* two lines on a phone; a BTO card still says "approximate site" */
   #sheet-peek .legend::-webkit-scrollbar { display: none; }
   /* The legend sits on the sheet itself, not on a floating pill of its own. */
   #sheet-peek .legend { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; }
@@ -416,9 +445,10 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
 
 /* ---- Wide screens: the sheet becomes a panel docked on the left, always open ---- */
 @media (min-width: 801px) {
+  #sheet-peek .legend-note { display: inline; } /* a wide map has room for the full key */
   #app { --side-w: clamp(360px, 30vw, 420px); }
   #side { top: 12px; left: 12px; bottom: 12px; width: var(--side-w); height: auto; max-height: none; border: .5px solid var(--line);
-    border-radius: 14px; padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
+    border-radius: var(--card-radius); padding-bottom: 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); transition: none;
     /* the chat box docks at the bottom of the panel, so the panel keeps room for it */
     padding-top: 12px; padding-bottom: calc(var(--topbar-h, 52px) + 36px); }
   #sheet-handle { display: none; }
@@ -456,3 +486,7 @@ button.secondary.on { background: var(--accent-text); border-color: var(--accent
   #sheet-notes { padding-inline: 12px; }
   button.secondary:hover, #card-sections > button:hover { filter: brightness(.96); }
 }
+/* A blocked location shows its crossed-out icon clearly; the button's own disabled opacity already dims it. */
+.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon { opacity: 1; }
+/* A phone has one close: the "Asking about" chip's x at the top clears the place everywhere. */
+@media (max-width: 800px) { #card-close { display: none; } }

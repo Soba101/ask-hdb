@@ -4,6 +4,8 @@
 import { initBuildings } from "./buildings.js";
 import { initCard } from "./card.js";
 import { initSheet } from "./sheet.js";
+import { displayAreaUnits } from "./area-units.js";
+import { initPreferences, matches } from "./preferences.js";
 const $ = (id) => document.getElementById(id);
 const sheet = initSheet({ chat: () => tab("chat") });
 const log = $("log"), form = $("form"), box = $("question"), send = $("send");
@@ -11,16 +13,83 @@ const tools = $("tools"), sources = $("sources"), empty = $("empty");
 const history = [];
 const MAX_TURNS = 12;
 let selected = null; // {kind, id, label, lat, lng}
+const preferences = initPreferences((unit) => {
+  log.querySelectorAll(".msg.bot").forEach((answer) => displayAreaUnits(answer, unit));
+  card.refreshAreas();
+});
 
 // ---------- chat ----------
+// Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>, *italic* stays plain.
+function inline(el, text) {
+  // [label](https://...) and bare https:// links become anchors; any other scheme stays plain text.
+  const link = /\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|https:\/\/[^\s<>()[\]]*[^\s<>()[\].,;:!?'"]/g;
+  let last = 0;
+  for (const m of text.matchAll(link)) {
+    styled(el, text.slice(last, m.index));
+    const a = document.createElement("a");
+    a.href = m[2] || m[0];
+    a.textContent = m[1] || m[0];
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    el.appendChild(a);
+    last = m.index + m[0].length;
+  }
+  styled(el, text.slice(last));
+}
+
+function styled(el, text) {
+  text.split("**").forEach((part, i) => {
+    if (i % 2) { const strong = document.createElement("strong"); strong.textContent = part; el.appendChild(strong); }
+    else el.append(part.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:]|$)/g, "$1$2"));
+  });
+}
+
+// Light Markdown for answers: headings, lists, rules and pipe tables. Real elements, so screen readers can jump between them.
+const isRow = (line) => /^\|.*\|$/.test(line.trim());
+const cellsOf = (line) => line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.replace(/\\\|/g, "|").trim()); // "\|" is a literal pipe
+const isRule = (line) => isRow(line) && cellsOf(line).every((c) => /^:?-{3,}:?$/.test(c));
+
+function render(div, text) {
+  const lines = text.split("\n");
+  let list = null; // the open <ul> for a run of list lines
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i], line = raw.trim();
+    let m = line.match(/^([*-]|\d+[.)])\s+(.*)$/);
+    if (!m) list = null;
+    if (m) {
+      if (!list) { list = document.createElement("ul"); list.className = "md-list"; div.appendChild(list); }
+      const item = document.createElement("li");
+      item.className = "md-d" + Math.min(3, Math.floor((raw.length - raw.trimStart().length) / 2)); // 2 spaces per level
+      inline(item, (/\d/.test(m[1]) ? m[1] : "•") + " " + m[2]);
+      list.appendChild(item);
+    } else if (isRow(line) && i + 1 < lines.length && isRule(lines[i + 1])) { // a table needs its |---| line
+      const table = document.createElement("table"), head = cellsOf(line);
+      for (; i < lines.length && isRow(lines[i]); i++) {
+        if (isRule(lines[i])) continue;
+        const cells = cellsOf(lines[i]).concat(Array(head.length).fill("")).slice(0, head.length); // keep cells under their header
+        const row = table.insertRow(), tag = table.rows.length === 1 ? "th" : "td";
+        // U+2011 is a hyphen that never breaks, so "2026-09" and "7-9" stay on one line in a narrow column.
+        for (const c of cells) { const cell = document.createElement(tag); inline(cell, c.replace(/(\d) ?- ?(\d)/g, "$1\u2011$2")); row.appendChild(cell); }
+      }
+      i--;
+      const wrap = document.createElement("div"); wrap.className = "md-table"; wrap.appendChild(table); div.appendChild(wrap);
+    } else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+      div.appendChild(document.createElement("hr"));
+    } else if ((m = line.match(/^#{1,6}\s+(.*?)\s*#*$/))) {
+      const heading = document.createElement("h4"); heading.className = "md-h"; inline(heading, m[1].replace(/\*\*/g, "")); div.appendChild(heading);
+    } else {
+      const block = document.createElement("p"); inline(block, raw); div.appendChild(block);
+    }
+  }
+}
+
 function add(kind, text) {
   const div = document.createElement("div");
   div.className = "msg " + kind;
-  // Text nodes only, never HTML: model output and tool results are untrusted. **bold** becomes <strong>.
-  text.split("**").forEach((part, i) => {
-    if (i % 2) { const strong = document.createElement("strong"); strong.textContent = part; div.appendChild(strong); }
-    else div.append(part);
-  });
+  if (kind === "bot") {
+    render(div, text);
+    displayAreaUnits(div, preferences.areaUnit());
+  } else inline(div, text);
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
   div.scrollIntoView?.({ block: "nearest" }); // on a phone the log sits inside the scrolling sheet
@@ -47,6 +116,14 @@ function addTool(event) {
 }
 
 function addResult(card, event) {
+  if (event.name === "policy_explain") {
+    // Only page names and links may leave policy context on the server.
+    (event.result.sources || []).forEach((source) => addSource(source.url, null, source.title));
+    if (event.result.error) {
+      const note = document.createElement("p"); note.textContent = event.result.error; card.appendChild(note);
+    }
+    return;
+  }
   const details = document.createElement("details");
   const label = document.createElement("summary");
   label.textContent = "Result";
@@ -67,8 +144,12 @@ function collectSources(node) {
   }
 }
 
-function addSource(url, asOf) {
-  if (seen.has(url)) return;
+function addSource(url, asOf, title) {
+  if (seen.has(url)) {
+    // A rules tool may have linked the same page first. Keep its readable policy title.
+    if (title) sources.querySelectorAll("a").forEach((a) => { if (a.href === url) a.textContent = title; });
+    return;
+  }
   seen.add(url);
   if (!sources.firstChild) {
     const title = document.createElement("h2");
@@ -79,7 +160,7 @@ function addSource(url, asOf) {
   const li = document.createElement("li");
   const a = document.createElement("a");
   a.href = url;
-  a.textContent = url.replace(/^https:\/\//, "");
+  a.textContent = title || url.replace(/^https:\/\//, "");
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   li.appendChild(a);
@@ -214,7 +295,11 @@ function show(question, event) {
 }
 
 // The question box grows to three lines, so a long question stays readable.
-function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 88) + "px"; }
+function grow() {
+  // An empty box measures its wrapped placeholder, so it would stay tall after a send: use the CSS height.
+  if (!box.value) { box.style.height = ""; return; }
+  box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 88) + "px";
+}
 box.addEventListener("input", grow);
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -226,7 +311,8 @@ form.addEventListener("submit", (e) => {
   ask(question);
 });
 box.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  // Enter belongs to the IME while the user is choosing a character. Safari reports that Enter as keyCode 229 with isComposing false.
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); form.requestSubmit(); }
 });
 
 // ---------- tabs ----------
@@ -317,9 +403,11 @@ async function applyLayer() {
     ? "Amber: within MOP. Light amber: MOP ends around " + year + ". Blue: past MOP. Grey: no data. " + data.mop_limits
     : data.limits[3] + " Based on the lease start year of each block.";
 }
-document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; applyLayer(); }; });
+const LAYER = "ask-hdb.layer", PRICE_UNIT = "ask-hdb.priceUnit";
+const remember = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+document.querySelectorAll(".seg [data-mode]").forEach((b) => { b.onclick = () => { layerMode = b.dataset.mode; remember(LAYER, layerMode); applyLayer(); }; });
 $("flat-type").onchange = applyLayer;
-$("price-unit").onchange = applyLayer;
+$("price-unit").onchange = () => { remember(PRICE_UNIT, $("price-unit").value); applyLayer(); };
 $("budget").oninput = () => { $("budget-label").textContent = fmtMoney(Number($("budget").value)); $("budget").setAttribute("aria-valuetext", fmtMoney(Number($("budget").value))); if (metricsCache[$("flat-type").value]) applyLayer(); };
 
 // ---------- map ----------
@@ -335,11 +423,19 @@ const mapLayer = {
   route(line) { todo.route = line; },
 };
 const card = initCard({
+  areaUnit: preferences.areaUnit,
   onSelect: sheet.select, onSection: sheet.section, onRoute: sheet.route,
   mapLayer,
   metrics: () => ({ flat: $("flat-type").value, data: metricsCache[$("flat-type").value] }),
   ask: (question) => { tab("chat"); ask(question); },
 });
+$("card-close").addEventListener("click", () => setSelected(null)); // closing the card also clears the "Asking about" chip
+// The last colour mode and price basis come back on reload; the map queue applies the layer once the map is ready.
+try {
+  if (["price", "lease", "mop"].includes(localStorage.getItem(LAYER))) layerMode = localStorage.getItem(LAYER);
+  if (["total", "sqm", "sqft"].includes(localStorage.getItem(PRICE_UNIT))) $("price-unit").value = localStorage.getItem(PRICE_UNIT);
+} catch {}
+if (layerMode !== "type") applyLayer();
 let maplibregl = null;
 const COLORS = ["match", ["get", "kind"], "block", "#1d5fd6", "mrt", "#d62d2d", "lrt", "#d62d2d",
   "primary_school", "#1f9d55", "bto", "#e08a00", "#888888"];
@@ -374,18 +470,21 @@ async function startMap() {
     maplibregl = lib.default || lib;
     // Dark mode only softens the colours of the OpenStreetMap tiles; it does not dim them, so the map stays easy to read.
     const tint = (dark) => ({ "raster-brightness-max": 1, "raster-saturation": dark ? -0.2 : 0 });
-    const dark = matchMedia("(prefers-color-scheme: dark)");
+    const dark = matchMedia("(prefers-color-scheme: dark)"), isDark = () => matches("(prefers-color-scheme: dark)");
     const map = new maplibregl.Map({
-      container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: true },
+      container: "map", center: [103.82, 1.35], zoom: 10.6, attributionControl: { compact: false },
       style: { version: 8, sources: { osm: { type: "raster", tileSize: 256, maxzoom: 19,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], attribution: "© OpenStreetMap contributors" } },
-        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(dark.matches) }] },
+        layers: [{ id: "osm", type: "raster", source: "osm", paint: tint(isDark()) }] },
+      // shortcut: MapLibre reads reduceMotion only here, so a changed Motion choice reaches map moves after a reload.
+      reduceMotion: matches("(prefers-reduced-motion: reduce)") || undefined,
     });
-    dark.addEventListener("change", () => {
-      for (const [name, value] of Object.entries(tint(dark.matches))) map.setPaintProperty("osm", name, value);
-    });
+    const retint = () => { for (const [name, value] of Object.entries(tint(isDark()))) map.setPaintProperty("osm", name, value); };
+    dark.addEventListener("change", retint); window.addEventListener("preferences", retint);
     sheet.setMap(map);
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    // The browser asks for location permission only when the visitor presses this button, never on page load.
+    map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true, fitBoundsOptions: { maxZoom: 16 } }), "top-right");
     map.on("load", async () => {
       let data;
       try {
@@ -432,11 +531,9 @@ async function startMap() {
         "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-radius": 9 } });
       map.addLayer({ id: "selected", type: "circle", source: "selected", paint: { "circle-color": "rgba(0,0,0,0)",
         "circle-stroke-color": "#111111", "circle-stroke-width": 3, "circle-radius": 13 } });
-      document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
-      document.querySelector(".maplibregl-ctrl-attrib")?.removeAttribute("open");
       const buildings = initBuildings(map);
       const blockIndex = new Map(blockFeatures.map((f) => [f.properties.id, f]));
-      for (const layer of ["places", "blocks", "highlight"]) {
+      for (const layer of ["places", "bto-sites", "blocks", "highlight"]) {
         map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
       }
@@ -452,7 +549,7 @@ async function startMap() {
       const pick = (e) => {
         const reach = matchMedia("(pointer: coarse)").matches ? 22 : 7; // a fingertip is wider than a dot
         const box = [[e.point.x - reach, e.point.y - reach], [e.point.x + reach, e.point.y + reach]];
-        const layers = ["places", "highlight", "blocks"];
+        const layers = ["places", "bto-sites", "highlight", "blocks"];
         if (map.getLayer("buildings")) layers.push("buildings");
         const hits = map.queryRenderedFeatures(box, { layers });
         if (!hits.length) return;

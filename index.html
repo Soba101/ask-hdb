@@ -21,8 +21,8 @@
       <span class="legend-item"><span class="dot block"></span>Block</span>
       <span class="legend-item"><span class="dot mrt"></span>MRT/LRT</span>
       <span class="legend-item"><span class="dot school"></span>School</span>
-      <span class="legend-item"><span class="dot bto"></span>BTO launched (approximate site)</span>
-      <span class="legend-item"><span class="dot bto-up"></span>Upcoming BTO (not on sale yet)</span>
+      <span class="legend-item"><span class="dot bto"></span><span>BTO launched<span class="legend-note">&nbsp;(approximate site)</span></span></span>
+      <span class="legend-item"><span class="dot bto-up"></span><span>Upcoming BTO<span class="legend-note">&nbsp;(not on sale yet)</span></span></span>
     </p>
     <div id="layers" class="layers" role="group" aria-label="Colour the blocks">
       <div class="seg">
@@ -48,8 +48,8 @@
         <p id="sun-position" class="small" role="status"></p>
         <p id="sun-panel-limits" class="small">Heights are illustrative, from floor counts. Sun geometry is illustrative, not measured heat.
           The 3D light shades each wall by its direction but does not cast shadows onto other buildings.
-          Shadows drawn on the ground are illustrative (ground shadows only), using the convex hull of each footprint;
-          this overestimates L-shaped and courtyard blocks. No trees or clouds; overlaps may look darker.
+          Shadows drawn on the ground are illustrative (ground shadows only), swept from each footprint as a flat-roofed block.
+          No trees, clouds or roof features.
           Shadows appear at zoom 15 or closer, for up to 600 buildings in view (dense areas may miss some), with lengths capped at 300 m and hidden below 10° sun altitude.
           Exposure colours and direct-sun hours ignore shade from other blocks. In Type mode, grey to yellow shows increasing exposure on the sunnier long facade. Facing is approximate per block, not per unit.</p>
       </div>
@@ -96,10 +96,14 @@
       </section>
       <section id="card-lease" class="card-section" hidden><h3>Lease</h3><ul id="lease-facts"></ul><div id="metric-lease"></div></section>
       <section id="card-plans" class="card-section" hidden>
-        <h3>Floor plans</h3>
+        <h3>Floor plans and Street View</h3>
         <p>HDB's terms on its other sites ask for written approval before others reuse its materials, so this app copies no floor plan drawings.</p>
-        <p>HDB e-Services may sell the plan of a given flat. Search for "floor plan" there and check the fee and who may buy.</p>
+        <p>Typical layouts: housingmap.sg, an independent site (not HDB), shows HDB floor plans by the year blocks were built. Use the lease start year on this card.</p>
+        <p><a href="https://www.housingmap.sg/hdb-floor-plans/" target="_blank" rel="noopener noreferrer">Open floor plans by year on housingmap.sg</a></p>
+        <p>The plan of one exact flat: HDB e-Services may sell it. Search for "floor plan" there and check the fee and who may buy.</p>
         <p><a href="https://www.hdb.gov.sg/eservices" target="_blank" rel="noopener noreferrer">Open HDB e-Services</a></p>
+        <p>Street View: Google shows the photo taken closest to the block's centre point, so it may open on a nearby road, not at the entrance.</p>
+        <p><a id="streetview-link" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Open Street View near this block</a></p>
       </section>
       <section id="card-more" class="card-section" hidden>
         <h3>More information</h3>
@@ -176,6 +180,7 @@
       <form id="form">
         <textarea id="question" aria-label="Your question" rows="2" maxlength="1000" placeholder="Ask about a flat, a grant or a place" required></textarea>
         <button id="send" type="submit">Send</button>
+        <button id="preferences-button" class="secondary" type="button" aria-label="Preferences" aria-haspopup="dialog" aria-controls="preferences" title="Preferences"></button>
       </form>
       <p id="notice" class="notice">Information only, not financial advice. Nothing you type is stored on the server and this page keeps the chat only until you close it, but your questions are sent to the language model provider to be answered. The map tiles load from OpenStreetMap, which sees your IP address and the area you view.</p>
       <details id="notices" class="small"><summary>Data credits</summary>
@@ -191,6 +196,23 @@
     </section>
   </aside>
 </div>
+<dialog id="preferences" aria-labelledby="preferences-title">
+  <h2 id="preferences-title">Preferences</h2>
+  <label for="area-unit">Area units</label>
+  <select id="area-unit">
+    <option value="sqm" selected>sqm</option><option value="sqft">sq ft</option>
+  </select>
+  <label for="theme">Appearance</label>
+  <select id="theme">
+    <option value="system" selected>Match device</option><option value="light">Light</option><option value="dark">Dark</option>
+  </select>
+  <label for="motion">Motion</label>
+  <select id="motion" aria-describedby="motion-note">
+    <option value="system" selected>Match device</option><option value="reduce">Reduce</option>
+  </select>
+  <p id="motion-note">Map movement follows a change after the page reloads.</p>
+  <button id="preferences-close" class="secondary" type="button" autofocus>Done</button>
+</dialog>
 <script src="demo.js"></script>
 <script type="module" src="app.js"></script>
 </body>
